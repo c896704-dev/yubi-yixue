@@ -2,14 +2,14 @@ import { Router } from 'express';
 
 const router = Router();
 
-const BASE_URL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
-const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+const BASE_URL = process.env.DEEPSEEK_BASE_URL || process.env.AI_BASE_URL || 'https://api.deepseek.com';
+const MODEL = process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || 'deepseek-v4-flash';
 
 router.post('/chat', async (req, res) => {
   try {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY || process.env.DASHSCOPE_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'DeepSeek API Key 未配置' });
+      return res.status(500).json({ error: 'AI API Key 未配置' });
     }
 
     const { messages } = req.body;

@@ -6,7 +6,7 @@
 import type { PersonInfo, AnalysisResult } from '../types'
 
 const DB_NAME = 'yubi-panguan'
-const DB_VERSION = 3
+const DB_VERSION = 4
 const STORE_NAME = 'records'
 const DIVINATION_STORE = 'divination_records'
 const COMPAT_STORE = 'compat_records'
@@ -24,18 +24,33 @@ function openDB(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      const tx = req.transaction
+      if (!tx) return
+
+      const store = db.objectStoreNames.contains(STORE_NAME)
+        ? tx.objectStore(STORE_NAME)
+        : db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      if (!store.indexNames.contains('lastUsed')) {
         store.createIndex('lastUsed', 'lastUsed', { unique: false })
+      }
+      if (!store.indexNames.contains('label')) {
         store.createIndex('label', 'label', { unique: false })
       }
-      if (!db.objectStoreNames.contains(DIVINATION_STORE)) {
-        const divStore = db.createObjectStore(DIVINATION_STORE, { keyPath: 'id' })
+
+      const divStore = db.objectStoreNames.contains(DIVINATION_STORE)
+        ? tx.objectStore(DIVINATION_STORE)
+        : db.createObjectStore(DIVINATION_STORE, { keyPath: 'id' })
+      if (!divStore.indexNames.contains('type')) {
         divStore.createIndex('type', 'type', { unique: false })
+      }
+      if (!divStore.indexNames.contains('createdAt')) {
         divStore.createIndex('createdAt', 'createdAt', { unique: false })
       }
-      if (!db.objectStoreNames.contains(COMPAT_STORE)) {
-        const compatStore = db.createObjectStore(COMPAT_STORE, { keyPath: 'id' })
+
+      const compatStore = db.objectStoreNames.contains(COMPAT_STORE)
+        ? tx.objectStore(COMPAT_STORE)
+        : db.createObjectStore(COMPAT_STORE, { keyPath: 'id' })
+      if (!compatStore.indexNames.contains('createdAt')) {
         compatStore.createIndex('createdAt', 'createdAt', { unique: false })
       }
     }
@@ -114,11 +129,10 @@ export async function getAllRecords(): Promise<SavedRecord[]> {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, 'readonly')
   const store = tx.objectStore(STORE_NAME)
-  const index = store.index('lastUsed')
   const records: SavedRecord[] = []
 
   return new Promise((resolve, reject) => {
-    const req = index.openCursor(null, 'prev')
+    const req = store.openCursor()
     req.onsuccess = () => {
       const cursor = req.result
       if (cursor) {
@@ -126,7 +140,7 @@ export async function getAllRecords(): Promise<SavedRecord[]> {
         cursor.continue()
       } else {
         db.close()
-        resolve(records)
+        resolve(records.sort((a, b) => (b.lastUsed || b.createdAt || 0) - (a.lastUsed || a.createdAt || 0)))
       }
     }
     req.onerror = () => {
@@ -210,11 +224,10 @@ export async function getAllDivinationRecords(): Promise<DivinationRecord[]> {
   const db = await openDB()
   const tx = db.transaction(DIVINATION_STORE, 'readonly')
   const store = tx.objectStore(DIVINATION_STORE)
-  const index = store.index('createdAt')
   const records: DivinationRecord[] = []
 
   return new Promise((resolve, reject) => {
-    const req = index.openCursor(null, 'prev')
+    const req = store.openCursor()
     req.onsuccess = () => {
       const cursor = req.result
       if (cursor) {
@@ -222,7 +235,7 @@ export async function getAllDivinationRecords(): Promise<DivinationRecord[]> {
         cursor.continue()
       } else {
         db.close()
-        resolve(records)
+        resolve(records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)))
       }
     }
     req.onerror = () => { db.close(); reject(req.error) }
@@ -268,11 +281,10 @@ export async function getAllCompatRecords(): Promise<CompatRecord[]> {
   const db = await openDB()
   const tx = db.transaction(COMPAT_STORE, 'readonly')
   const store = tx.objectStore(COMPAT_STORE)
-  const index = store.index('createdAt')
   const records: CompatRecord[] = []
 
   return new Promise((resolve, reject) => {
-    const req = index.openCursor(null, 'prev')
+    const req = store.openCursor()
     req.onsuccess = () => {
       const cursor = req.result
       if (cursor) {
@@ -280,7 +292,7 @@ export async function getAllCompatRecords(): Promise<CompatRecord[]> {
         cursor.continue()
       } else {
         db.close()
-        resolve(records)
+        resolve(records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)))
       }
     }
     req.onerror = () => { db.close(); reject(req.error) }
