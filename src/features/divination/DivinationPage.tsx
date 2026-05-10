@@ -10,10 +10,10 @@ type View = 'hub' | 'liuyao' | 'meihua'
 export function DivinationPage() {
   const [view, setView] = useState<View>('hub')
   const [history, setHistory] = useState<DivinationRecord[]>([])
-  const [showHistory, setShowHistory] = useState(false)
+  const [showHistory, setShowHistory] = useState(true)
   const [viewingRecord, setViewingRecord] = useState<DivinationRecord | null>(null)
 
-  const loadHistory = () => getAllDivinationRecords().then(setHistory)
+  const loadHistory = () => getAllDivinationRecords().then(setHistory).catch(() => setHistory([]))
   useEffect(() => { loadHistory() }, [])
 
   const goHub = () => { setView('hub'); setViewingRecord(null); loadHistory() }
@@ -83,46 +83,47 @@ export function DivinationPage() {
       </div>
 
       {/* 历史记录 */}
-      {history.length > 0 && (
-        <Card className="max-w-[700px] mx-auto w-full">
-          <div className="flex justify-between items-center">
-            <span className="font-serif text-lg font-semibold text-[#2C2C2C]">算卦记录</span>
-            <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)}>
-              {showHistory ? '收起' : `展开 (${history.length})`}
-            </Button>
-          </div>
-          {showHistory && (
-            <div className="mt-4 flex flex-col gap-1.5 max-h-[300px] overflow-auto">
-              {history.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg hover:bg-paper-100 cursor-pointer"
-                  onClick={() => handleViewRecord(r)}
-                >
-                  <div>
-                    <span className="text-sm font-semibold text-[#2C2C2C]">{r.label}</span>
-                    {r.question && (
-                      <div className="text-xs text-[#8C8C8C] mt-0.5 truncate max-w-[300px]">
-                        问：{r.question}
-                      </div>
-                    )}
-                    <div className="flex gap-2 mt-0.5">
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${r.type === 'liuyao' ? 'bg-amber-100 text-amber-700' : 'bg-pink-100 text-pink-700'}`}>
-                        {r.type === 'liuyao' ? '六爻' : '梅花易数'}
-                      </span>
-                      <span className="text-xs text-[#8C8C8C]">{new Date(r.createdAt).toLocaleDateString('zh-CN')}</span>
+      <Card className="max-w-[700px] mx-auto w-full">
+        <div className="flex justify-between items-center">
+          <span className="font-serif text-lg font-semibold text-[#2C2C2C]">算卦记录</span>
+          <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)}>
+            {showHistory ? '收起' : `历史 (${history.length})`}
+          </Button>
+        </div>
+        {history.length === 0 && (
+          <p className="text-sm text-[#8C8C8C] mt-4">暂无算卦记录，完成一次六爻或梅花易数后会自动保存在这里。</p>
+        )}
+        {history.length > 0 && showHistory && (
+          <div className="mt-4 flex flex-col gap-1.5 max-h-[300px] overflow-auto">
+            {history.map((r) => (
+              <div
+                key={r.id}
+                className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg hover:bg-paper-100 cursor-pointer"
+                onClick={() => handleViewRecord(r)}
+              >
+                <div>
+                  <span className="text-sm font-semibold text-[#2C2C2C]">{r.label}</span>
+                  {r.question && (
+                    <div className="text-xs text-[#8C8C8C] mt-0.5 truncate max-w-[300px]">
+                      问：{r.question}
                     </div>
-                  </div>
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => handleViewRecord(r)}>查看</Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteDivinationRecord(r.id).then(loadHistory)}>删除</Button>
+                  )}
+                  <div className="flex gap-2 mt-0.5">
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${r.type === 'liuyao' ? 'bg-amber-100 text-amber-700' : 'bg-pink-100 text-pink-700'}`}>
+                      {r.type === 'liuyao' ? '六爻' : '梅花易数'}
+                    </span>
+                    <span className="text-xs text-[#8C8C8C]">{new Date(r.createdAt).toLocaleDateString('zh-CN')}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" onClick={() => handleViewRecord(r)}>查看</Button>
+                  <Button variant="ghost" size="sm" onClick={() => deleteDivinationRecord(r.id).then(loadHistory)}>删除</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* 底部说明 */}
       <Card variant="tinted" className="max-w-[700px] mx-auto w-full">

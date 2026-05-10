@@ -26,7 +26,7 @@ export default function CompatPage() {
   const { loading, result, aiInsight, aiLoading, aiError, analyze: runCompat, fetchAiInsight, reset } = useCompat()
   const [report, setReport] = useState<string | null>(null)
   const [records, setRecords] = useState<SavedRecord[]>([])
-  const [showRecords, setShowRecords] = useState(false)
+  const [showRecords, setShowRecords] = useState(true)
   const [compatRecords, setCompatRecords] = useState<CompatRecord[]>([])
   const [showCompatHistory, setShowCompatHistory] = useState(true)
 
@@ -62,7 +62,7 @@ export default function CompatPage() {
   }, [])
 
   useEffect(() => {
-    getAllRecords().then(setRecords)
+    getAllRecords().then(setRecords).catch(() => setRecords([]))
     refreshCompatRecords()
   }, [refreshCompatRecords])
 
@@ -208,29 +208,30 @@ export default function CompatPage() {
 
       {!hasRunCompat && (
         <>
-          {records.length > 0 && (
-            <Card>
-              <div className="flex justify-between items-center">
-                <span className="font-serif text-lg font-semibold text-[#2C2C2C]">选择档案</span>
-                <Button variant="ghost" size="sm" onClick={() => setShowRecords(!showRecords)}>
-                  {showRecords ? '收起' : `展开 (${records.length})`}
-                </Button>
-              </div>
-              {showRecords && (
-                <div className="mt-4 flex flex-col gap-1.5">
-                  {records.map((r) => (
-                    <div key={r.id} className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg">
-                      <span className="text-sm font-semibold text-[#2C2C2C]">{r.label}</span>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => loadPerson(r, 1)}>男方</Button>
-                        <Button variant="ghost" size="sm" onClick={() => loadPerson(r, 2)}>女方</Button>
-                      </div>
+          <Card>
+            <div className="flex justify-between items-center">
+              <span className="font-serif text-lg font-semibold text-[#2C2C2C]">选择档案</span>
+              <Button variant="ghost" size="sm" onClick={() => setShowRecords(!showRecords)}>
+                {showRecords ? '收起' : `档案 (${records.length})`}
+              </Button>
+            </div>
+            {records.length === 0 && (
+              <p className="text-sm text-[#8C8C8C] mt-4">暂无八字档案，可先在八字排盘中完成一次分析，或直接在下方输入双方信息。</p>
+            )}
+            {records.length > 0 && showRecords && (
+              <div className="mt-4 flex flex-col gap-1.5">
+                {records.map((r) => (
+                  <div key={r.id} className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg">
+                    <span className="text-sm font-semibold text-[#2C2C2C]">{r.label}</span>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => loadPerson(r, 1)}>男方</Button>
+                      <Button variant="ghost" size="sm" onClick={() => loadPerson(r, 2)}>女方</Button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
 
           <div className="grid grid-cols-2 gap-6">
             <DualInput label="男方" onSubmit={handleAnalyze1} loading={analyzing1} analyzed={!!result1} person={person1} />

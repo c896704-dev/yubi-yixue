@@ -61,8 +61,9 @@ export function useFengshuiHistory() {
     setLoading(true)
     try {
       const res: any = await getRecords(params)
-      setRecords(res.data?.records || [])
-      setTotal(res.data?.total || 0)
+      const data = res.data || res
+      setRecords(data.records || [])
+      setTotal(data.total || 0)
     } finally {
       setLoading(false)
     }
@@ -70,7 +71,7 @@ export function useFengshuiHistory() {
 
   const fetchDetail = useCallback(async (id: string) => {
     const res: any = await getRecordDetail(id)
-    return res.data
+    return res.data || res
   }, [])
 
   const removeRecord = useCallback(async (id: string) => {
