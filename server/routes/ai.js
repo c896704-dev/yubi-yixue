@@ -3,9 +3,9 @@ import { Router } from 'express';
 const router = Router();
 
 function getAiConfig() {
-  const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.AI_BASE_URL || 'https://api.deepseek.com';
-  const model = process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || 'deepseek-v4-flash';
-  const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY || process.env.DASHSCOPE_API_KEY;
+  const baseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
+  const model = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+  const apiKey = process.env.DEEPSEEK_API_KEY;
   return { baseUrl, model, apiKey };
 }
 
@@ -20,7 +20,7 @@ router.post('/chat', async (req, res) => {
   try {
     const { baseUrl, model, apiKey } = getAiConfig();
     if (!apiKey) {
-      return res.status(500).json({ error: 'AI API Key 未配置' });
+      return res.status(500).json({ error: 'DeepSeek API Key 未配置' });
     }
 
     const { messages } = req.body;

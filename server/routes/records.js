@@ -12,9 +12,9 @@ router.get('/', (req, res) => {
       SELECT a.id, a.type, a.created_at, a.overall_score, a.summary, a.status,
              a.device_id
       FROM analyses a
-      WHERE a.device_id = ?
+      WHERE 1 = 1
     `;
-    const params = [req.deviceId];
+    const params = [];
 
     if (type) {
       query += ' AND a.type = ?';
@@ -26,8 +26,8 @@ router.get('/', (req, res) => {
 
     const records = db.prepare(query).all(...params);
     const countResult = db.prepare(
-      'SELECT COUNT(*) as total FROM analyses WHERE device_id = ?' + (type ? ' AND type = ?' : ''),
-    ).get(...(type ? [req.deviceId, type] : [req.deviceId]));
+      'SELECT COUNT(*) as total FROM analyses WHERE 1 = 1' + (type ? ' AND type = ?' : ''),
+    ).get(...(type ? [type] : []));
 
     res.json({
       success: true,
@@ -47,8 +47,8 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   try {
     const analysis = db.prepare(
-      'SELECT * FROM analyses WHERE id = ? AND device_id = ?'
-    ).get(req.params.id, req.deviceId);
+      'SELECT * FROM analyses WHERE id = ?'
+    ).get(req.params.id);
 
     if (!analysis) {
       return res.status(404).json({ success: false, error: '记录不存在' });
@@ -76,8 +76,8 @@ router.get('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   try {
     const result = db.prepare(
-      'DELETE FROM analyses WHERE id = ? AND device_id = ?'
-    ).run(req.params.id, req.deviceId);
+      'DELETE FROM analyses WHERE id = ?'
+    ).run(req.params.id);
 
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: '记录不存在' });
@@ -92,8 +92,8 @@ router.delete('/:id', (req, res) => {
 // 清空所有记录
 router.delete('/', (req, res) => {
   try {
-    db.prepare('DELETE FROM suggestions WHERE analysis_id IN (SELECT id FROM analyses WHERE device_id = ?)').run(req.deviceId);
-    db.prepare('DELETE FROM analyses WHERE device_id = ?').run(req.deviceId);
+    db.prepare('DELETE FROM suggestions WHERE analysis_id IN (SELECT id FROM analyses)').run();
+    db.prepare('DELETE FROM analyses').run();
 
     res.json({ success: true, message: '已清空所有记录' });
   } catch (error) {

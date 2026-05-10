@@ -10,6 +10,15 @@ const DB_VERSION = 4
 const STORE_NAME = 'records'
 const DIVINATION_STORE = 'divination_records'
 const COMPAT_STORE = 'compat_records'
+const LEGACY_DB_NAMES = [
+  DB_NAME,
+  'yubi-yixue',
+  'yubi-yixue-db',
+  'yubi_yixue',
+  'yubi-panguan-db',
+  'yubi-panguan-local',
+  'yubi-panguan-storage',
+]
 
 export interface SavedRecord {
   id: string
@@ -112,7 +121,7 @@ function openNamedDB(name: string): Promise<IDBDatabase> {
 }
 
 async function getCandidateDBNames(): Promise<string[]> {
-  const names = new Set<string>([DB_NAME])
+  const names = new Set<string>(LEGACY_DB_NAMES)
   const factory = indexedDB as IDBFactory & { databases?: () => Promise<Array<{ name?: string | null }>> }
   if (factory.databases) {
     try {
@@ -171,7 +180,12 @@ function readLocalStorageRows(storeName: string): StoreRow[] {
     const key = localStorage.key(i)
     if (!key || !tokens.some(token => key.toLowerCase().includes(token))) continue
     const parsed = parseMaybeJson(localStorage.getItem(key))
-    const values = Array.isArray(parsed) ? parsed : [parsed]
+    const nested = parseMaybeJson((parsed as any)?.[storeName] || (parsed as any)?.records || (parsed as any)?.items || (parsed as any)?.history)
+    const values = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(nested)
+        ? nested
+        : [parsed]
     values.forEach((value, index) => {
       rows.push({ dbName: 'localStorage', key: `${key}:${index}`, value })
     })
@@ -198,7 +212,7 @@ function normalizeDivinationRecord(row: StoreRow): DivinationRecord | null {
   const raw = parseMaybeJson(row.value)
   const type = raw?.type
   if (type !== 'liuyao' && type !== 'meihua') return null
-  const hexagramData = parseMaybeJson(raw?.hexagramData || raw?.hexagram_data)
+  const hexagramData = parseMaybeJson(raw?.hexagramData || raw?.hexagram_data || raw?.result)
   if (!hexagramData) return null
   const createdAt = toTimestamp(raw?.createdAt ?? raw?.created_at ?? raw?.timestamp, Date.now())
   return {
@@ -215,10 +229,10 @@ function normalizeDivinationRecord(row: StoreRow): DivinationRecord | null {
 
 function normalizeCompatRecord(row: StoreRow): CompatRecord | null {
   const raw = parseMaybeJson(row.value)
-  const result = parseMaybeJson(raw?.result || raw?.resultData || raw?.result_data)
+  const result = parseMaybeJson(raw?.result || raw?.resultData || raw?.result_data) || {}
   const malePerson = parseMaybeJson(raw?.malePerson || raw?.maleData || raw?.male_data || result?.male?.person)
   const femalePerson = parseMaybeJson(raw?.femalePerson || raw?.femaleData || raw?.female_data || result?.female?.person)
-  if (!isPersonInfo(malePerson) || !isPersonInfo(femalePerson) || !result) return null
+  if (!isPersonInfo(malePerson) || !isPersonInfo(femalePerson)) return null
   const createdAt = toTimestamp(raw?.createdAt ?? raw?.created_at ?? raw?.timestamp, Date.now())
   return {
     id: String(raw?.id || row.key || `${row.dbName}:${createdAt}`),
@@ -235,6 +249,48 @@ function uniqById<T extends { id: string }>(records: T[]): T[] {
   const map = new Map<string, T>()
   for (const record of records) map.set(record.id, record)
   return [...map.values()]
+}
+
+export interface StorageDiagnostics {
+  databases: { name: string; stores: string[]; counts: Record<string, number> }[]
+  localStorageKeys: string[]
+}
+
+export async function getStorageDiagnostics(): Promise<StorageDiagnostics> {
+  const databases: StorageDiagnostics['databases'] = []
+  const names = await getCandidateDBNames()
+  for (const name of names) {
+    let db: IDBDatabase | null = null
+    try {
+      db = name === DB_NAME ? await openDB() : await openNamedDB(name)
+      const stores = Array.from(db.objectStoreNames)
+      const counts: Record<string, number> = {}
+      for (const storeName of stores) {
+        counts[storeName] = await countStore(db, storeName)
+      }
+      if (stores.length > 0) databases.push({ name, stores, counts })
+    } catch {
+      // Keep diagnostics best-effort.
+    } finally {
+      db?.close()
+    }
+  }
+
+  const localStorageKeys: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key) localStorageKeys.push(key)
+  }
+  return { databases, localStorageKeys }
+}
+
+function countStore(db: IDBDatabase, storeName: string): Promise<number> {
+  return new Promise((resolve) => {
+    const tx = db.transaction(storeName, 'readonly')
+    const req = tx.objectStore(storeName).count()
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => resolve(0)
+  })
 }
 
 /** 保存一条排盘记录 */
