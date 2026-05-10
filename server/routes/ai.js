@@ -2,12 +2,23 @@ import { Router } from 'express';
 
 const router = Router();
 
-const BASE_URL = process.env.DEEPSEEK_BASE_URL || process.env.AI_BASE_URL || 'https://api.deepseek.com';
-const MODEL = process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || 'deepseek-v4-flash';
+function getAiConfig() {
+  const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.AI_BASE_URL || 'https://api.deepseek.com';
+  const model = process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || 'deepseek-v4-flash';
+  const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY || process.env.DASHSCOPE_API_KEY;
+  return { baseUrl, model, apiKey };
+}
+
+function getChatCompletionsUrl(baseUrl) {
+  const clean = baseUrl.replace(/\/+$/, '');
+  if (clean.endsWith('/chat/completions')) return clean;
+  if (clean.endsWith('/v1')) return `${clean}/chat/completions`;
+  return `${clean}/v1/chat/completions`;
+}
 
 router.post('/chat', async (req, res) => {
   try {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY || process.env.DASHSCOPE_API_KEY;
+    const { baseUrl, model, apiKey } = getAiConfig();
     if (!apiKey) {
       return res.status(500).json({ error: 'AI API Key 未配置' });
     }
@@ -17,14 +28,14 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '缺少消息内容' });
     }
 
-    const upstream = await fetch(`${BASE_URL}/v1/chat/completions`, {
+    const upstream = await fetch(getChatCompletionsUrl(baseUrl), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         messages,
         temperature: 0.7,
         max_tokens: 2048,
