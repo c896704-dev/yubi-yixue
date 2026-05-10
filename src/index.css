@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   御笔易学 — Global Styles
+   现代东方极简 · Eastern Modernism
+   ============================================================ */
+
+@layer base {
+  body {
+    background-color: #F5F0EB;
+    color: #2C2C2C;
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: #F2E7E0;
+    color: #2C2C2C;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background-color: #E0D3C4; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background-color: #D0BEA8; }
+}
+
+@layer components {
+  /* ============================================================
+     Card
+     ============================================================ */
+  .card {
+    @apply bg-white rounded-xl border border-[#E8E0D8] p-6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card-interactive:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+    transform: translateY(-2px);
+  }
+  .card-tinted {
+    @apply bg-paper-50;
+  }
+  .card-header {
+    @apply font-serif text-lg font-semibold text-[#2C2C2C] pb-3 mb-4 border-b border-[#E8E0D8];
+  }
+
+  /* ============================================================
+     Buttons
+     ============================================================ */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium
+           transition-all duration-200 cursor-pointer select-none
+           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+    border: none;
+    outline: none;
+    line-height: 1;
+  }
+  .btn-sm  { @apply px-3.5 py-1.5 text-xs; }
+  .btn-md  { @apply px-5 py-2.5 text-sm; }
+  .btn-lg  { @apply px-7 py-3.5 text-base; }
+
+  .btn-primary {
+    @apply bg-brand-500 text-white hover:bg-brand-600;
+    box-shadow: 0 1px 2px rgba(184, 132, 107, 0.25);
+  }
+  .btn-secondary {
+    @apply bg-white text-[#2C2C2C] border border-[#E8E0D8] hover:bg-paper-100;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-[#8C8C8C] hover:text-[#2C2C2C] hover:bg-paper-100;
+  }
+  .btn-danger {
+    @apply bg-negative-400 text-white hover:bg-negative-500;
+  }
+  .btn-gold {
+    @apply bg-gold-400 text-white hover:bg-gold-500;
+  }
+
+  /* ============================================================
+     Form Inputs
+     ============================================================ */
+  .input {
+    @apply w-full px-4 py-2.5 bg-white border border-[#E8E0D8] rounded-lg text-sm text-[#2C2C2C]
+           placeholder:text-[#B8B8B8] transition-all duration-200 outline-none;
+  }
+  .input:focus {
+    @apply border-brand-500;
+    box-shadow: 0 0 0 3px rgba(184, 132, 107, 0.12);
+  }
+  .input-error {
+    @apply border-negative-400;
+  }
+  .input-label {
+    @apply block text-xs font-medium text-[#8C8C8C] mb-1.5;
+  }
+  .input-error-msg {
+    @apply text-xs text-negative-400 mt-1;
+  }
+
+  /* ============================================================
+     Select
+     ============================================================ */
+  .select {
+    @apply w-full px-4 py-2.5 bg-white border border-[#E8E0D8] rounded-lg text-sm text-[#2C2C2C]
+           transition-all duration-200 outline-none appearance-none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23B8B8B8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+  .select:focus {
+    @apply border-brand-500;
+    box-shadow: 0 0 0 3px rgba(184, 132, 107, 0.12);
+  }
+
+  /* ============================================================
+     Badge
+     ============================================================ */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold leading-relaxed;
+  }
+  .badge-default  { @apply bg-brand-100 text-brand-700; }
+  .badge-gold     { @apply bg-gold-100 text-gold-700; }
+  .badge-positive { @apply bg-positive-100 text-positive-700; }
+  .badge-negative { @apply bg-negative-100 text-negative-600; }
+
+  /* ============================================================
+     Tabs (inset style)
+     ============================================================ */
+  .tab-bar {
+    @apply flex gap-0.5 p-1 rounded-lg;
+    background: #F0EBE5;
+  }
+  .tab-item {
+    @apply px-5 py-2 text-sm rounded-md font-medium cursor-pointer
+           transition-all duration-200;
+    color: #8C8C8C;
+  }
+  .tab-item:hover { color: #2C2C2C; }
+  .tab-item-active {
+    @apply bg-white text-[#2C2C2C];
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  /* ============================================================
+     Report Typography (react-markdown output)
+     ============================================================ */
+  .report {
+    @apply text-[15px] leading-relaxed text-[#2C2C2C];
+  }
+  .report h1 { @apply font-serif text-[28px] font-bold text-[#2C2C2C] mt-8 mb-4; }
+  .report h2 { @apply font-serif text-[22px] font-semibold text-[#2C2C2C] mt-6 mb-3; }
+  .report h3 { @apply font-serif text-lg font-semibold text-[#4C4C4C] mt-5 mb-2; }
+  .report h4 { @apply font-sans text-base font-semibold text-[#4C4C4C] mt-4 mb-2; }
+  .report p { @apply my-2; }
+  .report strong { @apply font-semibold text-[#2C2C2C]; }
+  .report em { @apply text-[#8C8C8C]; }
+  .report blockquote {
+    @apply border-l-[3px] border-brand-400 bg-brand-50 px-4 py-3 my-3 rounded-r-lg text-sm text-[#4C4C4C];
+  }
+  .report table {
+    @apply w-full border-collapse my-4 text-sm rounded-lg overflow-hidden;
+  }
+  .report thead { @apply bg-paper-50; }
+  .report th {
+    @apply px-4 py-2.5 text-left text-xs font-semibold text-[#8C8C8C] uppercase tracking-wide;
+  }
+  .report td {
+    @apply px-4 py-2.5 border-t border-[#E8E0D8];
+  }
+  .report tbody tr:nth-child(even) { @apply bg-paper-50/50; }
+  .report pre {
+    @apply bg-paper-50 p-4 rounded-lg text-sm overflow-x-auto;
+  }
+  .report code {
+    @apply bg-brand-50 text-brand-700 px-1.5 py-0.5 rounded text-xs;
+  }
+  .report ul, .report ol { @apply my-2 pl-5; }
+  .report li { @apply my-1; }
+  .report hr { @apply border-[#E8E0D8] my-6; }
+  .report a { @apply text-brand-600 underline decoration-brand-300 underline-offset-2; }
+
+  /* ============================================================
+     AI Insight Card
+     ============================================================ */
+  .ai-insight {
+    @apply relative overflow-hidden rounded-xl border border-[#E8E0D8] p-6;
+    background: linear-gradient(135deg, #FBF7F4 0%, #FDFCFB 100%);
+  }
+  .ai-insight::before {
+    content: '';
+    @apply absolute top-0 right-0 w-20 h-20 pointer-events-none;
+    background: radial-gradient(circle at bottom left, rgba(184, 132, 107, 0.08), transparent 70%);
+  }
+
+  /* ============================================================
+     Dividers & Utilities
+     ============================================================ */
+  .divider { @apply border-t border-[#E8E0D8] my-6; }
+
+  .shimmer {
+    background: linear-gradient(90deg, #F5F0EB 25%, #EDE5DC 50%, #F5F0EB 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+}
+
+/* ============================================================
+   打印样式
+   ============================================================ */
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 页面容器占满 A4 */
+  main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+
+  /* 卦画区横向排列 */
+  .print-hexagrams {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    align-items: flex-start !important;
+    gap: 16pt !important;
+  }
+
+  /* 卦画线条强制黑色（覆盖 * { background: transparent }） */
+  .hex-line { background-color: #000 !important; }
+
+  /* 禁用动画 + 去掉所有背景色 */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+  html, body {
+    background-color: #fff !important;
+  }
+
+  /* 隐藏交互元素 */
+  .fixed, .sticky, .z-30, .z-40 {
+    position: static !important;
+  }
+  button, input, textarea, select,
+  .btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-gold, .btn-danger,
+  .btn-sm, .btn-md, .btn-lg {
+    display: none !important;
+  }
+
+  /* 卡片简洁 */
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    padding: 10pt 12pt !important;
+    margin-bottom: 8pt !important;
+    page-break-inside: avoid;
+  }
+
+  /* 标题 */
+  h1 { font-size: 18pt; }
+  h2 { font-size: 14pt; }
+  h3 { font-size: 12pt; }
+
+  /* 报告 */
+  .report { font-size: 11pt; line-height: 1.6; color: #000; }
+  .report table { border-collapse: collapse; width: 100%; }
+  .report td, .report th { border: 1px solid #999; padding: 4pt 6pt; }
+
+  svg { max-width: 100%; height: auto; overflow: visible; }
+  h2, h3, h4 { page-break-after: avoid; }
+  p, ul, ol { orphans: 2; widows: 2; }
+
+  @page { margin: 12mm 14mm; size: A4; }
+}

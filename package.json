@@ -1,0 +1,39 @@
+{
+  "name": "yubi-yixue",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n srv,web -c cyan,magenta \"node server/index.js\" \"vite\"",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "start": "node server/index.js",
+    "db:migrate": "node server/db-migrate.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.6.0",
+    "concurrently": "^9.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "lunar-typescript": "^1.6.12",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.0.0",
+    "remark-gfm": "^4.0.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3"
+  }
+}

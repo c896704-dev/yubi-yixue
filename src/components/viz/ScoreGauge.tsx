@@ -1,0 +1,62 @@
+interface ScoreGaugeProps {
+  score: number
+  label?: string
+  size?: number
+  className?: string
+}
+
+function scoreColor(s: number): string {
+  if (s >= 80) return '#7BAB8A'
+  if (s >= 60) return '#C9A04A'
+  return '#D4A0A0'
+}
+
+export function ScoreGauge({ score, label, size = 180, className = '' }: ScoreGaugeProps) {
+  const clamped = Math.min(100, Math.max(0, score))
+  const scale = size / 180
+  const radius = Math.round(70 * scale)
+  const strokeWidth = Math.max(4, Math.round(10 * scale))
+  const fontSize = Math.round(28 * scale)
+  const labelFontSize = Math.round(11 * scale)
+  const cx = size / 2
+  const cy = Math.round(size * 0.65)
+  const angle = (clamped / 100) * 180
+  const rad = (angle - 90) * (Math.PI / 180)
+  const x = cx + radius * Math.cos(rad)
+  const y = cy + radius * Math.sin(rad)
+  const largeArc = angle > 90 ? 1 : 0
+  const color = scoreColor(clamped)
+  const svgHeight = Math.round(size * 0.75)
+
+  return (
+    <div className={`flex flex-col items-center ${className}`} style={{ maxWidth: size }}>
+      <svg width={size} height={svgHeight} viewBox={`0 0 ${size} ${svgHeight}`}>
+        <path
+          d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
+          fill="none"
+          stroke="#E8E0D8"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+        {clamped > 0 && (
+          <path
+            d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 ${largeArc} 1 ${x} ${y}`}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+        )}
+        <text x={cx} y={cy - strokeWidth * 0.6} textAnchor="middle" className="font-serif font-bold" style={{ fontSize, fill: color }}>
+          {Math.round(clamped)}
+        </text>
+        <text x={cx} y={cy + strokeWidth * 1.6} textAnchor="middle" style={{ fontSize: labelFontSize, fill: '#8C8C8C' }}>
+          分
+        </text>
+      </svg>
+      {label && (
+        <span className="mt-1 text-sm text-[#8C8C8C] font-semibold">{label}</span>
+      )}
+    </div>
+  )
+}
