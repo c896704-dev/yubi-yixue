@@ -5,6 +5,7 @@ import { renderEnhancedCompatibilityReport } from '../../utils/compatibility'
 import { useCompat } from '../../hooks/useBazi'
 import { getAllRecords, deleteRecord, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
 import { buildCompatQASystemPrompt } from '../../utils/ai'
+import { deleteServerCompatRecord, getServerCompatRecords, saveServerCompatRecord } from '../../services/compatApi'
 import { ChatPanel } from '../../components/ui/ChatPanel'
 import { DualInput } from './DualInput'
 import { CompatScore } from './CompatScore'
@@ -27,12 +28,43 @@ export default function CompatPage() {
   const [records, setRecords] = useState<SavedRecord[]>([])
   const [showRecords, setShowRecords] = useState(false)
   const [compatRecords, setCompatRecords] = useState<CompatRecord[]>([])
-  const [showCompatHistory, setShowCompatHistory] = useState(false)
+  const [showCompatHistory, setShowCompatHistory] = useState(true)
+
+  const refreshCompatRecords = useCallback(async () => {
+    const localRecords = await getAllCompatRecords()
+    let serverRecords: CompatRecord[] = []
+
+    if (localStorage.getItem('auth_token')) {
+      try {
+        const res = await getServerCompatRecords()
+        serverRecords = res.records.map((r) => {
+          const resultData = r.resultData as CompatRecord['result']
+          return {
+            id: r.id,
+            malePerson: r.maleData,
+            femalePerson: r.femaleData,
+            result: resultData,
+            aiInsight: r.aiInsight,
+            label: r.label,
+            createdAt: new Date(r.createdAt).getTime(),
+          }
+        })
+      } catch {
+        serverRecords = []
+      }
+    }
+
+    const merged = new Map<string, CompatRecord>()
+    for (const record of [...serverRecords, ...localRecords]) {
+      merged.set(record.id, record)
+    }
+    setCompatRecords([...merged.values()].sort((a, b) => b.createdAt - a.createdAt))
+  }, [])
 
   useEffect(() => {
     getAllRecords().then(setRecords)
-    getAllCompatRecords().then(setCompatRecords)
-  }, [])
+    refreshCompatRecords()
+  }, [refreshCompatRecords])
 
   // aiInsight 异步返回后更新已保存的合盘记录
   useEffect(() => {
@@ -40,11 +72,21 @@ export default function CompatPage() {
       getAllCompatRecords().then(records => {
         const latest = records[0]
         if (latest && !latest.aiInsight) {
-          saveCompatRecord({ ...latest, aiInsight }).then(() => getAllCompatRecords().then(setCompatRecords))
+          saveCompatRecord({ ...latest, aiInsight }).then(refreshCompatRecords)
+          if (localStorage.getItem('auth_token')) {
+            saveServerCompatRecord({
+              id: latest.id,
+              maleData: latest.malePerson,
+              femaleData: latest.femalePerson,
+              resultData: latest.result,
+              aiInsight,
+              label: latest.label,
+            }).catch(() => {})
+          }
         }
       })
     }
-  }, [aiInsight, result])
+  }, [aiInsight, result, refreshCompatRecords])
 
   const loadPerson = useCallback((record: SavedRecord, side: 1 | 2) => {
     setShowRecords(false)
@@ -81,7 +123,7 @@ export default function CompatPage() {
     fetchAiInsight(result1, result2)
     // 自动保存合盘记录
     const label = `${person1!.name} & ${person2!.name} · 合盘`
-    saveCompatRecord({
+    const record = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
       malePerson: person1!,
       femalePerson: person2!,
@@ -89,8 +131,40 @@ export default function CompatPage() {
       aiInsight: null,
       label,
       createdAt: Date.now(),
-    }).then(() => getAllCompatRecords().then(setCompatRecords))
-  }, [result1, result2, person1, person2, runCompat, fetchAiInsight])
+    }
+    saveCompatRecord(record).then(refreshCompatRecords)
+    if (localStorage.getItem('auth_token')) {
+      saveServerCompatRecord({
+        id: record.id,
+        maleData: record.malePerson,
+        femaleData: record.femalePerson,
+        resultData: record.result,
+        aiInsight: null,
+        label: record.label,
+      }).catch(() => {})
+    }
+  }, [result1, result2, person1, person2, runCompat, fetchAiInsight, refreshCompatRecords])
+
+  const handleLoadCompatRecord = useCallback(async (record: CompatRecord) => {
+    const male = record.result?.male || analyzePerson(record.malePerson)
+    const female = record.result?.female || analyzePerson(record.femalePerson)
+    setPerson1(record.malePerson)
+    setPerson2(record.femalePerson)
+    setResult1(male)
+    setResult2(female)
+    const compatResult = await runCompat(male, female)
+    setReport(renderEnhancedCompatibilityReport(compatResult))
+    setHasRunCompat(true)
+    setShowCompatHistory(false)
+  }, [runCompat])
+
+  const handleDeleteCompatRecord = useCallback(async (id: string) => {
+    await deleteCompatRecord(id)
+    if (localStorage.getItem('auth_token')) {
+      await deleteServerCompatRecord(id).catch(() => {})
+    }
+    refreshCompatRecords()
+  }, [refreshCompatRecords])
 
   const handleReset = useCallback(() => {
     setPerson1(null); setPerson2(null)
@@ -105,11 +179,9 @@ export default function CompatPage() {
       <Card>
         <div className="flex justify-between items-center">
           <span className="font-serif text-lg font-semibold text-[#2C2C2C]">合盘历史</span>
-          {compatRecords.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={() => setShowCompatHistory(!showCompatHistory)}>
-              {showCompatHistory ? '收起' : `展开 (${compatRecords.length})`}
-            </Button>
-          )}
+          <Button variant="ghost" size="sm" onClick={() => setShowCompatHistory(!showCompatHistory)}>
+            {showCompatHistory ? '收起' : `历史 (${compatRecords.length})`}
+          </Button>
         </div>
         {compatRecords.length === 0 && (
           <p className="text-sm text-[#8C8C8C] mt-4">完成合盘分析后，记录将自动保存在此，方便随时查看。</p>
@@ -124,9 +196,10 @@ export default function CompatPage() {
                     {new Date(cr.createdAt).toLocaleDateString('zh-CN')}
                   </span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => deleteCompatRecord(cr.id).then(() => getAllCompatRecords().then(setCompatRecords))}>
-                  删除
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => handleLoadCompatRecord(cr)}>查看</Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeleteCompatRecord(cr.id)}>删除</Button>
+                </div>
               </div>
             ))}
           </div>

@@ -42,8 +42,8 @@ router.post('/records', authMiddleware, (req, res) => {
 router.get('/records', authMiddleware, (req, res) => {
   try {
     const records = db.prepare(
-      'SELECT * FROM compat_records WHERE user_id = ? ORDER BY created_at DESC'
-    ).all(req.userId);
+      'SELECT * FROM compat_records ORDER BY created_at DESC'
+    ).all();
 
     res.json({
       records: records.map(r => ({
