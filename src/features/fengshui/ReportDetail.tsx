@@ -44,10 +44,10 @@ export function ReportDetail({ recordId, onBack }: ReportDetailProps) {
   }))
 
   return (
-    <div className="flex flex-col gap-6">
-      <div><Button variant="ghost" size="sm" onClick={onBack}>← 返回列表</Button></div>
+    <div className="flex flex-col gap-5">
+      <div><Button variant="clear" size="sm" onClick={onBack}>← 返回列表</Button></div>
       <Card><div className="text-center"><ScoreGauge score={detail.overallScore || data.overall_score || 0} label="综合评分" /></div></Card>
-      {detail.summary && <Card title="分析总结"><p className="text-[15px] text-[#2C2C2C] leading-relaxed">{detail.summary}</p></Card>}
+      {detail.summary && <Card title="分析总结"><p className="text-[15px] leading-relaxed" style={{ color: 'var(--fg)' }}>{detail.summary}</p></Card>}
       {cells.length > 0 && <Card title="九宫方位分析"><PalaceGrid cells={cells} /></Card>}
       {(detail.strengths?.length > 0 || detail.weaknesses?.length > 0) && (
         <Card><ProsConsList strengths={detail.strengths} weaknesses={detail.weaknesses} /></Card>
@@ -60,9 +60,9 @@ export function ReportDetail({ recordId, onBack }: ReportDetailProps) {
           <div className="report"><ReactMarkdown remarkPlugins={[remarkGfm]}>{data.ai_report}</ReactMarkdown></div>
         </Card>
       )}
-      <div className="flex gap-4 justify-center">
-        <Button variant="secondary" onClick={onBack}>返回列表</Button>
-        <Button variant="secondary" onClick={() => window.print()}>打印报告</Button>
+      <div className="actions">
+        <Button variant="mist" onClick={onBack}>返回列表</Button>
+        <Button variant="clear" onClick={() => window.print()}>打印报告</Button>
       </div>
       <ChatPanel
         mode="风水问答"

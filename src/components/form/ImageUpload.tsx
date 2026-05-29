@@ -27,7 +27,7 @@ export function ImageUpload({
 
   return (
     <div className={className}>
-      {label && <span className="input-label">{label}</span>}
+      {label && <span className="field-label">{label}</span>}
       <input
         ref={inputRef}
         type="file"
@@ -40,23 +40,25 @@ export function ImageUpload({
         }}
       />
       {value ? (
-        <div className="relative rounded-xl overflow-hidden border border-[#E8E0D8]">
+        <div className="relative rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
           <img
             src={value}
             alt="预览"
-            className="w-full max-h-[300px] object-contain bg-paper-50"
+            className="w-full max-h-[300px] object-contain"
+            style={{ backgroundColor: 'var(--bg)' }}
           />
           <div className="flex gap-2 p-2">
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="btn btn-clear btn-sm"
               onClick={() => inputRef.current?.click()}
             >
               重新上传
             </button>
             <button
               type="button"
-              className="btn btn-ghost btn-sm !text-negative-400"
+              className="btn btn-clear btn-sm"
+              style={{ color: 'var(--danger)' }}
               onClick={() => onChange(null)}
             >
               删除
@@ -74,27 +76,28 @@ export function ImageUpload({
             const f = e.dataTransfer.files[0]
             if (f) handleFile(f)
           }}
-          className={`py-12 px-6 text-center cursor-pointer rounded-xl transition-all duration-200 ${
-            dragOver
-              ? 'border-2 border-dashed border-brand-500 bg-brand-50'
-              : 'border-2 border-dashed border-[#E8E0D8] bg-white'
-          }`}
+          className="py-10 px-6 text-center cursor-pointer rounded-lg transition-all duration-200 border-2 border-dashed"
+          style={{
+            borderColor: dragOver ? 'var(--primary)' : 'var(--border)',
+            backgroundColor: dragOver ? 'var(--primary-light)' : 'var(--bg)',
+          }}
         >
           <svg
-            width="40"
-            height="40"
+            width="36"
+            height="36"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#B8B8B8"
+            stroke="currentColor"
             strokeWidth="1.5"
             className="mx-auto mb-3"
+            style={{ color: 'var(--muted)' }}
           >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          <div className="text-sm text-[#8C8C8C]">拖拽图片到此处，或点击上传</div>
-          <div className="text-[11px] text-[#B8B8B8] mt-1">支持 JPG、PNG，大小不超过 10MB</div>
+          <div className="text-sm" style={{ color: 'var(--muted)' }}>拖拽图片到此处，或点击上传</div>
+          <div className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>支持 JPG、PNG，大小不超过 10MB</div>
         </div>
       )}
     </div>

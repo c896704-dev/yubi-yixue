@@ -8,16 +8,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export function Input({ label, error, className = '', id, ...props }: InputProps) {
   const inputId = id || label
   return (
-    <div className="flex flex-col gap-1">
-      {label && (
-        <label htmlFor={inputId} className="input-label">{label}</label>
-      )}
-      <input
-        id={inputId}
-        className={`input ${error ? 'input-error' : ''} ${className}`}
-        {...props}
-      />
-      {error && <span className="input-error-msg">{error}</span>}
+    <div className="field-wrap">
+      {label && <label htmlFor={inputId} className="field-label">{label}</label>}
+      <input id={inputId} className={`field ${error ? 'error' : ''} ${className}`} {...props} />
+      {error && <span className="field-error">{error}</span>}
     </div>
   )
 }

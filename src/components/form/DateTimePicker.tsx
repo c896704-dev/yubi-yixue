@@ -26,7 +26,7 @@ function NumSelect({
 }) {
   return (
     <select
-      className="select !px-2 !py-2.5"
+      className="select"
       value={value}
       onChange={(e) => {
         const v = e.target.value
@@ -60,8 +60,8 @@ export function DateTimePicker({
   const minutes = [0, 10, 20, 30, 40, 50]
 
   return (
-    <div className="flex flex-col gap-1">
-      {label && <span className="input-label">{label}</span>}
+    <div className="field-wrap">
+      {label && <span className="field-label">{label}</span>}
       <div className="grid grid-cols-5 gap-2">
         <NumSelect value={year} onChange={onYearChange} options={years} placeholder="年" />
         <NumSelect value={month} onChange={onMonthChange} options={months} placeholder="月" />
@@ -69,7 +69,7 @@ export function DateTimePicker({
         <NumSelect value={hour} onChange={onHourChange} options={hours} placeholder="时" />
         <NumSelect value={minute} onChange={onMinuteChange} options={minutes} placeholder="分" />
       </div>
-      {error && <span className="input-error-msg">{error}</span>}
+      {error && <span className="field-error">{error}</span>}
     </div>
   )
 }

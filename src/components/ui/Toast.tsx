@@ -2,21 +2,11 @@ import { useState, useEffect, useCallback, createContext, useContext, type React
 
 type ToastType = 'success' | 'error' | 'info'
 
-interface ToastItem {
-  id: number
-  type: ToastType
-  message: string
-}
-
-interface ToastContextValue {
-  toast: (type: ToastType, message: string) => void
-}
+interface ToastItem { id: number; type: ToastType; message: string }
+interface ToastContextValue { toast: (type: ToastType, message: string) => void }
 
 const ToastContext = createContext<ToastContextValue>({ toast: () => {} })
-
-export function useToast() {
-  return useContext(ToastContext)
-}
+export function useToast() { return useContext(ToastContext) }
 
 let toastId = 0
 
@@ -35,7 +25,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div className="fixed top-5 right-5 z-[100] flex flex-col gap-2">
+      <div className="toast-container">
         {toasts.map((t) => (
           <ToastMessage key={t.id} item={t} onDone={() => removeToast(t.id)} />
         ))}
@@ -44,16 +34,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   )
 }
 
-const typeBorder: Record<ToastType, string> = {
-  success: 'border-positive-400',
-  error: 'border-negative-400',
-  info: 'border-brand-400',
+const typeClass: Record<ToastType, string> = {
+  success: 'toast-success',
+  error: 'toast-error',
+  info: 'toast-info',
 }
 
-const typeDot: Record<ToastType, string> = {
-  success: 'bg-positive-100 text-positive-600',
-  error: 'bg-negative-100 text-negative-500',
-  info: 'bg-brand-100 text-brand-600',
+const typeIcons: Record<ToastType, string> = {
+  success: '✓', error: '✕', info: 'i',
 }
 
 function ToastMessage({ item, onDone }: { item: ToastItem; onDone: () => void }) {
@@ -63,12 +51,8 @@ function ToastMessage({ item, onDone }: { item: ToastItem; onDone: () => void })
   }, [onDone])
 
   return (
-    <div
-      className={`animate-slide-up flex items-center gap-2.5 px-4 py-3 bg-white border-l-[3px] rounded-lg shadow-card max-w-sm text-sm text-[#2C2C2C] ${typeBorder[item.type]}`}
-    >
-      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${typeDot[item.type]}`}>
-        {item.type === 'success' ? '✓' : item.type === 'error' ? '✕' : 'i'}
-      </span>
+    <div className={`toast ${typeClass[item.type]}`}>
+      <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{typeIcons[item.type]}</span>
       {item.message}
     </div>
   )

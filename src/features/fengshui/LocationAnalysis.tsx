@@ -2,11 +2,8 @@ import { useState } from 'react'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
-import { Input } from '../../components/ui/Input'
 import { ImageUpload } from '../../components/form/ImageUpload'
 import { Loading } from '../../components/ui/Loading'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { ScoreGauge } from '../../components/viz/ScoreGauge'
 import { ProsConsList } from './ProsConsList'
 import { SuggestionList } from './SuggestionList'
@@ -38,9 +35,9 @@ export function LocationAnalysis() {
   if (result) {
     const d = (result as any).data || result
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <Card><div className="text-center"><ScoreGauge score={d.overallScore || 0} label="楼盘评分" /></div></Card>
-        {d.summary && <Card title="分析总结"><p className="text-[15px] text-[#2C2C2C] leading-relaxed">{d.summary}</p></Card>}
+        {d.summary && <Card title="分析总结"><p className="text-[15px] leading-relaxed" style={{ color: 'var(--fg)' }}>{d.summary}</p></Card>}
         {(d.strengths?.length > 0 || d.weaknesses?.length > 0) && (
           <Card><ProsConsList strengths={d.strengths} weaknesses={d.weaknesses} /></Card>
         )}
@@ -49,14 +46,14 @@ export function LocationAnalysis() {
         )}
         {d.environment && (
           <Card title="环境分析">
-            <div className="text-sm text-[#8C8C8C] leading-relaxed whitespace-pre-wrap">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--muted)' }}>
               {typeof d.environment === 'string' ? d.environment : JSON.stringify(d.environment, null, 2)}
             </div>
           </Card>
         )}
-        <div className="flex gap-4 justify-center">
-          <Button variant="secondary" onClick={reset}>重新分析</Button>
-          <Button variant="secondary" onClick={() => window.print()}>打印报告</Button>
+        <div className="actions">
+          <Button variant="mist" onClick={reset}>重新分析</Button>
+          <Button variant="clear" onClick={() => window.print()}>打印报告</Button>
         </div>
         <ChatPanel
           mode="风水问答"
@@ -81,30 +78,20 @@ export function LocationAnalysis() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <Card title="楼盘位置分析">
         <div className="flex flex-col gap-4">
-          <div className="flex gap-1 mb-2">
-            <button
-              type="button"
-              onClick={() => setMode('text')}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm cursor-pointer transition-all ${
-                mode === 'text' ? 'bg-brand-500 text-white' : 'bg-paper-200 text-[#8C8C8C]'
-              }`}
-            >文字描述</button>
-            <button
-              type="button"
-              onClick={() => setMode('image')}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm cursor-pointer transition-all ${
-                mode === 'image' ? 'bg-brand-500 text-white' : 'bg-paper-200 text-[#8C8C8C]'
-              }`}
-            >上传图片</button>
+          <div className="segmented mb-2">
+            <button type="button" onClick={() => setMode('text')}
+              className={`segmented-item ${mode === 'text' ? 'active' : ''}`}>文字描述</button>
+            <button type="button" onClick={() => setMode('image')}
+              className={`segmented-item ${mode === 'image' ? 'active' : ''}`}>上传图片</button>
           </div>
 
           {mode === 'text' ? (
             <div>
-              <span className="input-label">描述楼盘周边环境</span>
-              <textarea className="input resize-y" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述楼盘位置、周边道路、建筑分布、自然环境等..." rows={5} />
+              <span className="field-label">描述楼盘周边环境</span>
+              <textarea className="field resize-y" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述楼盘位置、周边道路、建筑分布、自然环境等..." rows={5} />
             </div>
           ) : (
             <ImageUpload value={image} onChange={setImage} label="上传周边环境照片" />
@@ -118,18 +105,18 @@ export function LocationAnalysis() {
               <option value="west">坐东朝西</option>
             </Select>
             <div>
-              <span className="input-label">建造年份（选填）</span>
-              <input className="input" type="number" value={buildingYear} onChange={(e) => setBuildingYear(e.target.value)} placeholder="如 2020" />
+              <span className="field-label">建造年份（选填）</span>
+              <input className="field" type="number" value={buildingYear} onChange={(e) => setBuildingYear(e.target.value)} placeholder="如 2020" />
             </div>
           </div>
 
-          {error && <span className="input-error-msg">{error}</span>}
+          {error && <span className="field-error">{error}</span>}
 
           <Button onClick={handleAnalyze} loading={loading} disabled={(mode === 'text' && !description) || (mode === 'image' && !image)} size="lg">开始分析</Button>
         </div>
       </Card>
 
-      {loading && <Card><Loading size={40} text="AI 正在分析楼盘环境，请稍候..." /></Card>}
+      {loading && <Card><Loading text="AI 正在分析楼盘环境，请稍候..." /></Card>}
     </div>
   )
 }

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n srv,web -c cyan,magenta \"node server/index.js\" \"vite\"",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "start": "node server/index.js",
     "db:migrate": "node server/db-migrate.js"
@@ -13,7 +14,7 @@
   "dependencies": {
     "axios": "^1.7.0",
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.6.0",
+    "better-sqlite3": "^12.10.0",
     "concurrently": "^9.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

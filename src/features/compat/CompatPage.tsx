@@ -3,7 +3,7 @@ import type { PersonInfo, AnalysisResult } from '../../types'
 import { analyzePerson } from '../../utils/analysis'
 import { renderEnhancedCompatibilityReport } from '../../utils/compatibility'
 import { useCompat } from '../../hooks/useBazi'
-import { getAllRecords, deleteRecord, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
+import { getAllRecords, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
 import { buildCompatQASystemPrompt } from '../../utils/ai'
 import { deleteServerCompatRecord, getServerCompatRecords, saveServerCompatRecord } from '../../services/compatApi'
 import { ChatPanel } from '../../components/ui/ChatPanel'
@@ -11,7 +11,6 @@ import { DualInput } from './DualInput'
 import { CompatScore } from './CompatScore'
 import { CompatReport } from './CompatReport'
 import { BaziChart } from '../../components/viz/BaziChart'
-import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
 
@@ -26,94 +25,45 @@ export default function CompatPage() {
   const { loading, result, aiInsight, aiLoading, aiError, analyze: runCompat, fetchAiInsight, reset } = useCompat()
   const [report, setReport] = useState<string | null>(null)
   const [records, setRecords] = useState<SavedRecord[]>([])
-  const [showRecords, setShowRecords] = useState(true)
   const [compatRecords, setCompatRecords] = useState<CompatRecord[]>([])
   const [showCompatHistory, setShowCompatHistory] = useState(true)
 
   const refreshCompatRecords = useCallback(async () => {
     const localRecords = await getAllCompatRecords()
     let serverRecords: CompatRecord[] = []
-
     if (localStorage.getItem('auth_token')) {
       try {
         const res = await getServerCompatRecords()
-        serverRecords = res.records.map((r) => {
-          const resultData = r.resultData as CompatRecord['result']
-          return {
-            id: r.id,
-            malePerson: r.maleData,
-            femalePerson: r.femaleData,
-            result: resultData,
-            aiInsight: r.aiInsight,
-            label: r.label,
-            createdAt: new Date(r.createdAt).getTime(),
-          }
-        })
-      } catch {
-        serverRecords = []
-      }
+        serverRecords = res.records.map((r: any) => ({
+          id: r.id, malePerson: r.maleData, femalePerson: r.femaleData,
+          result: r.resultData as CompatRecord['result'], aiInsight: r.aiInsight,
+          label: r.label, createdAt: new Date(r.createdAt).getTime(),
+        }))
+      } catch { serverRecords = [] }
     }
-
     const merged = new Map<string, CompatRecord>()
-    for (const record of [...serverRecords, ...localRecords]) {
-      merged.set(record.id, record)
-    }
+    for (const record of [...serverRecords, ...localRecords]) merged.set(record.id, record)
     setCompatRecords([...merged.values()].sort((a, b) => b.createdAt - a.createdAt))
   }, [])
 
-  useEffect(() => {
-    getAllRecords().then(setRecords).catch(() => setRecords([]))
-    refreshCompatRecords()
-  }, [refreshCompatRecords])
+  useEffect(() => { getAllRecords().then(setRecords).catch(() => setRecords([])); refreshCompatRecords() }, [refreshCompatRecords])
 
-  // aiInsight 异步返回后更新已保存的合盘记录
   useEffect(() => {
     if (aiInsight && result) {
-      getAllCompatRecords().then(records => {
-        const latest = records[0]
+      getAllCompatRecords().then(recs => {
+        const latest = recs[0]
         if (latest && !latest.aiInsight) {
           saveCompatRecord({ ...latest, aiInsight }).then(refreshCompatRecords)
           if (localStorage.getItem('auth_token')) {
-            saveServerCompatRecord({
-              id: latest.id,
-              maleData: latest.malePerson,
-              femaleData: latest.femalePerson,
-              resultData: latest.result,
-              aiInsight,
-              label: latest.label,
-            }).catch(() => {})
+            saveServerCompatRecord({ id: latest.id, maleData: latest.malePerson, femaleData: latest.femalePerson, resultData: latest.result, aiInsight, label: latest.label }).catch(() => {})
           }
         }
       })
     }
   }, [aiInsight, result, refreshCompatRecords])
 
-  const loadPerson = useCallback((record: SavedRecord, side: 1 | 2) => {
-    setShowRecords(false)
-    if (side === 1) {
-      setPerson1(record.person)
-      setAnalyzing1(true)
-      setResult1(analyzePerson(record.person))
-      setAnalyzing1(false)
-    } else {
-      setPerson2(record.person)
-      setAnalyzing2(true)
-      setResult2(analyzePerson(record.person))
-      setAnalyzing2(false)
-    }
-  }, [])
-
-  const handleAnalyze1 = useCallback(async (person: PersonInfo) => {
-    setPerson1(person); setAnalyzing1(true)
-    setResult1(analyzePerson(person))
-    setAnalyzing1(false)
-  }, [])
-
-  const handleAnalyze2 = useCallback(async (person: PersonInfo) => {
-    setPerson2(person); setAnalyzing2(true)
-    setResult2(analyzePerson(person))
-    setAnalyzing2(false)
-  }, [])
+  const handleAnalyze1 = useCallback(async (person: PersonInfo) => { setPerson1(person); setAnalyzing1(true); setResult1(analyzePerson(person)); setAnalyzing1(false) }, [])
+  const handleAnalyze2 = useCallback(async (person: PersonInfo) => { setPerson2(person); setAnalyzing2(true); setResult2(analyzePerson(person)); setAnalyzing2(false) }, [])
 
   const handleCompat = useCallback(async () => {
     if (!result1 || !result2) return
@@ -121,173 +71,112 @@ export default function CompatPage() {
     setReport(renderEnhancedCompatibilityReport(compatResult))
     setHasRunCompat(true)
     fetchAiInsight(result1, result2)
-    // 自动保存合盘记录
     const label = `${person1!.name} & ${person2!.name} · 合盘`
-    const record = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      malePerson: person1!,
-      femalePerson: person2!,
-      result: compatResult,
-      aiInsight: null,
-      label,
-      createdAt: Date.now(),
-    }
+    const record = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), malePerson: person1!, femalePerson: person2!, result: compatResult, aiInsight: null, label, createdAt: Date.now() }
     saveCompatRecord(record).then(refreshCompatRecords)
-    if (localStorage.getItem('auth_token')) {
-      saveServerCompatRecord({
-        id: record.id,
-        maleData: record.malePerson,
-        femaleData: record.femalePerson,
-        resultData: record.result,
-        aiInsight: null,
-        label: record.label,
-      }).catch(() => {})
-    }
+    if (localStorage.getItem('auth_token')) { saveServerCompatRecord({ id: record.id, maleData: record.malePerson, femaleData: record.femalePerson, resultData: record.result, aiInsight: null, label: record.label }).catch(() => {}) }
   }, [result1, result2, person1, person2, runCompat, fetchAiInsight, refreshCompatRecords])
 
   const handleLoadCompatRecord = useCallback(async (record: CompatRecord) => {
     const male = record.result?.male || analyzePerson(record.malePerson)
     const female = record.result?.female || analyzePerson(record.femalePerson)
-    setPerson1(record.malePerson)
-    setPerson2(record.femalePerson)
-    setResult1(male)
-    setResult2(female)
+    setPerson1(record.malePerson); setPerson2(record.femalePerson); setResult1(male); setResult2(female)
     const compatResult = await runCompat(male, female)
     setReport(renderEnhancedCompatibilityReport(compatResult))
-    setHasRunCompat(true)
-    setShowCompatHistory(false)
+    setHasRunCompat(true); setShowCompatHistory(false)
   }, [runCompat])
 
   const handleDeleteCompatRecord = useCallback(async (id: string) => {
     await deleteCompatRecord(id)
-    if (localStorage.getItem('auth_token')) {
-      await deleteServerCompatRecord(id).catch(() => {})
-    }
+    if (localStorage.getItem('auth_token')) await deleteServerCompatRecord(id).catch(() => {})
     refreshCompatRecords()
   }, [refreshCompatRecords])
 
   const handleReset = useCallback(() => {
-    setPerson1(null); setPerson2(null)
-    setResult1(null); setResult2(null)
-    setReport(null); setHasRunCompat(false)
-    reset()
+    setPerson1(null); setPerson2(null); setResult1(null); setResult2(null); setReport(null); setHasRunCompat(false); reset()
   }, [reset])
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* 合盘历史记录 — 始终可见 */}
-      <Card>
-        <div className="flex justify-between items-center">
-          <span className="font-serif text-lg font-semibold text-[#2C2C2C]">合盘历史</span>
-          <Button variant="ghost" size="sm" onClick={() => setShowCompatHistory(!showCompatHistory)}>
-            {showCompatHistory ? '收起' : `历史 (${compatRecords.length})`}
-          </Button>
-        </div>
-        {compatRecords.length === 0 && (
-          <p className="text-sm text-[#8C8C8C] mt-4">完成合盘分析后，记录将自动保存在此，方便随时查看。</p>
-        )}
-        {compatRecords.length > 0 && showCompatHistory && (
-          <div className="mt-4 flex flex-col gap-1.5">
-            {compatRecords.map((cr) => (
-              <div key={cr.id} className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg">
-                <div className="text-sm">
-                  <span className="font-semibold text-[#2C2C2C]">{cr.label}</span>
-                  <span className="text-[#8C8C8C] ml-2 text-xs">
-                    {new Date(cr.createdAt).toLocaleDateString('zh-CN')}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleLoadCompatRecord(cr)}>查看</Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteCompatRecord(cr.id)}>删除</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {!hasRunCompat && (
         <>
-          <Card>
-            <div className="flex justify-between items-center">
-              <span className="font-serif text-lg font-semibold text-[#2C2C2C]">选择档案</span>
-              <Button variant="ghost" size="sm" onClick={() => setShowRecords(!showRecords)}>
-                {showRecords ? '收起' : `档案 (${records.length})`}
-              </Button>
-            </div>
-            {records.length === 0 && (
-              <p className="text-sm text-[#8C8C8C] mt-4">暂无八字档案，可先在八字排盘中完成一次分析，或直接在下方输入双方信息。</p>
-            )}
-            {records.length > 0 && showRecords && (
-              <div className="mt-4 flex flex-col gap-1.5">
-                {records.map((r) => (
-                  <div key={r.id} className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg">
-                    <span className="text-sm font-semibold text-[#2C2C2C]">{r.label}</span>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => loadPerson(r, 1)}>男方</Button>
-                      <Button variant="ghost" size="sm" onClick={() => loadPerson(r, 2)}>女方</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <div className="grid grid-cols-2 gap-6">
-            <DualInput label="男方" onSubmit={handleAnalyze1} loading={analyzing1} analyzed={!!result1} person={person1} />
-            <DualInput label="女方" onSubmit={handleAnalyze2} loading={analyzing2} analyzed={!!result2} person={person2} />
+          {/* Dual input with inline profile picker */}
+          <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 24 }}>
+            <DualInput label="男方" records={records} onSubmit={handleAnalyze1} loading={analyzing1} analyzed={!!result1} person={person1} />
+            <DualInput label="女方" records={records} onSubmit={handleAnalyze2} loading={analyzing2} analyzed={!!result2} person={person2} />
           </div>
 
           {result1 && result2 && !loading && (
-            <div className="text-center">
+            <div style={{ textAlign: 'center' }}>
               <Button size="lg" onClick={handleCompat}>开始合盘分析</Button>
             </div>
           )}
         </>
       )}
 
-      {loading && (
-        <Card><Loading size={40} text="正在合盘分析中，请稍候..." /></Card>
-      )}
+      {loading && <Loading text="正在合盘分析中，请稍候..." />}
 
       {result && (
         <>
           <CompatScore result={result} />
           {report && <CompatReport reportMarkdown={report} aiInsight={aiInsight} aiLoading={aiLoading} aiError={aiError} />}
+
           {result1 && result2 && (
-            <Card title="双方八字详情">
-              <div className="grid grid-cols-2 gap-6">
-                <BaziChart bazi={result1.bazi} person={result1.person} />
-                <BaziChart bazi={result2.bazi} person={result2.person} />
+            <div className="section">
+              <h3 className="section-title">双方八字详情</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 24 }}>
+                <div className="card"><BaziChart bazi={result1.bazi} person={result1.person} /></div>
+                <div className="card"><BaziChart bazi={result2.bazi} person={result2.person} /></div>
               </div>
-            </Card>
+            </div>
           )}
-          <div className="flex gap-4 justify-center">
+
+          <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新合盘</Button>
-            <Button variant="secondary" onClick={() => window.print()}>打印报告</Button>
+            <Button variant="ghost" onClick={() => window.print()}>打印报告</Button>
           </div>
 
           {result1 && result2 && (() => {
             const ctx1 = `八字：${result1.bazi.year.stem}${result1.bazi.year.branch} ${result1.bazi.month.stem}${result1.bazi.month.branch} ${result1.bazi.day.stem}${result1.bazi.day.branch} ${result1.bazi.hour.stem}${result1.bazi.hour.branch}，日主${result1.bazi.dayMaster}（${result1.bazi.dayMasterElement}），${result1.bodyStrength || ''}，格局${result1.geJu || ''}`
             const ctx2 = `八字：${result2.bazi.year.stem}${result2.bazi.year.branch} ${result2.bazi.month.stem}${result2.bazi.month.branch} ${result2.bazi.day.stem}${result2.bazi.day.branch} ${result2.bazi.hour.stem}${result2.bazi.hour.branch}，日主${result2.bazi.dayMaster}（${result2.bazi.dayMasterElement}），${result2.bodyStrength || ''}，格局${result2.geJu || ''}`
             const scoresCtx = result ? `总分${result.scores.total}，吸引力${result.scores.attraction}，稳定性${result.scores.stability}，互补性${result.scores.complement}` : ''
-            return (
-              <ChatPanel
-                mode="合盘问答"
-                systemPrompt={buildCompatQASystemPrompt(ctx1, ctx2, scoresCtx)}
-                suggestions={[
-                  '我们两人适合结婚吗？',
-                  '一起创业投资前景如何？',
-                  '财运方面是谁旺谁？',
-                  '两人性格怎么磨合更好？',
-                  '需要特别注意什么矛盾？',
-                  '何时结婚或要孩子比较好？',
-                ]}
-              />
-            )
+            return <ChatPanel mode="合盘问答" systemPrompt={buildCompatQASystemPrompt(ctx1, ctx2, scoresCtx)} suggestions={['我们两人适合结婚吗？', '一起创业投资前景如何？', '财运方面是谁旺谁？', '两人性格怎么磨合更好？', '需要特别注意什么矛盾？', '何时结婚或要孩子比较好？']} />
           })()}
         </>
       )}
+
+      {/* History — always visible */}
+      <div className="section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h3 className="section-title" style={{ marginBottom: 0 }}>合盘历史</h3>
+          {compatRecords.length > 0 && (
+            <button className="fold-trigger" onClick={() => setShowCompatHistory(!showCompatHistory)}>
+              {showCompatHistory ? '收起' : `展开 (${compatRecords.length})`}
+            </button>
+          )}
+        </div>
+        {showCompatHistory && compatRecords.length > 0 && (
+          <div className="card" style={{ padding: '4px 0', maxHeight: 280, overflowY: 'auto' }}>
+            {compatRecords.map((cr) => (
+              <div key={cr.id} className="history-row">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="history-row-label">{cr.label}</div>
+                  <div className="history-row-meta">{new Date(cr.createdAt).toLocaleDateString('zh-CN')}</div>
+                </div>
+                <div className="history-row-actions">
+                  <Button variant="ghost" size="sm" onClick={() => handleLoadCompatRecord(cr)}>查看</Button>
+                  <Button variant="danger-ghost" size="sm" onClick={() => handleDeleteCompatRecord(cr.id)}>删除</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {showCompatHistory && compatRecords.length === 0 && (
+          <p style={{ fontSize: 14, color: 'hsl(var(--muted-foreground))', padding: '8px 0' }}>
+            完成合盘分析后，记录将自动保存在此。
+          </p>
+        )}
+      </div>
     </div>
   )
 }

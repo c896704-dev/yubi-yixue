@@ -9,6 +9,7 @@ import settingsRouter from './routes/settings.js';
 import authRouter from './routes/auth.js';
 import divinationRouter from './routes/divination.js';
 import compatRouter from './routes/compat.js';
+import baziRouter from './routes/bazi.js';
 import aiRouter from './routes/ai.js';
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/records', recordsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/divination', divinationRouter);
 app.use('/api/compat', compatRouter);
+app.use('/api/bazi', baziRouter);
 app.use('/api/ai', aiRouter);
 
 // Health check

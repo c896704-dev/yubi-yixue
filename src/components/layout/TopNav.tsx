@@ -27,39 +27,31 @@ export function TopNav({
   onLogout,
 }: TopNavProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#E8E0D8] bg-white/85 backdrop-blur-md">
-      <div className="max-w-[1100px] mx-auto px-6 flex items-center justify-between h-14">
-        <div className="flex items-center gap-8">
-          <span className="font-serif text-lg font-bold text-[#2C2C2C] tracking-wider">
-            御笔易学
-          </span>
-          <nav className="flex gap-1">
-            {tabs.map((tab) => {
-              const active = tab.key === activeTab
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => onTabChange(tab.key)}
-                  className={`px-4 py-1.5 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
-                    active
-                      ? 'font-semibold text-[#2C2C2C] bg-paper-200'
-                      : 'font-normal text-[#8C8C8C] hover:text-[#2C2C2C]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
-          </nav>
+    <header className="ink-nav">
+      <div className="ink-nav-inner">
+        <div className="ink-nav-brand">
+          <span className="ink-seal-mark">御笔</span>
+          御笔易学
         </div>
-        <div>
+        <nav className="ink-nav-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => onTabChange(tab.key)}
+              className={`ink-nav-tab ${tab.key === activeTab ? 'active' : ''}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="ink-nav-user">
           {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-[#8C8C8C]">{username}</span>
-              <Button variant="ghost" size="sm" onClick={onLogout}>退出</Button>
-            </div>
+            <>
+              <span className="ink-nav-username">{username}</span>
+              <Button variant="clear" size="sm" onClick={onLogout}>退出</Button>
+            </>
           ) : (
-            <Button variant="ghost" size="sm" onClick={onLoginClick}>登录</Button>
+            <Button variant="clear" size="sm" onClick={onLoginClick}>登录</Button>
           )}
         </div>
       </div>

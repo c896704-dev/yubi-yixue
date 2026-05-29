@@ -9,18 +9,15 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 export function Select({ label, error, className = '', id, children, ...props }: SelectProps) {
   const selectId = id || label
   return (
-    <div className="flex flex-col gap-1">
-      {label && (
-        <label htmlFor={selectId} className="input-label">{label}</label>
-      )}
-      <select
-        id={selectId}
-        className={`select ${error ? 'input-error' : ''} ${className}`}
-        {...props}
-      >
-        {children}
-      </select>
-      {error && <span className="input-error-msg">{error}</span>}
+    <div className="field-wrap">
+      {label && <label htmlFor={selectId} className="field-label">{label}</label>}
+      <div className="select-wrap">
+        <select id={selectId} className={`select ${error ? 'error' : ''} ${className}`} {...props}>
+          {children}
+        </select>
+        <span className="select-arrow" aria-hidden="true">▼</span>
+      </div>
+      {error && <span className="field-error">{error}</span>}
     </div>
   )
 }

@@ -531,7 +531,7 @@ export function analyzeHealth(result: AnalysisResult): HealthProfile {
     '金': '呼吸训练、游泳、骑行（增强心肺功能）',
     '水': '游泳、冥想、水中运动（水的环境最为适宜）',
   }
-  const weakElem = Object.entries(dist).sort((a, b) => a[1] - b[1])[0]![0] as FiveElement
+  const weakElem = (Object.entries(dist).sort((a, b) => a[1] - b[1])[0]?.[0] || '木') as FiveElement
   const exerciseAdvice = `推荐：${exerciseByElem[weakElem]}，以补益最弱五行之${weakElem}气。`
 
   return {
@@ -769,9 +769,9 @@ function generateAppearance(
   if (shenSha.all.some(s => s.name === '华盖')) weights.set('金', (weights.get('金') || 0) + 10)
 
   const sorted = [...weights.entries()].sort((a, b) => b[1] - a[1])
-  const primary = sorted[0]![0]
-  const secondary = sorted[1]![0]
-  const primaryRatio = sorted[0]![1] / (sorted[0]![1] + sorted[1]![1])
+  const primary = sorted[0] ? sorted[0][0] : dmElem
+  const secondary = sorted[1] ? sorted[1][0] : primary
+  const primaryRatio = sorted[0] ? sorted[0][1] / ((sorted[0]?.[1] ?? 1) + (sorted[1]?.[1] ?? 1)) : 0.5
 
   const p = PURE_ELEM_APPEARANCE[primary]
   const s = PURE_ELEM_APPEARANCE[secondary]

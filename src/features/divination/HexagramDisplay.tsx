@@ -10,7 +10,7 @@ interface HexagramDisplayProps {
 
 /**
  * 卦画显示组件
- * 用 CSS 绘制传统卦画：阳爻━━━，阴爻━━ ━━
+ * 用 CSS 绘制传统卦画：阳爻━，阴爻━ ━
  * 爻从下往上排列（初爻在最下）
  */
 export function HexagramDisplay({
@@ -25,7 +25,7 @@ export function HexagramDisplay({
   return (
     <div className={`text-center ${className}`}>
       {label && (
-        <div className="text-xs text-[#8C8C8C] mb-2 font-sans">{label}</div>
+        <div className="text-xs mb-2" style={{ color: 'var(--muted)' }}>{label}</div>
       )}
       {/* 卦画：从下往上显示则需要 reverse，从上往下渲染 */}
       <div className="inline-flex flex-col items-center my-2">
@@ -35,15 +35,15 @@ export function HexagramDisplay({
           return (
             <div key={i} className="flex items-center justify-center" style={{ minHeight: 22 }}>
               {/* 动爻标记：固定宽度占位，保证对齐 */}
-              <span className="inline-block w-5 text-center text-xs text-negative-500 font-bold">
+              <span className="inline-block w-5 text-center text-xs font-bold" style={{ color: 'var(--danger)' }}>
                 {isChanging ? (line === 1 ? '○' : '×') : ''}
               </span>
               {line === 1 ? (
-                <div className="hex-line w-[60px] h-[6px] bg-[#2C2C2C] rounded-sm" />
+                <div className="w-[60px] h-[6px] rounded-sm" style={{ backgroundColor: 'var(--fg)' }} />
               ) : (
                 <div className="flex gap-[10px] w-[60px]">
-                  <div className="hex-line flex-1 h-[6px] bg-[#2C2C2C] rounded-sm" />
-                  <div className="hex-line flex-1 h-[6px] bg-[#2C2C2C] rounded-sm" />
+                  <div className="flex-1 h-[6px] rounded-sm" style={{ backgroundColor: 'var(--fg)' }} />
+                  <div className="flex-1 h-[6px] rounded-sm" style={{ backgroundColor: 'var(--fg)' }} />
                 </div>
               )}
               {/* 右侧留白保持对称 */}
@@ -53,11 +53,11 @@ export function HexagramDisplay({
         })}
       </div>
       {/* 卦名 */}
-      <div className={`font-serif text-lg font-bold ${color.text}`}>
+      <div className={`font-[family-name:var(--font-title)] text-lg font-bold ${color.text}`}>
         {hexagram.name}
       </div>
       {/* 上下卦 */}
-      <div className="text-xs text-[#8C8C8C] mt-0.5">
+      <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
         上{hexagram.upperTrigram}下{hexagram.lowerTrigram}
       </div>
       {/* 五行 */}

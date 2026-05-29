@@ -20,8 +20,10 @@ export function BaziResult({ result }: BaziResultProps) {
     status: yongShen?.favorable?.includes(el) ? '喜用' : yongShen?.unfavorable?.includes(el) ? '忌' : undefined,
   }))
 
+  const strong = bodyStrength === '身强' || bodyStrength === '身偏旺'
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <Card>
         <BaziChart bazi={bazi} person={person} />
       </Card>
@@ -31,22 +33,16 @@ export function BaziResult({ result }: BaziResultProps) {
       </Card>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <div className="text-center">
-            <span className="text-[11px] text-[#8C8C8C]">身强身弱</span>
-            <div className={`font-serif text-[22px] font-bold mt-1 ${
-              bodyStrength === '身强' || bodyStrength === '身偏旺' ? 'text-negative-400' : 'text-positive-400'
-            }`}>
-              {bodyStrength || '—'}
-            </div>
+        <Card className="text-center">
+          <div className="text-[11px]" style={{ color: 'var(--muted)' }}>身强身弱</div>
+          <div className="font-[family-name:var(--font-title)] text-[22px] font-bold mt-1" style={{ color: strong ? 'var(--danger)' : 'var(--success)' }}>
+            {bodyStrength || '—'}
           </div>
         </Card>
-        <Card>
-          <div className="text-center">
-            <span className="text-[11px] text-[#8C8C8C]">格局</span>
-            <div className="font-serif text-[22px] font-bold text-[#2C2C2C] mt-1">
-              {geJu || '—'}
-            </div>
+        <Card className="text-center">
+          <div className="text-[11px]" style={{ color: 'var(--muted)' }}>格局</div>
+          <div className="font-[family-name:var(--font-title)] text-[22px] font-bold mt-1" style={{ color: 'var(--fg)' }}>
+            {geJu || '—'}
           </div>
         </Card>
       </div>
@@ -54,13 +50,11 @@ export function BaziResult({ result }: BaziResultProps) {
       {yongShen && (
         <Card title="喜用神">
           <div className="flex gap-2 flex-wrap">
-            {yongShen.favorable?.map((el) => <Badge key={el} variant="positive">{el}</Badge>)}
-            {yongShen.unfavorable?.map((el) => <Badge key={el} variant="negative">{el}</Badge>)}
+            {yongShen.favorable?.map((el) => <Badge key={el} variant="green">{el}</Badge>)}
+            {yongShen.unfavorable?.map((el) => <Badge key={el} variant="red">{el}</Badge>)}
           </div>
           {yongShen.commentary && yongShen.commentary.length > 0 && (
-            <p className="mt-3 text-sm text-[#8C8C8C] leading-relaxed">
-              {yongShen.commentary.join('；')}
-            </p>
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{yongShen.commentary.join('；')}</p>
           )}
         </Card>
       )}

@@ -31,11 +31,13 @@ export function LoginModal({ open, onClose, onSwitchToRegister }: LoginModalProp
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input label="邮箱" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="请输入邮箱" />
         <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
-        {error && <span className="input-error-msg">{error}</span>}
+        {error && <span className="text-xs" style={{ color: 'var(--danger)' }}>{error}</span>}
         <Button type="submit" loading={loading} className="w-full !mt-2">登录</Button>
-        <div className="text-center text-sm text-[#8C8C8C]">
+        <div className="text-center text-sm" style={{ color: 'var(--muted)' }}>
           还没有账号？
-          <button type="button" onClick={onSwitchToRegister} className="bg-transparent border-none text-brand-500 cursor-pointer font-semibold ml-1">立即注册</button>
+          <button type="button" onClick={onSwitchToRegister} className="bg-transparent border-none cursor-pointer font-semibold ml-1" style={{ color: 'var(--primary)' }}>
+            立即注册
+          </button>
         </div>
       </form>
     </Modal>

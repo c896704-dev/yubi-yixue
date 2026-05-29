@@ -10,16 +10,16 @@ interface FormFieldProps {
 
 export function FormField({ label, error, required, help, children }: FormFieldProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="field-wrap">
       {label && (
-        <label className="input-label">
+        <label className="field-label">
           {label}
-          {required && <span className="text-negative-400 ml-1">*</span>}
+          {required && <span style={{ color: 'var(--danger)' }} className="ml-1">*</span>}
         </label>
       )}
       {children}
-      {help && !error && <span className="text-[11px] text-[#B8B8B8]">{help}</span>}
-      {error && <span className="input-error-msg">{error}</span>}
+      {help && !error && <span className="text-[11px]" style={{ color: 'var(--muted)' }}>{help}</span>}
+      {error && <span className="field-error">{error}</span>}
     </div>
   )
 }

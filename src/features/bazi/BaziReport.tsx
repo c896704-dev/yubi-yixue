@@ -26,21 +26,9 @@ interface AiInsightCardProps {
 export function AiInsightCard({ insight, loading, error }: AiInsightCardProps) {
   return (
     <div className="ai-insight">
-      <div style={{
-        fontFamily: 'var(--font-serif)',
-        fontSize: 'var(--text-h4)',
-        fontWeight: 'var(--weight-semibold)',
-        color: 'var(--color-primary-deep)',
-        marginBottom: 'var(--space-md)',
-      }}>
-        AI 命理分析
-      </div>
-      {loading && <Loading size={24} text="AI 正在分析中..." />}
-      {error && (
-        <p style={{ color: 'var(--color-negative)', fontSize: 'var(--text-aux)' }}>
-          {error}
-        </p>
-      )}
+      <h3 className="ai-insight-title">AI 命理分析</h3>
+      {loading && <Loading text="AI 正在分析中..." />}
+      {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
       {insight && (
         <div className="report">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>

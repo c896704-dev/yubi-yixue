@@ -8,6 +8,11 @@ import type { PersonInfo, AnalysisResult } from '../types'
 const DB_NAME = 'yubi-panguan'
 const DB_VERSION = 4
 const STORE_NAME = 'records'
+
+// Lazy imports to avoid circular deps
+let _baziApi: any = null; const baziApi = () => { if (!_baziApi) _baziApi = import('../services/baziApi'); return _baziApi }
+let _divApi: any = null; const divApi = () => { if (!_divApi) _divApi = import('../services/divinationApi'); return _divApi }
+let _compatApi: any = null; const compatApi = () => { if (!_compatApi) _compatApi = import('../services/compatApi'); return _compatApi }
 const DIVINATION_STORE = 'divination_records'
 const COMPAT_STORE = 'compat_records'
 const LEGACY_DB_NAMES = [
@@ -347,7 +352,25 @@ export async function saveRecord(person: PersonInfo): Promise<string> {
   store.add(record)
   await waitTx(tx)
   db.close()
+  // 同步到服务端
+  baziApi().then((api: any) => api.saveBaziRecord(record.id, record.person, null, record.label))
   return record.id
+}
+
+/** 获取所有记录（合并服务端 + IndexedDB，按 id 去重） */
+export async function getAllRecordsMerged(): Promise<SavedRecord[]> {
+  const local = await getAllRecords()
+  try {
+    const api = await baziApi()
+    const res = await api.getServerBaziRecords()
+    const serverRecords: SavedRecord[] = (res.records || []).map((r: any) => ({
+      id: r.id, person: r.personData, createdAt: new Date(r.createdAt).getTime(),
+      lastUsed: new Date(r.createdAt).getTime(), label: r.label || makeLabel(r.personData),
+    }))
+    const merged = new Map<string, SavedRecord>()
+    for (const r of [...serverRecords, ...local]) merged.set(r.id, r)
+    return [...merged.values()].sort((a, b) => b.lastUsed - a.lastUsed)
+  } catch { return local }
 }
 
 /** 获取所有记录（按最近使用排序） */

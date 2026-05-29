@@ -9,9 +9,9 @@ import { Empty } from '../../components/ui/Empty'
 const typeLabels: Record<string, string> = { layout: '户型图', location: '楼盘', comprehensive: '综合' }
 
 function scoreCircleColor(s: number): string {
-  if (s >= 80) return 'bg-positive-50 text-positive-500'
-  if (s >= 60) return 'bg-gold-50 text-gold-500'
-  return 'bg-negative-50 text-negative-400'
+  if (s >= 80) return '#7A9A7A'
+  if (s >= 60) return '#4A9E9E'
+  return '#C4664A'
 }
 
 interface FengshuiHistoryProps {
@@ -28,7 +28,7 @@ export function FengshuiHistory({ onViewDetail }: FengshuiHistoryProps) {
   }, [page, fetchRecords])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <Card title="历史记录">
         {loading ? (
           <Loading text="加载中..." />
@@ -40,19 +40,20 @@ export function FengshuiHistory({ onViewDetail }: FengshuiHistoryProps) {
               <div
                 key={r.id}
                 onClick={() => onViewDetail(r.id)}
-                className="flex items-center justify-between py-3 px-4 bg-paper-50 rounded-lg cursor-pointer hover:bg-paper-100 transition-colors"
+                className="flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer transition-colors"
+                style={{ backgroundColor: 'var(--bg)' }}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center font-serif text-[15px] font-bold shrink-0 ${scoreCircleColor(r.overall_score)}`}>
+                  <div className="w-11 h-11 rounded-full flex items-center justify-center font-[family-name:var(--font-title)] text-[15px] font-bold shrink-0 text-white" style={{ backgroundColor: scoreCircleColor(r.overall_score) }}>
                     {r.overall_score ?? '—'}
                   </div>
                   <div>
-                    <Badge variant="default">{typeLabels[r.type] || r.type}</Badge>
-                    <div className="text-sm text-[#8C8C8C] mt-1">{r.summary?.slice(0, 60) || '—'}</div>
-                    <div className="text-[11px] text-[#B8B8B8] mt-0.5">{new Date(r.created_at).toLocaleString('zh-CN')}</div>
+                    <Badge variant="mist">{typeLabels[r.type] || r.type}</Badge>
+                    <div className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{r.summary?.slice(0, 60) || '—'}</div>
+                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>{new Date(r.created_at).toLocaleString('zh-CN')}</div>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); removeRecord(r.id) }}>删除</Button>
+                <Button variant="clear" size="sm" onClick={(e) => { e.stopPropagation(); removeRecord(r.id) }}>删除</Button>
               </div>
             ))}
           </div>
@@ -60,9 +61,9 @@ export function FengshuiHistory({ onViewDetail }: FengshuiHistoryProps) {
 
         {total > limit && (
           <div className="flex justify-center gap-2 mt-4">
-            <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>上一页</Button>
-            <span className="text-sm text-[#8C8C8C] py-1.5">{page + 1} / {Math.ceil(total / limit)}</span>
-            <Button variant="ghost" size="sm" disabled={(page + 1) * limit >= total} onClick={() => setPage((p) => p + 1)}>下一页</Button>
+            <Button variant="clear" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>上一页</Button>
+            <span className="text-sm py-1.5" style={{ color: 'var(--muted)' }}>{page + 1} / {Math.ceil(total / limit)}</span>
+            <Button variant="clear" size="sm" disabled={(page + 1) * limit >= total} onClick={() => setPage((p) => p + 1)}>下一页</Button>
           </div>
         )}
       </Card>

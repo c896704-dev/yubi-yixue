@@ -374,16 +374,28 @@ function findWarnings(male: AnalysisResult, female: AnalysisResult): string[] {
   }
 
   // 健康互克
-  const mWeakest = Object.entries(male.fiveElementDistribution).sort((a, b) => a[1] - b[1])[0]!
-  const fWeakest = Object.entries(female.fiveElementDistribution).sort((a, b) => a[1] - b[1])[0]!
+  const entriesA = Object.entries(male.fiveElementDistribution || {}).sort((a, b) => a[1] - b[1])
+  const entriesB = Object.entries(female.fiveElementDistribution || {}).sort((a, b) => a[1] - b[1])
+  const mWeakest = entriesA.length > 0 ? entriesA[0] : null
+  const fWeakest = entriesB.length > 0 ? entriesB[0] : null
   const controls = (a: string, b: string) =>
     (a === '木' && b === '土') || (a === '土' && b === '水') ||
     (a === '水' && b === '火') || (a === '火' && b === '金') || (a === '金' && b === '木')
 
-  for (const p of [male.bazi.year, male.bazi.month, male.bazi.hour]) {
-    if (controls(p.stemElement, fWeakest[0] as FiveElement)) {
-      warnings.push(`男方命局${p.stemElement}气克女方最弱的${fWeakest[0]}，长期相处可能对女方健康产生不利影响`)
-      break
+  if (fWeakest) {
+    for (const p of [male.bazi.year, male.bazi.month, male.bazi.hour]) {
+      if (controls(p.stemElement, fWeakest[0] as FiveElement)) {
+        warnings.push(`男方命局${p.stemElement}气克女方最弱的${fWeakest[0]}，长期相处可能对女方健康产生不利影响`)
+        break
+      }
+    }
+  }
+  if (mWeakest) {
+    for (const p of [male.bazi.year, male.bazi.month, male.bazi.hour]) {
+      if (controls(p.stemElement, mWeakest[0] as FiveElement)) {
+        warnings.push(`女方命局${p.stemElement}气克男方最弱的${mWeakest[0]}，长期相处可能对男方健康产生不利影响`)
+        break
+      }
     }
   }
 

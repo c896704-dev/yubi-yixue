@@ -2,17 +2,22 @@ import type { ReactNode } from 'react'
 
 interface PageContainerProps {
   children: ReactNode
-  maxWidth?: number
   className?: string
+  title?: string
+  desc?: string
 }
 
-export function PageContainer({ children, maxWidth = 1100, className = '' }: PageContainerProps) {
+export function PageContainer({ children, className = '', title, desc }: PageContainerProps) {
   return (
-    <main
-      className={`mx-auto px-6 py-12 animate-fade-in ${className}`}
-      style={{ maxWidth }}
-    >
+    <main className={`page-wrap ${className}`}>
+      {title && (
+        <div className="page-header">
+          <h1 className="page-header-title">{title}</h1>
+          {desc && <p className="page-header-desc">{desc}</p>}
+        </div>
+      )}
       {children}
+      <div className="page-ink-bottom" />
     </main>
   )
 }

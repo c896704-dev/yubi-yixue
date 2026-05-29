@@ -16,6 +16,10 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+function addColumnSafely(table, column, definition) {
+  try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`) } catch {}
+}
+
 export function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS devices (
@@ -69,8 +73,10 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS bazi_records (
       id TEXT PRIMARY KEY,
       user_id TEXT,
+      device_id TEXT,
       person_data TEXT NOT NULL,
       result_data TEXT,
+      label TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
@@ -82,11 +88,13 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS divination_records (
       id TEXT PRIMARY KEY,
       user_id TEXT,
+      device_id TEXT,
       type TEXT NOT NULL CHECK(type IN ('liuyao', 'meihua')),
       method TEXT NOT NULL,
       question TEXT,
       hexagram_data TEXT NOT NULL,
       ai_interpretation TEXT,
+      label TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
@@ -97,6 +105,7 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS compat_records (
       id TEXT PRIMARY KEY,
       user_id TEXT,
+      device_id TEXT,
       male_data TEXT NOT NULL,
       female_data TEXT NOT NULL,
       result_data TEXT NOT NULL,
@@ -107,6 +116,17 @@ export function initDatabase() {
     );
     CREATE INDEX IF NOT EXISTS idx_compat_user ON compat_records(user_id);
   `);
+
+  // Migrate existing tables that may be missing new columns
+  addColumnSafely('bazi_records', 'device_id', 'TEXT');
+  addColumnSafely('bazi_records', 'label', 'TEXT');
+  addColumnSafely('divination_records', 'device_id', 'TEXT');
+  addColumnSafely('divination_records', 'label', 'TEXT');
+  addColumnSafely('compat_records', 'device_id', 'TEXT');
+  // Create indexes after migration (safe for new tables via IF NOT EXISTS, requires column to exist)
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_bazi_records_device ON bazi_records(device_id);
+           CREATE INDEX IF NOT EXISTS idx_divination_device ON divination_records(device_id);
+           CREATE INDEX IF NOT EXISTS idx_compat_device ON compat_records(device_id);`);
 }
 
 export default db;

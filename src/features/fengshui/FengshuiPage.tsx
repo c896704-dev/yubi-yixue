@@ -17,7 +17,7 @@ export default function FengshuiPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <Tabs
         tabs={[
           { key: 'layout', label: '户型图分析' },
@@ -28,10 +28,12 @@ export default function FengshuiPage() {
         activeKey={tab}
         onChange={(k) => setTab(k as FengshuiTab)}
       />
-      {tab === 'layout' && <LayoutAnalysis />}
-      {tab === 'location' && <LocationAnalysis />}
-      {tab === 'history' && <FengshuiHistory onViewDetail={setDetailId} />}
-      {tab === 'settings' && <FengshuiSettings />}
+      <div className="fade-in">
+        {tab === 'layout' && <LayoutAnalysis />}
+        {tab === 'location' && <LocationAnalysis />}
+        {tab === 'history' && <FengshuiHistory onViewDetail={setDetailId} />}
+        {tab === 'settings' && <FengshuiSettings />}
+      </div>
     </div>
   )
 }

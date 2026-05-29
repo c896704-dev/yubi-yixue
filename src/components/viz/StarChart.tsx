@@ -10,12 +10,6 @@ interface StarChartProps {
   className?: string
 }
 
-const starColors: Record<string, string> = {
-  auspicious: '#7BAB8A',
-  inauspicious: '#D4A0A0',
-  neutral: '#8C8C8C',
-}
-
 export function StarChart({ data, className = '' }: StarChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -45,30 +39,27 @@ export function StarChart({ data, className = '' }: StarChartProps) {
       const x = col * cellW
       const y = row * cellH
 
-      ctx.strokeStyle = '#E8E0D8'
+      ctx.strokeStyle = '#E0DDD5'
       ctx.lineWidth = 1
       ctx.strokeRect(x, y, cellW, cellH)
 
       ctx.fillStyle = '#2C2C2C'
-      ctx.font = `600 ${12 * dpr}px "Noto Serif SC", serif`
+      ctx.font = '600 12px "Noto Serif SC", serif'
       ctx.textAlign = 'center'
       ctx.fillText(item.palace, x + cellW / 2, y + 18)
 
       item.stars.forEach((star, si) => {
         const sy = y + 32 + si * 18
-        ctx.fillStyle = starColors[star.type]
-        ctx.font = `${11 * dpr}px "Noto Sans SC", sans-serif`
+        ctx.fillStyle = star.type === 'auspicious' ? '#7A9A7A' : star.type === 'inauspicious' ? '#C4664A' : '#999'
+        ctx.font = '11px "Noto Sans SC", sans-serif'
         ctx.fillText(star.name, x + cellW / 2, sy)
       })
     })
   }, [data])
 
   return (
-    <div className={`bg-white rounded-xl p-4 ${className}`}>
-      <canvas
-        ref={canvasRef}
-        style={{ width: '100%', height: Math.ceil(data.length / 3) * 120 }}
-      />
+    <div className={`card ${className}`}>
+      <canvas ref={canvasRef} style={{ width: '100%', height: Math.ceil(data.length / 3) * 120 }} />
     </div>
   )
 }

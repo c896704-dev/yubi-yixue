@@ -47,10 +47,10 @@ export function LayoutAnalysis() {
     }))
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <Card><div className="text-center"><ScoreGauge score={d.overallScore || 0} label="综合评分" /></div></Card>
         {cells.length > 0 && <Card title="九宫方位分析"><PalaceGrid cells={cells} /></Card>}
-        {d.summary && <Card title="分析总结"><p className="text-[15px] text-[#2C2C2C] leading-relaxed">{d.summary}</p></Card>}
+        {d.summary && <Card title="分析总结"><p className="text-[15px] leading-relaxed" style={{ color: 'var(--fg)' }}>{d.summary}</p></Card>}
         {(d.strengths?.length > 0 || d.weaknesses?.length > 0) && (
           <Card><ProsConsList strengths={d.strengths} weaknesses={d.weaknesses} /></Card>
         )}
@@ -64,9 +64,9 @@ export function LayoutAnalysis() {
             </div>
           </Card>
         )}
-        <div className="flex gap-4 justify-center">
-          <Button variant="secondary" onClick={reset}>重新分析</Button>
-          <Button variant="secondary" onClick={() => window.print()}>打印报告</Button>
+        <div className="actions">
+          <Button variant="mist" onClick={reset}>重新分析</Button>
+          <Button variant="clear" onClick={() => window.print()}>打印报告</Button>
         </div>
         <ChatPanel
           mode="风水问答"
@@ -91,34 +91,35 @@ export function LayoutAnalysis() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <Card title="户型图分析">
         <div className="flex flex-col gap-4">
           <ImageUpload value={image} onChange={setImage} label="上传户型图" />
           <div className="grid grid-cols-2 gap-4">
-            <Select label="朝向" value={orientation} onChange={(e) => setOrientation(e.target.value)}>
-              <option value="south">坐北朝南</option>
-              <option value="north">坐南朝北</option>
-              <option value="east">坐西朝东</option>
-              <option value="west">坐东朝西</option>
+            <Select label="图片上方朝向" value={orientation} onChange={(e) => setOrientation(e.target.value)}>
+              <option value="south">↑ 南 (图片上=南)</option>
+              <option value="north">↑ 北 (图片上=北)</option>
+              <option value="east">↑ 东 (图片上=东)</option>
+              <option value="west">↑ 西 (图片上=西)</option>
             </Select>
             <div>
-              <span className="input-label">建造年份（选填）</span>
-              <input className="input" type="number" value={buildingYear} onChange={(e) => setBuildingYear(e.target.value)} placeholder="如 2020" />
+              <span className="field-label">建造年份（选填）</span>
+              <input className="field" type="number" value={buildingYear} onChange={(e) => setBuildingYear(e.target.value)} placeholder="如 2020" />
             </div>
           </div>
           <div className="flex gap-2 items-center mt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-[#8C8C8C]">
-              <input type="checkbox" checked={withBazi} onChange={(e) => setWithBazi(e.target.checked)} className="accent-brand-500" />
+            <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--muted)' }}>
+              <input type="checkbox" checked={withBazi} onChange={(e) => setWithBazi(e.target.checked)}
+                style={{ accentColor: 'var(--primary)' }} />
               结合生肖匹配
             </label>
-            {withBazi && <input className="input !w-[120px]" type="number" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} placeholder="出生年份" />}
+            {withBazi && <input className="field !w-[120px]" type="number" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} placeholder="出生年份" />}
           </div>
-          {error && <span className="input-error-msg">{error}</span>}
+          {error && <span className="field-error">{error}</span>}
           <Button onClick={handleAnalyze} loading={loading} disabled={!image} size="lg">开始分析</Button>
         </div>
       </Card>
-      {loading && <Card><Loading size={40} text="AI 正在分析户型图，请稍候..." /></Card>}
+      {loading && <Card><Loading text="AI 正在分析户型图，请稍候..." /></Card>}
     </div>
   )
 }

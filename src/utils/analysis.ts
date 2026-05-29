@@ -440,7 +440,7 @@ export function renderLifeStagesReport(result: AnalysisResult): string {
   let md = '## 三、运程长卷 (Life Stages)\n\n'
 
   // 起运年龄说明
-  const firstFortune = bigFortunes[0]
+  const firstFortune = bigFortunes?.[0]
   if (firstFortune) {
     const startAge = firstFortune.startAge
     md += `> **起运年龄：** ${startAge}岁起运（系统采用排盘引擎自动计算）。大运每十年一换，逢交运之年（如${startAge + 10 * 10}岁前后）人生有重大转换。\n\n`

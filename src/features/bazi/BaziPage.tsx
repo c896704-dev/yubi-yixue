@@ -3,24 +3,53 @@ import type { PersonInfo } from '../../types'
 import { useBazi } from '../../hooks/useBazi'
 import { getAllRecords, deleteRecord, type SavedRecord } from '../../utils/db'
 import {
-  renderFundamentalReport,
-  renderLifeStagesReport,
-  renderRiskReport,
-  renderCompatibilityPreview,
-  renderPersonalityReport,
-  renderHealthReport,
-  renderAppearanceReport,
-  renderIntelligenceReport,
-  renderFamilyDeepReport,
-  renderCareerReport,
+  renderFundamentalReport, renderLifeStagesReport, renderRiskReport, renderCompatibilityPreview,
+  renderPersonalityReport, renderHealthReport, renderAppearanceReport, renderIntelligenceReport,
+  renderFamilyDeepReport, renderCareerReport,
 } from '../../utils/analysis'
 import { BaziInput } from './BaziInput'
 import { BaziResult } from './BaziResult'
 import { BaziReport, AiInsightCard } from './BaziReport'
 import { BaziChat } from './BaziChat'
-import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
+
+function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
+  records: SavedRecord[]
+  showRecords: boolean
+  onToggle: () => void
+  onLoad: (r: SavedRecord) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <div className="section">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <h3 className="section-title" style={{ marginBottom: 0 }}>历史记录</h3>
+        <button className="fold-trigger" onClick={onToggle}>
+          {showRecords ? '收起' : `展开 (${records.length})`}
+        </button>
+      </div>
+      {showRecords && (
+        <div className="card" style={{ padding: '4px 0' }}>
+          {records.map((r) => (
+            <div key={r.id} className="history-row">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="history-row-label">{r.label}</div>
+                <div className="history-row-meta">
+                  {r.person.gender === '男' ? '♂' : '♀'} {r.person.birthYear}年 · {r.person.birthPlace}
+                </div>
+              </div>
+              <div className="history-row-actions">
+                <Button variant="ghost" size="sm" onClick={() => onLoad(r)}>加载</Button>
+                <Button variant="danger-ghost" size="sm" onClick={() => onDelete(r.id)}>删除</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function BaziPage() {
   const { loading, result, aiInsight, aiLoading, aiError, analyze, fetchAiInsight, reset } = useBazi()
@@ -58,54 +87,36 @@ export default function BaziPage() {
 
   const handleLoadRecord = useCallback(async (record: SavedRecord) => {
     setShowRecords(false)
-    await handleAnalyze(record.person)
-  }, [handleAnalyze])
+    // Skip AI regeneration — just run local analysis
+    await analyze(record.person)
+  }, [analyze])
 
   const handleDeleteRecord = useCallback(async (id: string) => {
     await deleteRecord(id)
     setRecords((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  const handleReset = useCallback(() => {
-    reset()
-  }, [reset])
+  const handleReset = useCallback(() => { reset() }, [reset])
 
   return (
-    <div className="flex flex-col gap-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {!result && !loading && (
         <>
-          <Card>
-            <div className="flex justify-between items-center">
-              <span className="font-serif text-lg font-semibold text-[#2C2C2C]">历史记录</span>
-              <Button variant="ghost" size="sm" onClick={() => setShowRecords(!showRecords)}>
-                {showRecords ? '收起' : `历史 (${records.length})`}
-              </Button>
-            </div>
-            {records.length === 0 && (
-              <p className="text-sm text-[#8C8C8C] mt-4">暂无排盘记录，完成一次八字分析后会自动保存在这里。</p>
-            )}
-            {records.length > 0 && showRecords && (
-              <div className="mt-4 flex flex-col gap-1.5">
-                {records.map((r) => (
-                  <div key={r.id} className="flex justify-between items-center py-2.5 px-3.5 bg-paper-50 rounded-lg">
-                    <span className="text-sm font-semibold text-[#2C2C2C]">{r.label}</span>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleLoadRecord(r)}>加载</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(r.id)}>删除</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
           <BaziInput onSubmit={handleAnalyze} loading={loading} />
+          {records.length > 0 && (
+            <RecordList
+              records={records}
+              showRecords={showRecords}
+              onToggle={() => setShowRecords(!showRecords)}
+              onLoad={handleLoadRecord}
+              onDelete={handleDeleteRecord}
+            />
+          )}
         </>
       )}
 
       {loading && (
-        <Card>
-          <Loading size={40} text="正在排盘中，请稍候..." />
-        </Card>
+        <Loading text="正在排盘中，请稍候..." />
       )}
 
       {result && !loading && (
@@ -113,7 +124,7 @@ export default function BaziPage() {
           <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} />
           <BaziResult result={result} />
           {fullReport && <BaziReport markdown={fullReport} />}
-          <div className="flex gap-4 justify-center">
+          <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新排盘</Button>
             <Button variant="ghost" onClick={() => window.print()}>打印报告</Button>
           </div>
