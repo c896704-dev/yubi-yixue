@@ -3,7 +3,10 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 import { initDatabase } from './db.js';
+import db from './db.js';
 import { deviceMiddleware } from './middleware/device.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,13 +37,80 @@ app.use('/api/compat', compatRouter);
 app.use('/api/bazi', baziRouter);
 app.use('/api/ai', aiRouter);
 
+// Migration import (admin-only, import browser IndexedDB data)
+app.post('/api/migrate/import', async (req, res) => {
+  try {
+    const { baziRecords, divinationRecords, compatRecords, adminPassword } = req.body;
+    if (adminPassword !== (process.env.ADMIN_MIGRATE_TOKEN || 'yubi-migrate-2024')) {
+      return res.status(403).json({ error: '无迁移权限' });
+    }
+
+    // Find or create admin user
+    const adminEmail = 'cyh20101224@126.com';
+    let admin = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
+    if (!admin) {
+      const adminId = uuidv4();
+      const hash = bcrypt.hashSync('admin123', 10);
+      db.prepare('INSERT INTO users (id, email, username, password_hash) VALUES (?, ?, ?, ?)')
+        .run(adminId, adminEmail, '管理员', hash);
+      admin = { id: adminId };
+    }
+    const adminId = admin.id;
+
+    let imported = { bazi: 0, divination: 0, compat: 0, skipped: 0 };
+
+    // Import bazi records
+    for (const r of (baziRecords || [])) {
+      if (!r.person || !r.person.birthYear) { imported.skipped++; continue; }
+      const id = r.id || String(Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+      const exists = db.prepare('SELECT id FROM bazi_records WHERE id = ?').get(id);
+      if (exists) { imported.skipped++; continue; }
+      db.prepare(`INSERT INTO bazi_records (id, user_id, person_data, result_data, label, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)`).run(id, adminId, JSON.stringify(r.person), r.resultData ? JSON.stringify(r.resultData) : null, r.label || '', new Date(r.createdAt || Date.now()).toISOString());
+      imported.bazi++;
+    }
+
+    // Import divination records
+    for (const r of (divinationRecords || [])) {
+      if (!r.hexagramData) { imported.skipped++; continue; }
+      const id = r.id || String(Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+      const exists = db.prepare('SELECT id FROM divination_records WHERE id = ?').get(id);
+      if (exists) { imported.skipped++; continue; }
+      db.prepare(`INSERT INTO divination_records (id, user_id, type, method, question, hexagram_data, ai_interpretation, label, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(id, adminId, r.type || 'liuyao', r.method || '', r.question || '', JSON.stringify(r.hexagramData),
+          r.aiInterpretation || null, r.label || '', new Date(r.createdAt || Date.now()).toISOString());
+      imported.divination++;
+    }
+
+    // Import compat records
+    for (const r of (compatRecords || [])) {
+      if (!r.malePerson || !r.femalePerson) { imported.skipped++; continue; }
+      const id = r.id || String(Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+      const exists = db.prepare('SELECT id FROM compat_records WHERE id = ?').get(id);
+      if (exists) { imported.skipped++; continue; }
+      db.prepare(`INSERT INTO compat_records (id, user_id, male_data, female_data, result_data, ai_insight, label, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(id, adminId, JSON.stringify(r.malePerson), JSON.stringify(r.femalePerson), JSON.stringify(r.result || {}),
+          r.aiInsight || null, r.label || '', new Date(r.createdAt || Date.now()).toISOString());
+      imported.compat++;
+    }
+
+    res.json({ success: true, imported });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Serve production build in non-dev environments
+// Serve public files and production build
+const publicPath = path.join(__dirname, '..', 'public');
 const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(publicPath));
 app.use(express.static(distPath));
 app.get('*', (_req, res, next) => {
   // Don't catch API routes

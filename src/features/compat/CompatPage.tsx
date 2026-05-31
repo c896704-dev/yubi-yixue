@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { PersonInfo, AnalysisResult } from '../../types'
 import { analyzePerson } from '../../utils/analysis'
 import { renderEnhancedCompatibilityReport } from '../../utils/compatibility'
@@ -22,25 +22,32 @@ export default function CompatPage() {
   const [analyzing1, setAnalyzing1] = useState(false)
   const [analyzing2, setAnalyzing2] = useState(false)
   const [hasRunCompat, setHasRunCompat] = useState(false)
-  const { loading, result, aiInsight, aiLoading, aiError, analyze: runCompat, fetchAiInsight, reset } = useCompat()
+  const { loading, result, aiInsight, aiLoading, aiError, analyze: runCompat, fetchAiInsight, reset, restoreAiInsight } = useCompat()
   const [report, setReport] = useState<string | null>(null)
   const [records, setRecords] = useState<SavedRecord[]>([])
   const [compatRecords, setCompatRecords] = useState<CompatRecord[]>([])
   const [showCompatHistory, setShowCompatHistory] = useState(true)
+  const pendingAiRef = useRef<string | null>(null)
+
+  // 从历史记录恢复 AI 报告
+  useEffect(() => {
+    if (pendingAiRef.current && result && !loading) {
+      restoreAiInsight(pendingAiRef.current)
+      pendingAiRef.current = null
+    }
+  }, [result, loading, restoreAiInsight])
 
   const refreshCompatRecords = useCallback(async () => {
     const localRecords = await getAllCompatRecords()
     let serverRecords: CompatRecord[] = []
-    if (localStorage.getItem('auth_token')) {
-      try {
-        const res = await getServerCompatRecords()
-        serverRecords = res.records.map((r: any) => ({
-          id: r.id, malePerson: r.maleData, femalePerson: r.femaleData,
-          result: r.resultData as CompatRecord['result'], aiInsight: r.aiInsight,
-          label: r.label, createdAt: new Date(r.createdAt).getTime(),
-        }))
-      } catch { serverRecords = [] }
-    }
+    try {
+      const res = await getServerCompatRecords()
+      serverRecords = res.records.map((r: any) => ({
+        id: r.id, malePerson: r.maleData, femalePerson: r.femaleData,
+        result: r.resultData as CompatRecord['result'], aiInsight: r.aiInsight,
+        label: r.label, createdAt: new Date(r.createdAt).getTime(),
+      }))
+    } catch { serverRecords = [] }
     const merged = new Map<string, CompatRecord>()
     for (const record of [...serverRecords, ...localRecords]) merged.set(record.id, record)
     setCompatRecords([...merged.values()].sort((a, b) => b.createdAt - a.createdAt))
@@ -48,19 +55,20 @@ export default function CompatPage() {
 
   useEffect(() => { getAllRecords().then(setRecords).catch(() => setRecords([])); refreshCompatRecords() }, [refreshCompatRecords])
 
+  // Track the compat record that's waiting for AI insight
+  const pendingRecordRef = useRef<CompatRecord | null>(null)
+
   useEffect(() => {
-    if (aiInsight && result) {
-      getAllCompatRecords().then(recs => {
-        const latest = recs[0]
-        if (latest && !latest.aiInsight) {
-          saveCompatRecord({ ...latest, aiInsight }).then(refreshCompatRecords)
-          if (localStorage.getItem('auth_token')) {
-            saveServerCompatRecord({ id: latest.id, maleData: latest.malePerson, femaleData: latest.femalePerson, resultData: latest.result, aiInsight, label: latest.label }).catch(() => {})
-          }
-        }
-      })
+    if (aiInsight && pendingRecordRef.current) {
+      const rec = pendingRecordRef.current
+      pendingRecordRef.current = null
+      // Patch the record with AI insight
+      saveCompatRecord({ ...rec, aiInsight }).then(refreshCompatRecords)
+      if (localStorage.getItem('auth_token')) {
+        saveServerCompatRecord({ id: rec.id, maleData: rec.malePerson, femaleData: rec.femalePerson, resultData: rec.result, aiInsight, label: rec.label }).catch(() => {})
+      }
     }
-  }, [aiInsight, result, refreshCompatRecords])
+  }, [aiInsight, refreshCompatRecords])
 
   const handleAnalyze1 = useCallback(async (person: PersonInfo) => { setPerson1(person); setAnalyzing1(true); setResult1(analyzePerson(person)); setAnalyzing1(false) }, [])
   const handleAnalyze2 = useCallback(async (person: PersonInfo) => { setPerson2(person); setAnalyzing2(true); setResult2(analyzePerson(person)); setAnalyzing2(false) }, [])
@@ -72,7 +80,8 @@ export default function CompatPage() {
     setHasRunCompat(true)
     fetchAiInsight(result1, result2)
     const label = `${person1!.name} & ${person2!.name} · 合盘`
-    const record = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), malePerson: person1!, femalePerson: person2!, result: compatResult, aiInsight: null, label, createdAt: Date.now() }
+    const record: CompatRecord = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), malePerson: person1!, femalePerson: person2!, result: compatResult, aiInsight: null, label, createdAt: Date.now() }
+    pendingRecordRef.current = record
     saveCompatRecord(record).then(refreshCompatRecords)
     if (localStorage.getItem('auth_token')) { saveServerCompatRecord({ id: record.id, maleData: record.malePerson, femaleData: record.femalePerson, resultData: record.result, aiInsight: null, label: record.label }).catch(() => {}) }
   }, [result1, result2, person1, person2, runCompat, fetchAiInsight, refreshCompatRecords])
@@ -81,6 +90,7 @@ export default function CompatPage() {
     const male = record.result?.male || analyzePerson(record.malePerson)
     const female = record.result?.female || analyzePerson(record.femalePerson)
     setPerson1(record.malePerson); setPerson2(record.femalePerson); setResult1(male); setResult2(female)
+    pendingAiRef.current = record.aiInsight || null
     const compatResult = await runCompat(male, female)
     setReport(renderEnhancedCompatibilityReport(compatResult))
     setHasRunCompat(true); setShowCompatHistory(false)

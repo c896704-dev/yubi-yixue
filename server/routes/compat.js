@@ -1,22 +1,23 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.js';
 import db from '../db.js';
+import { optionalAuth, ADMIN_EMAIL } from '../middleware/auth.js';
 
 const router = Router();
+router.use(optionalAuth);
 
-/** 保存合盘记录（device_id 兜底） */
+function canSeeAll(req) { return req.isAdmin || req.userEmail === ADMIN_EMAIL; }
+
+/** Save (always works) */
 router.post('/records', (req, res) => {
   try {
     const { id, maleData, femaleData, resultData, aiInsight, label } = req.body;
-    if (!id || !maleData || !femaleData || !resultData || !label) {
-      return res.status(400).json({ error: '缺少必要字段' });
-    }
-    const deviceId = req.deviceId || '';
+    if (!id || !maleData || !femaleData || !resultData || !label) return res.status(400).json({ error: '缺少必要字段' });
 
+    const deviceId = req.deviceId || '';
     const existing = db.prepare('SELECT id FROM compat_records WHERE id = ?').get(id);
     if (existing) {
-      db.prepare(`UPDATE compat_records SET male_data=?, female_data=?, result_data=?, ai_insight=?, label=? WHERE id=?`)
-        .run(JSON.stringify(maleData), JSON.stringify(femaleData), JSON.stringify(resultData), aiInsight || null, label, id);
+      db.prepare(`UPDATE compat_records SET male_data=?, female_data=?, result_data=?, ai_insight=?, label=?, user_id=COALESCE(?, user_id) WHERE id=?`)
+        .run(JSON.stringify(maleData), JSON.stringify(femaleData), JSON.stringify(resultData), aiInsight || null, label, req.userId || null, id);
     } else {
       db.prepare(`INSERT INTO compat_records (id, user_id, device_id, male_data, female_data, result_data, ai_insight, label)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -29,29 +30,39 @@ router.post('/records', (req, res) => {
   }
 });
 
-/** 获取合盘记录（device_id 或 user_id） */
+/** Get (admin sees all, normal users see own) */
 router.get('/records', (req, res) => {
   try {
-    const deviceId = req.deviceId || '';
-    const records = req.userId
-      ? db.prepare('SELECT * FROM compat_records WHERE user_id = ? ORDER BY created_at DESC').all(req.userId)
-      : db.prepare('SELECT * FROM compat_records WHERE device_id = ? ORDER BY created_at DESC').all(deviceId);
+    let records;
+    if (canSeeAll(req)) {
+      records = db.prepare('SELECT * FROM compat_records ORDER BY created_at DESC').all();
+    } else if (req.userId) {
+      records = db.prepare('SELECT * FROM compat_records WHERE user_id = ? ORDER BY created_at DESC').all(req.userId);
+    } else {
+      records = db.prepare('SELECT * FROM compat_records WHERE device_id = ? ORDER BY created_at DESC').all(req.deviceId || '');
+    }
 
     res.json({ records: records.map(r => ({
       id: r.id, maleData: JSON.parse(r.male_data), femaleData: JSON.parse(r.female_data),
-      resultData: JSON.parse(r.result_data), aiInsight: r.ai_insight, label: r.label, createdAt: r.created_at,
+      resultData: JSON.parse(r.result_data), aiInsight: r.ai_insight, label: r.label,
+      createdAt: r.created_at, userId: r.user_id,
     }))});
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-/** 删除合盘记录 */
+/** Delete (admin can delete any) */
 router.delete('/records/:id', (req, res) => {
   try {
-    const deviceId = req.deviceId || '';
-    const existing = db.prepare('SELECT id FROM compat_records WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT id, user_id, device_id FROM compat_records WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: '记录未找到' });
+
+    const isAdmin = canSeeAll(req);
+    const isOwner = req.userId && existing.user_id === req.userId;
+    const isDeviceOwner = !req.userId && existing.device_id === (req.deviceId || '');
+    if (!isAdmin && !isOwner && !isDeviceOwner) return res.status(403).json({ error: '无权删除' });
+
     db.prepare('DELETE FROM compat_records WHERE id = ?').run(req.params.id);
     res.json({ success: true });
   } catch (e) {

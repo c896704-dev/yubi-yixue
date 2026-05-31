@@ -120,6 +120,7 @@ export function initDatabase() {
   // Migrate existing tables that may be missing new columns
   addColumnSafely('bazi_records', 'device_id', 'TEXT');
   addColumnSafely('bazi_records', 'label', 'TEXT');
+  addColumnSafely('bazi_records', 'ai_insight', 'TEXT');
   addColumnSafely('divination_records', 'device_id', 'TEXT');
   addColumnSafely('divination_records', 'label', 'TEXT');
   addColumnSafely('compat_records', 'device_id', 'TEXT');

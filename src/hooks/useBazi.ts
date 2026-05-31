@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type { PersonInfo, AnalysisResult, CompatibilityResult } from '../types'
 import { analyzePerson } from '../utils/analysis'
 import { computeCompatibility } from '../utils/compatibility'
@@ -12,6 +12,7 @@ export function useBazi() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
   const [records, setRecords] = useState<SavedRecord[]>([])
+  const analysisResultRef = useRef<AnalysisResult | null>(null)
 
   const analyze = useCallback(async (person: PersonInfo) => {
     setLoading(true)
@@ -20,6 +21,7 @@ export function useBazi() {
     try {
       const res = analyzePerson(person)
       setResult(res)
+      analysisResultRef.current = res
       await saveRecord(person)
       return res
     } finally {
@@ -33,6 +35,8 @@ export function useBazi() {
     try {
       const insight = await generateBaziInsight(report, `${person.name}，${person.gender}，生于${person.birthYear}年`)
       setAiInsight(insight)
+      // Persist AI insight to both IndexedDB and server
+      saveRecord(person, analysisResultRef.current || undefined, insight).catch(() => {})
     } catch (e: any) {
       setAiError(e.message || 'AI 分析失败')
     } finally {
@@ -56,7 +60,11 @@ export function useBazi() {
     setAiError(null)
   }, [])
 
-  return { loading, result, aiInsight, aiLoading, aiError, records, analyze, fetchAiInsight, loadRecords, removeRecord, reset }
+  const restoreAiInsight = useCallback((insight: string | null) => {
+    setAiInsight(insight)
+  }, [])
+
+  return { loading, result, aiInsight, aiLoading, aiError, records, analyze, fetchAiInsight, loadRecords, removeRecord, reset, restoreAiInsight }
 }
 
 export function useCompat() {
@@ -100,5 +108,9 @@ export function useCompat() {
     setAiError(null)
   }, [])
 
-  return { loading, result, aiInsight, aiLoading, aiError, analyze, fetchAiInsight, reset }
+  const restoreAiInsight = useCallback((insight: string | null) => {
+    setAiInsight(insight)
+  }, [])
+
+  return { loading, result, aiInsight, aiLoading, aiError, analyze, fetchAiInsight, reset, restoreAiInsight }
 }

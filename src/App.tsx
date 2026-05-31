@@ -44,7 +44,7 @@ function AppContent() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-window)' }}>
-      {/* Sidebar — desktop only */}
+      {/* Sidebar — desktop */}
       {!isMobile && (
         <aside className="sidebar">
           <div className="sidebar-header">
@@ -72,7 +72,7 @@ function AppContent() {
               <>
                 <div className="sidebar-user" onClick={logout}>
                   <span style={{ fontSize: 13, color: 'var(--secondary)' }}>
-                    {user.username}
+                    {user.username} {user.isAdmin && '(管理员)'}
                   </span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--tertiary)' }}>
                     退出
@@ -109,7 +109,7 @@ function AppContent() {
         </div>
       </main>
 
-      {/* Bottom Tab Bar — mobile only */}
+      {/* Bottom Tab Bar — mobile */}
       {isMobile && (
         <nav className="bottom-bar">
           {tabs.map((t) => (
@@ -122,10 +122,17 @@ function AppContent() {
               <span>{t.label.slice(0, 2)}</span>
             </button>
           ))}
-          <button className="bottom-bar-item" onClick={() => setLoginOpen(true)}>
-            <span className="icon">👤</span>
-            <span>我的</span>
-          </button>
+          {user ? (
+            <button className="bottom-bar-item" onClick={logout}>
+              <span className="icon">👤</span>
+              <span>退出</span>
+            </button>
+          ) : (
+            <button className="bottom-bar-item" onClick={() => setLoginOpen(true)}>
+              <span className="icon">👤</span>
+              <span>我的</span>
+            </button>
+          )}
         </nav>
       )}
 

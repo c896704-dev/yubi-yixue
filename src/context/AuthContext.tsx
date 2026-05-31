@@ -5,6 +5,7 @@ interface User {
   id: string
   email: string
   username: string
+  isAdmin?: boolean
 }
 
 interface AuthContextValue {
@@ -29,18 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
-    api
-      .get('/auth/me')
-      .then((res: any) => {
-        setUser(res.data.user)
-      })
-      .catch(() => {
-        localStorage.removeItem('auth_token')
-      })
+    if (!token) { setLoading(false); return }
+    api.get('/auth/me')
+      .then((res: any) => setUser(res.data.user))
+      .catch(() => { localStorage.removeItem('auth_token') })
       .finally(() => setLoading(false))
   }, [])
 

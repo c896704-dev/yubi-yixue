@@ -31,6 +31,8 @@ export interface SavedRecord {
   createdAt: number
   lastUsed: number
   label: string // 自动生成的标签，如 "张三 · 男 · 1990年"
+  aiInsight?: string | null   // AI 分析报告（持久化）
+  resultData?: any            // 八字排盘结果（持久化）
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -204,12 +206,15 @@ function normalizeSavedRecord(row: StoreRow): SavedRecord | null {
   if (!isPersonInfo(person)) return null
   const createdAt = toTimestamp(raw?.createdAt ?? raw?.created_at ?? raw?.timestamp, Date.now())
   const lastUsed = toTimestamp(raw?.lastUsed ?? raw?.last_used ?? raw?.updatedAt ?? createdAt, createdAt)
+  const aiInsight = raw?.aiInsight ?? raw?.ai_insight ?? null
   return {
     id: String(raw?.id || row.key || `${row.dbName}:${createdAt}`),
     person,
     createdAt,
     lastUsed,
     label: String(raw?.label || makeLabel(person)),
+    aiInsight: typeof aiInsight === 'string' ? aiInsight : null,
+    resultData: parseMaybeJson(raw?.resultData || raw?.result_data || null),
   }
 }
 
@@ -299,7 +304,7 @@ function countStore(db: IDBDatabase, storeName: string): Promise<number> {
 }
 
 /** 保存一条排盘记录 */
-export async function saveRecord(person: PersonInfo): Promise<string> {
+export async function saveRecord(person: PersonInfo, resultData?: any, aiInsight?: string | null): Promise<string> {
   const db = await openDB()
 
   // 在同一连接中先获取所有记录进行去重
@@ -331,11 +336,15 @@ export async function saveRecord(person: PersonInfo): Promise<string> {
 
   if (existing) {
     existing.lastUsed = Date.now()
+    if (aiInsight) existing.aiInsight = aiInsight
+    if (resultData) existing.resultData = resultData
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     store.put(existing)
     await waitTx(tx)
     db.close()
+    // Sync updated AI report to server
+    baziApi().then((api: any) => api.saveBaziRecord(existing.id, existing.person, resultData || null, existing.label, aiInsight || null))
     return existing.id
   }
 
@@ -345,6 +354,8 @@ export async function saveRecord(person: PersonInfo): Promise<string> {
     createdAt: Date.now(),
     lastUsed: Date.now(),
     label: makeLabel(person),
+    aiInsight: aiInsight || null,
+    resultData: resultData || null,
   }
 
   const tx = db.transaction(STORE_NAME, 'readwrite')
@@ -353,7 +364,7 @@ export async function saveRecord(person: PersonInfo): Promise<string> {
   await waitTx(tx)
   db.close()
   // 同步到服务端
-  baziApi().then((api: any) => api.saveBaziRecord(record.id, record.person, null, record.label))
+  baziApi().then((api: any) => api.saveBaziRecord(record.id, record.person, resultData || null, record.label, aiInsight || null))
   return record.id
 }
 
@@ -366,9 +377,25 @@ export async function getAllRecordsMerged(): Promise<SavedRecord[]> {
     const serverRecords: SavedRecord[] = (res.records || []).map((r: any) => ({
       id: r.id, person: r.personData, createdAt: new Date(r.createdAt).getTime(),
       lastUsed: new Date(r.createdAt).getTime(), label: r.label || makeLabel(r.personData),
+      aiInsight: r.aiInsight || null,
+      resultData: r.resultData || null,
     }))
     const merged = new Map<string, SavedRecord>()
-    for (const r of [...serverRecords, ...local]) merged.set(r.id, r)
+    // Server records take priority (have aiInsight/resultData), but local fallbacks fill gaps
+    for (const r of local) merged.set(r.id, r)
+    for (const r of serverRecords) {
+      const existing = merged.get(r.id)
+      if (existing) {
+        // Merge: server provides aiInsight/resultData if local doesn't have them
+        merged.set(r.id, {
+          ...existing,
+          aiInsight: existing.aiInsight || r.aiInsight,
+          resultData: existing.resultData || r.resultData,
+        })
+      } else {
+        merged.set(r.id, r)
+      }
+    }
     return [...merged.values()].sort((a, b) => b.lastUsed - a.lastUsed)
   } catch { return local }
 }

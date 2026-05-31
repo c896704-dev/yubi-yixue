@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { PersonInfo } from '../../types'
 import { useBazi } from '../../hooks/useBazi'
-import { getAllRecords, deleteRecord, type SavedRecord } from '../../utils/db'
+import { getAllRecordsMerged, deleteRecord, getRecordById, type SavedRecord } from '../../utils/db'
 import {
   renderFundamentalReport, renderLifeStagesReport, renderRiskReport, renderCompatibilityPreview,
   renderPersonalityReport, renderHealthReport, renderAppearanceReport, renderIntelligenceReport,
@@ -52,13 +52,22 @@ function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
 }
 
 export default function BaziPage() {
-  const { loading, result, aiInsight, aiLoading, aiError, analyze, fetchAiInsight, reset } = useBazi()
+  const { loading, result, aiInsight, aiLoading, aiError, analyze, fetchAiInsight, reset, restoreAiInsight } = useBazi()
   const [records, setRecords] = useState<SavedRecord[]>([])
   const [showRecords, setShowRecords] = useState(true)
+  const pendingAiRef = useRef<string | null>(null)
+
+  // 从历史记录恢复 AI 报告（等 analyze 完成、loading 结束、aiInsight 被清空后再恢复）
+  useEffect(() => {
+    if (pendingAiRef.current && result && !loading) {
+      restoreAiInsight(pendingAiRef.current)
+      pendingAiRef.current = null
+    }
+  }, [result, loading, restoreAiInsight])
 
   useEffect(() => {
-    getAllRecords().then(setRecords).catch(() => setRecords([]))
-  }, [result])
+    getAllRecordsMerged().then(setRecords).catch(() => setRecords([]))
+  }, [result, aiInsight])
 
   const fullReport = useMemo(() => {
     if (!result) return null
@@ -87,7 +96,9 @@ export default function BaziPage() {
 
   const handleLoadRecord = useCallback(async (record: SavedRecord) => {
     setShowRecords(false)
-    // Skip AI regeneration — just run local analysis
+    // 先把 AI 存到 ref 里（analyze 会清空 aiInsight）
+    const fresh = record.id ? await getRecordById(record.id) : null
+    pendingAiRef.current = fresh?.aiInsight || record.aiInsight || null
     await analyze(record.person)
   }, [analyze])
 
