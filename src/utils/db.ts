@@ -370,7 +370,9 @@ export async function saveRecord(person: PersonInfo, resultData?: any, aiInsight
 
 /** 获取所有记录（合并服务端 + IndexedDB，按 id 去重） */
 export async function getAllRecordsMerged(): Promise<SavedRecord[]> {
-  const local = await getAllRecords()
+  // 登录后只从服务端取（服务器负责权限隔离），避免 IndexedDB 绕过权限
+  const hasToken = !!localStorage.getItem('auth_token')
+  const local = hasToken ? [] : await getAllRecords()
   try {
     const api = await baziApi()
     const res = await api.getServerBaziRecords()
@@ -481,6 +483,26 @@ export async function getAllDivinationRecords(): Promise<DivinationRecord[]> {
   const rows = [...await readStoreRowsFromAllDBs(DIVINATION_STORE), ...readLocalStorageRows(DIVINATION_STORE)]
   return uniqById(rows.map(normalizeDivinationRecord).filter((r): r is DivinationRecord => !!r))
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+}
+
+/** 合并服务端 + IndexedDB 算卦记录 */
+export async function getAllDivinationRecordsMerged(): Promise<DivinationRecord[]> {
+  // 登录后跳过 IndexedDB（服务器负责权限隔离）
+  const hasToken = !!localStorage.getItem('auth_token')
+  const local = hasToken ? [] : await getAllDivinationRecords()
+  try {
+    const api = await divApi()
+    const res = await api.getServerDivinationRecords()
+    const serverRecords: DivinationRecord[] = (res.records || []).map((r: any) => ({
+      id: r.id, type: r.type, method: r.method, question: r.question,
+      hexagramData: r.hexagramData, aiInterpretation: r.aiInterpretation,
+      label: r.label, createdAt: typeof r.createdAt === 'number' ? r.createdAt : new Date(r.createdAt || Date.now()).getTime(),
+    }))
+    const merged = new Map<string, DivinationRecord>()
+    for (const r of local) merged.set(r.id, r)
+    for (const r of serverRecords) merged.set(r.id, r)
+    return [...merged.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+  } catch { return local }
 }
 
 export async function getDivinationRecordsByType(type: 'liuyao' | 'meihua'): Promise<DivinationRecord[]> {

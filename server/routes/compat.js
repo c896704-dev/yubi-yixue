@@ -16,8 +16,9 @@ router.post('/records', (req, res) => {
     const deviceId = req.deviceId || '';
     const existing = db.prepare('SELECT id FROM compat_records WHERE id = ?').get(id);
     if (existing) {
-      db.prepare(`UPDATE compat_records SET male_data=?, female_data=?, result_data=?, ai_insight=?, label=?, user_id=COALESCE(?, user_id) WHERE id=?`)
-        .run(JSON.stringify(maleData), JSON.stringify(femaleData), JSON.stringify(resultData), aiInsight || null, label, req.userId || null, id);
+      // UPDATE 不改变 user_id（谁创建的归谁）
+      db.prepare(`UPDATE compat_records SET male_data=?, female_data=?, result_data=?, ai_insight=?, label=? WHERE id=?`)
+        .run(JSON.stringify(maleData), JSON.stringify(femaleData), JSON.stringify(resultData), aiInsight || null, label, id);
     } else {
       db.prepare(`INSERT INTO compat_records (id, user_id, device_id, male_data, female_data, result_data, ai_insight, label)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)

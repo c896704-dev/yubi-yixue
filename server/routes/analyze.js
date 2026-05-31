@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db.js';
+import { optionalAuth } from '../middleware/auth.js';
 import { runFengshuiAnalysis, runLocationAnalysis } from '../services/fengshui-engine.js';
 import {
   callQwenVision,
@@ -13,6 +14,7 @@ import {
 } from '../services/ai-service.js';
 
 const router = Router();
+router.use(optionalAuth);
 
 // 提取base64数据
 function extractBase64(image) {
@@ -29,12 +31,12 @@ function parseAIJson(content) {
 }
 
 // 保存分析结果到数据库
-function saveAnalysis(analysisId, deviceId, type, inputData, engineResult, aiReport) {
+function saveAnalysis(analysisId, deviceId, userId, type, inputData, engineResult, aiReport) {
   db.prepare(`
-    INSERT INTO analyses (id, device_id, type, input_data, overall_score, summary, detail_data, ai_report, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed')
+    INSERT INTO analyses (id, device_id, user_id, type, input_data, overall_score, summary, detail_data, ai_report, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')
   `).run(
-    analysisId, deviceId, type, JSON.stringify(inputData),
+    analysisId, deviceId, userId || null, type, JSON.stringify(inputData),
     engineResult.overallScore, engineResult.summary,
     JSON.stringify(engineResult), aiReport
   );
@@ -138,7 +140,7 @@ router.post('/layout', async (req, res) => {
     }
 
     // Step 4: 保存
-    saveAnalysis(analysisId, req.deviceId, 'layout', { orientation, buildingYear, mode, withBazi, birthData }, engineResult, aiReport);
+    saveAnalysis(analysisId, req.deviceId, req.userId, 'layout', { orientation, buildingYear, mode, withBazi, birthData }, engineResult, aiReport);
 
     res.json({
       success: true,
@@ -200,7 +202,7 @@ router.post('/location', async (req, res) => {
     }
 
     const engineResult = runLocationAnalysis({ environment, orientation, buildingYear, mode });
-    saveAnalysis(analysisId, req.deviceId, 'location', { description, orientation, buildingYear, mode }, engineResult, null);
+    saveAnalysis(analysisId, req.deviceId, req.userId, 'location', { description, orientation, buildingYear, mode }, engineResult, null);
 
     res.json({
       success: true,

@@ -3,7 +3,7 @@ import type { PersonInfo, AnalysisResult } from '../../types'
 import { analyzePerson } from '../../utils/analysis'
 import { renderEnhancedCompatibilityReport } from '../../utils/compatibility'
 import { useCompat } from '../../hooks/useBazi'
-import { getAllRecords, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
+import { getAllRecordsMerged, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
 import { buildCompatQASystemPrompt } from '../../utils/ai'
 import { deleteServerCompatRecord, getServerCompatRecords, saveServerCompatRecord } from '../../services/compatApi'
 import { ChatPanel } from '../../components/ui/ChatPanel'
@@ -38,7 +38,9 @@ export default function CompatPage() {
   }, [result, loading, restoreAiInsight])
 
   const refreshCompatRecords = useCallback(async () => {
-    const localRecords = await getAllCompatRecords()
+    const hasToken = !!localStorage.getItem('auth_token')
+    // 登录后只从服务端取（服务端负责权限隔离）
+    const localRecords = hasToken ? [] : await getAllCompatRecords()
     let serverRecords: CompatRecord[] = []
     try {
       const res = await getServerCompatRecords()
@@ -53,7 +55,11 @@ export default function CompatPage() {
     setCompatRecords([...merged.values()].sort((a, b) => b.createdAt - a.createdAt))
   }, [])
 
-  useEffect(() => { getAllRecords().then(setRecords).catch(() => setRecords([])); refreshCompatRecords() }, [refreshCompatRecords])
+  const authTokenCompat = localStorage.getItem('auth_token')
+  useEffect(() => {
+    getAllRecordsMerged().then(setRecords).catch(() => setRecords([]));
+    refreshCompatRecords()
+  }, [refreshCompatRecords, authTokenCompat])
 
   // Track the compat record that's waiting for AI insight
   const pendingRecordRef = useRef<CompatRecord | null>(null)

@@ -9,6 +9,7 @@ import CompatPage from './features/compat/CompatPage'
 import FengshuiPage from './features/fengshui/FengshuiPage'
 import { DivinationPage } from './features/divination/DivinationPage'
 import { useAuth } from './hooks/useAuth'
+import { migrateAllRecords } from './services/migrateService'
 
 type Tab = 'bazi' | 'compat' | 'fengshui' | 'divination'
 
@@ -31,7 +32,33 @@ function AppContent() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [migrating, setMigrating] = useState(false)
+  const [migrateResult, setMigrateResult] = useState<string | null>(null)
   const { user, logout } = useAuth()
+
+  // 管理员登录后，自动触发一次数据迁移
+  useEffect(() => {
+    if (user?.isAdmin) {
+      migrateAllRecords()
+        .then(r => {
+          const total = r.bazi + r.divination + r.compat
+          if (total > 0) setMigrateResult(`已迁移 ${total} 条记录到数据库`)
+        })
+        .catch(() => {})
+    }
+  }, [user?.isAdmin])
+
+  const handleMigrate = async () => {
+    setMigrating(true); setMigrateResult(null)
+    try {
+      const r = await migrateAllRecords()
+      setMigrateResult(`迁移完成：八字 ${r.bazi} 条、算卦 ${r.divination} 条、合盘 ${r.compat} 条（跳过 ${r.skipped} 条重复）`)
+    } catch (e: any) {
+      setMigrateResult(`迁移失败：${e.message}`)
+    } finally {
+      setMigrating(false)
+    }
+  }
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -68,8 +95,24 @@ function AppContent() {
           </nav>
 
           <div className="sidebar-footer">
+            {migrateResult && (
+              <div style={{ fontSize: 11, color: 'var(--tertiary)', padding: '4px 12px', lineHeight: 1.4 }}>{migrateResult}</div>
+            )}
             {user ? (
               <>
+                {user.isAdmin && (
+                  <button
+                    className="sidebar-user"
+                    onClick={handleMigrate}
+                    disabled={migrating}
+                    style={{ borderTop: '1px solid var(--border)', justifyContent: 'center', gap: 6, opacity: migrating ? 0.6 : 1 }}
+                  >
+                    <span style={{ fontSize: 14}}>⬆</span>
+                    <span style={{ fontSize: 12, color: 'var(--tertiary)' }}>
+                      {migrating ? '迁移中...' : '迁移浏览器数据'}
+                    </span>
+                  </button>
+                )}
                 <div className="sidebar-user" onClick={logout}>
                   <span style={{ fontSize: 13, color: 'var(--secondary)' }}>
                     {user.username} {user.isAdmin && '(管理员)'}

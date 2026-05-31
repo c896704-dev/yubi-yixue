@@ -65,9 +65,13 @@ export default function BaziPage() {
     }
   }, [result, loading, restoreAiInsight])
 
+  // 登录/登出时重新加载记录列表
+  const authToken = localStorage.getItem('auth_token')
+
   useEffect(() => {
     getAllRecordsMerged().then(setRecords).catch(() => setRecords([]))
-  }, [result, aiInsight])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, aiInsight, authToken])
 
   const fullReport = useMemo(() => {
     if (!result) return null

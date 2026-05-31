@@ -21,7 +21,7 @@ router.post('/register', (req, res) => {
     db.prepare('INSERT INTO users (id, email, username, password_hash) VALUES (?, ?, ?, ?)').run(id, email, username, passwordHash);
 
     const token = jwt.sign({ userId: id, email }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ success: true, data: { token, user: { id, email, username } } });
+    res.json({ success: true, data: { token, user: { id, email, username, isAdmin: email === ADMIN_EMAIL } } });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: '注册失败，请稍后重试' });
@@ -40,7 +40,7 @@ router.post('/login', (req, res) => {
     if (!valid) return res.status(401).json({ error: '邮箱或密码错误' });
 
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ success: true, data: { token, user: { id: user.id, email: user.email, username: user.username } } });
+    res.json({ success: true, data: { token, user: { id: user.id, email: user.email, username: user.username, isAdmin: user.email === ADMIN_EMAIL } } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: '登录失败，请稍后重试' });

@@ -22,8 +22,9 @@ router.post('/records', (req, res) => {
     const existing = db.prepare('SELECT id FROM bazi_records WHERE id = ?').get(id);
 
     if (existing) {
-      db.prepare(`UPDATE bazi_records SET person_data=?, result_data=?, label=?, user_id=COALESCE(?, user_id), ai_insight=COALESCE(?, ai_insight), created_at=datetime('now') WHERE id=?`)
-        .run(JSON.stringify(personData), resultData ? JSON.stringify(resultData) : null, label || '', userId, aiInsight || null, id);
+      // UPDATE 不改变 user_id（谁创建的永远归谁）
+      db.prepare(`UPDATE bazi_records SET person_data=?, result_data=?, label=?, ai_insight=COALESCE(?, ai_insight), created_at=datetime('now') WHERE id=?`)
+        .run(JSON.stringify(personData), resultData ? JSON.stringify(resultData) : null, label || '', aiInsight || null, id);
     } else {
       db.prepare(`INSERT INTO bazi_records (id, user_id, device_id, person_data, result_data, label, ai_insight)
         VALUES (?, ?, ?, ?, ?, ?, ?)`)

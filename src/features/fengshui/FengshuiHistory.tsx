@@ -22,10 +22,13 @@ export function FengshuiHistory({ onViewDetail }: FengshuiHistoryProps) {
   const { records, total, loading, fetchRecords, removeRecord } = useFengshuiHistory()
   const [page, setPage] = useState(0)
   const limit = 10
+  // 登录/登出时重新加载（让服务端重新按权限过滤）
+  const authToken = localStorage.getItem('auth_token')
 
   useEffect(() => {
     fetchRecords({ limit, offset: page * limit })
-  }, [page, fetchRecords])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, fetchRecords, authToken])
 
   return (
     <div className="flex flex-col gap-5">

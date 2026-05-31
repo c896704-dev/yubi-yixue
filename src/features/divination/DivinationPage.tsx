@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '../../components/ui/Button'
 import { LiuyaoPage } from './liuyao/LiuyaoPage'
 import { MeihuaPage } from './meihua/MeihuaPage'
-import { getAllDivinationRecords, deleteDivinationRecord, type DivinationRecord } from '../../utils/db'
+import { getAllDivinationRecordsMerged, deleteDivinationRecord, type DivinationRecord } from '../../utils/db'
 
 type View = 'hub' | 'liuyao' | 'meihua'
 
@@ -12,8 +12,10 @@ export function DivinationPage() {
   const [showHistory, setShowHistory] = useState(true)
   const [viewingRecord, setViewingRecord] = useState<DivinationRecord | null>(null)
 
-  const loadHistory = () => getAllDivinationRecords().then(setHistory).catch(() => setHistory([]))
-  useEffect(() => { loadHistory() }, [])
+  const loadHistory = () => getAllDivinationRecordsMerged().then(setHistory).catch(() => setHistory([]))
+  // 登录/登出时重新加载
+  const authToken = localStorage.getItem('auth_token')
+  useEffect(() => { loadHistory() }, [authToken])
 
   const goHub = () => { setView('hub'); setViewingRecord(null); loadHistory() }
 

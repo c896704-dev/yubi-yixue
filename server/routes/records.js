@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import db from '../db.js';
+import { optionalAuth, ADMIN_EMAIL } from '../middleware/auth.js';
 
 const router = Router();
+router.use(optionalAuth);
+
+function canSeeAll(req) { return req.isAdmin || req.userEmail === ADMIN_EMAIL; }
 
 // 获取历史记录列表
 router.get('/', (req, res) => {
@@ -19,6 +23,17 @@ router.get('/', (req, res) => {
     if (type) {
       query += ' AND a.type = ?';
       params.push(type);
+    }
+
+    // 用户隔离：管理员看全部，普通登录用户看自己的，匿名看当前设备
+    if (!canSeeAll(req)) {
+      if (req.userId) {
+        query += ' AND a.user_id = ?';
+        params.push(req.userId);
+      } else {
+        query += ' AND a.device_id = ?';
+        params.push(req.deviceId || '');
+      }
     }
 
     query += ' ORDER BY a.created_at DESC LIMIT ? OFFSET ?';
@@ -75,14 +90,12 @@ router.get('/:id', (req, res) => {
 // 删除单条记录
 router.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare(
-      'DELETE FROM analyses WHERE id = ?'
-    ).run(req.params.id);
-
-    if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: '记录不存在' });
+    const existing = db.prepare('SELECT id, device_id FROM analyses WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, error: '记录不存在' });
+    if (!canSeeAll(req) && existing.device_id !== (req.deviceId || '')) {
+      return res.status(403).json({ error: '无权删除此记录' });
     }
-
+    db.prepare('DELETE FROM analyses WHERE id = ?').run(req.params.id);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

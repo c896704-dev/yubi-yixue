@@ -15,12 +15,19 @@ router.post('/records', (req, res) => {
     if (!['liuyao', 'meihua'].includes(type)) return res.status(400).json({ error: '无效的算卦类型' });
 
     const deviceId = req.deviceId || '';
-    db.prepare(`INSERT OR REPLACE INTO divination_records
-      (id, user_id, device_id, type, method, question, hexagram_data, ai_interpretation, label, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(id, req.userId || null, deviceId, type, method, question || null,
-        JSON.stringify(hexagramData), aiInterpretation || null, label || '',
-        createdAt ? new Date(createdAt).toISOString() : new Date().toISOString());
+    const existing_rec = db.prepare('SELECT id FROM divination_records WHERE id = ?').get(id);
+    if (existing_rec) {
+      // UPDATE 不改变 user_id（谁创建的归谁）
+      db.prepare(`UPDATE divination_records SET type=?, method=?, question=?, hexagram_data=?, ai_interpretation=?, label=?, created_at=? WHERE id=?`)
+        .run(type, method, question || null, JSON.stringify(hexagramData), aiInterpretation || null, label || '',
+          createdAt ? new Date(createdAt).toISOString() : new Date().toISOString(), id);
+    } else {
+      db.prepare(`INSERT INTO divination_records (id, user_id, device_id, type, method, question, hexagram_data, ai_interpretation, label, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(id, req.userId || null, deviceId, type, method, question || null,
+          JSON.stringify(hexagramData), aiInterpretation || null, label || '',
+          createdAt ? new Date(createdAt).toISOString() : new Date().toISOString());
+    }
     res.json({ success: true, id });
   } catch (error) {
     console.error('Save divination failed:', error);
