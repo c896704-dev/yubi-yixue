@@ -1,8 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDatabase } from './db.js';
 import { deviceMiddleware } from './middleware/device.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import analyzeRouter from './routes/analyze.js';
 import recordsRouter from './routes/records.js';
 import settingsRouter from './routes/settings.js';
@@ -33,6 +37,15 @@ app.use('/api/ai', aiRouter);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Serve production build in non-dev environments
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res, next) => {
+  // Don't catch API routes
+  if (_req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Initialize database
