@@ -67,6 +67,7 @@ export function initDatabase() {
       email TEXT UNIQUE NOT NULL,
       username TEXT NOT NULL,
       password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -125,6 +126,7 @@ export function initDatabase() {
   addColumnSafely('divination_records', 'device_id', 'TEXT');
   addColumnSafely('divination_records', 'label', 'TEXT');
   addColumnSafely('compat_records', 'device_id', 'TEXT');
+  addColumnSafely('users', 'role', 'TEXT NOT NULL DEFAULT \'user\'');
   // Create indexes after migration (safe for new tables via IF NOT EXISTS, requires column to exist)
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bazi_records_device ON bazi_records(device_id);
            CREATE INDEX IF NOT EXISTS idx_divination_device ON divination_records(device_id);

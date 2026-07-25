@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db.js';
 import { optionalAuth } from '../middleware/auth.js';
+import { handleError } from '../middleware/error-helper.js';
 import { runFengshuiAnalysis, runLocationAnalysis } from '../services/fengshui-engine.js';
 import {
   callQwenVision,
@@ -164,8 +165,7 @@ router.post('/layout', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Layout analysis error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    handleError(res, error, '户型分析');
   }
 });
 
@@ -218,8 +218,7 @@ router.post('/location', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Location analysis error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    handleError(res, error, '楼盘位置分析');
   }
 });
 
@@ -240,7 +239,7 @@ router.post('/ai-report', async (req, res) => {
       res.status(500).json({ success: false, error: result.error });
     }
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    handleError(res, error, 'AI 报告生成');
   }
 });
 

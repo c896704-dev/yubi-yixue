@@ -5,7 +5,17 @@ import db, { initDatabase } from './db.js';
 
 const ADMIN_EMAIL = 'cyh20101224@126.com';
 const ADMIN_USERNAME = '管理员';
-const ADMIN_PASSWORD = process.env.ADMIN_INIT_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_INIT_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[FATAL] 生产环境首次运行必须设置 ADMIN_INIT_PASSWORD 环境变量');
+    process.exit(1);
+  }
+  console.warn('[WARN] ADMIN_INIT_PASSWORD 未设置，使用开发默认密码。生产环境请务必配置！');
+}
+
+const effectivePassword = ADMIN_PASSWORD || 'admin123-dev-only';
 
 initDatabase();
 
@@ -20,10 +30,10 @@ if (existingAdmin) {
   console.log(`管理员用户已存在: ${ADMIN_EMAIL} (id=${adminId})`);
 } else {
   adminId = uuidv4();
-  const hash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
-  db.prepare('INSERT OR IGNORE INTO users (id, email, username, password_hash) VALUES (?, ?, ?, ?)')
-    .run(adminId, ADMIN_EMAIL, ADMIN_USERNAME, hash);
-  console.log(`已创建管理员用户: ${ADMIN_EMAIL} / 密码: ${ADMIN_PASSWORD}`);
+  const hash = bcrypt.hashSync(effectivePassword, 10);
+  db.prepare('INSERT OR IGNORE INTO users (id, email, username, password_hash, role) VALUES (?, ?, ?, ?, ?)')
+    .run(adminId, ADMIN_EMAIL, ADMIN_USERNAME, hash, 'admin');
+  console.log(`已创建管理员用户: ${ADMIN_EMAIL}（请立即修改密码）`);
 }
 
 // 2. Migrate all orphan records (user_id IS NULL) to admin
