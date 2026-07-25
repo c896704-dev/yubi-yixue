@@ -143,7 +143,6 @@ export default function BaziPage() {
             <Button variant="secondary" onClick={handleReset}>重新排盘</Button>
             <Button variant="ghost" onClick={() => window.print()}>打印报告</Button>
           </div>
-          {/* 浮动 AI 解惑助手（fixed 定位，脱离文档流） */}
           <BaziChat result={result} />
         </>
       )}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef, type CSSProperties } from 'react'
+import { useState, useCallback, useEffect, useMemo, type CSSProperties } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Loading } from '../../../components/ui/Loading'
@@ -85,31 +85,28 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
     return buildMeihuaCodeAnalysis(result)
   }, [result])
 
-  const recordIdRef = useRef<string | null>(null)
-
   /** 自动 AI 解读 */
   const autoInterpret = useCallback(async (r: MeihuaResult, q: string) => {
     if (!q.trim()) return
     setInterpreting(true)
     setInterpretError(null)
-
-    // 第一步：先生成 id 和 label，立即保存基础记录
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-    const label = `${r.originalHexagram.name} 之 ${r.changedHexagram.name}`
-    recordIdRef.current = id
-
-    const record: DivinationRecord = {
-      id, type: 'meihua', method: r.method, question: q,
-      hexagramData: r, aiInterpretation: null, createdAt: Date.now(), label,
-    }
-    await saveDivinationRecord(record)
-
-    // 第二步：请求 AI，完成后更新记录
     try {
       const ma = buildMeihuaCodeAnalysis(r)
       const text = await generateMeihuaInterpretation(r, q, omen, ma)
       setInterpretation(text)
-      await saveDivinationRecord({ ...record, aiInterpretation: text })
+      // 自动保存记录
+      const label = `${r.originalHexagram.name} 之 ${r.changedHexagram.name}`
+      const record: DivinationRecord = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+        type: 'meihua',
+        method: r.method,
+        question: q,
+        hexagramData: r,
+        aiInterpretation: text,
+        createdAt: Date.now(),
+        label,
+      }
+      await saveDivinationRecord(record)
     } catch (e: any) {
       setInterpretError(e.message || 'AI解读失败')
     } finally {

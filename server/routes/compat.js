@@ -1,12 +1,11 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { optionalAuth } from '../middleware/auth.js';
-import { handleError } from '../middleware/error-helper.js';
+import { optionalAuth, ADMIN_EMAIL } from '../middleware/auth.js';
 
 const router = Router();
 router.use(optionalAuth);
 
-function canSeeAll(req) { return req.isAdmin; }
+function canSeeAll(req) { return req.isAdmin || req.userEmail === ADMIN_EMAIL; }
 
 /** Save (always works) */
 router.post('/records', (req, res) => {
@@ -28,7 +27,7 @@ router.post('/records', (req, res) => {
     }
     res.json({ success: true, id });
   } catch (e) {
-    handleError(res, e, '保存合盘记录');
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -50,7 +49,7 @@ router.get('/records', (req, res) => {
       createdAt: r.created_at, userId: r.user_id,
     }))});
   } catch (e) {
-    handleError(res, e, '获取合盘记录');
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -68,7 +67,7 @@ router.delete('/records/:id', (req, res) => {
     db.prepare('DELETE FROM compat_records WHERE id = ?').run(req.params.id);
     res.json({ success: true });
   } catch (e) {
-    handleError(res, e, '删除合盘记录');
+    res.status(500).json({ error: e.message });
   }
 });
 

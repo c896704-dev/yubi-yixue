@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { handleError } from '../middleware/error-helper.js';
 
 const router = Router();
 
@@ -13,7 +12,7 @@ router.post('/device', (req, res) => {
     const device = db.prepare('SELECT * FROM devices WHERE id = ?').get(req.deviceId);
     res.json({ success: true, data: device });
   } catch (error) {
-    handleError(res, error, '更新设备信息');
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -23,7 +22,7 @@ router.get('/device', (req, res) => {
     const device = db.prepare('SELECT * FROM devices WHERE id = ?').get(req.deviceId);
     res.json({ success: true, data: device });
   } catch (error) {
-    handleError(res, error, '获取设备信息');
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

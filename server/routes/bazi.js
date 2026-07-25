@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { optionalAuth } from '../middleware/auth.js';
-import { handleError } from '../middleware/error-helper.js';
+import { optionalAuth, ADMIN_EMAIL } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -9,7 +8,7 @@ const router = Router();
 router.use(optionalAuth);
 
 function canSeeAll(req) {
-  return req.isAdmin;
+  return req.isAdmin || req.userEmail === ADMIN_EMAIL;
 }
 
 /** 保存八字排盘记录 */
@@ -34,7 +33,7 @@ router.post('/records', (req, res) => {
     }
     res.json({ success: true, id });
   } catch (e) {
-    handleError(res, e, '保存八字记录');
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -58,7 +57,7 @@ router.get('/records', (req, res) => {
       label: r.label, createdAt: r.created_at, userId: r.user_id,
     }))});
   } catch (e) {
-    handleError(res, e, '获取八字记录');
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -79,7 +78,7 @@ router.delete('/records/:id', (req, res) => {
     db.prepare('DELETE FROM bazi_records WHERE id = ?').run(req.params.id);
     res.json({ success: true });
   } catch (e) {
-    handleError(res, e, '删除八字记录');
+    res.status(500).json({ error: e.message });
   }
 });
 

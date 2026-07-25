@@ -1,4 +1,3 @@
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd /Users/camellia/Desktop/Code/CC/yubi-yixue
 npx vite --port 5173 --strictPort

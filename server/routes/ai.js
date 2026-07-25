@@ -1,8 +1,6 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
-router.use(authMiddleware);
 
 function getAiConfig() {
   const baseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';

@@ -1,12 +1,11 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { optionalAuth, authMiddleware } from '../middleware/auth.js';
-import { handleError } from '../middleware/error-helper.js';
+import { optionalAuth, ADMIN_EMAIL } from '../middleware/auth.js';
 
 const router = Router();
 router.use(optionalAuth);
 
-function canSeeAll(req) { return req.isAdmin; }
+function canSeeAll(req) { return req.isAdmin || req.userEmail === ADMIN_EMAIL; }
 
 // 获取历史记录列表
 router.get('/', (req, res) => {
@@ -70,13 +69,6 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({ success: false, error: '记录不存在' });
     }
 
-    const isAdmin = canSeeAll(req);
-    const isOwner = req.userId && analysis.user_id === req.userId;
-    const isDeviceOwner = !req.userId && analysis.device_id === (req.deviceId || '');
-    if (!isAdmin && !isOwner && !isDeviceOwner) {
-      return res.status(403).json({ error: '无权查看此记录' });
-    }
-
     const suggestions = db.prepare(
       'SELECT * FROM suggestions WHERE analysis_id = ? ORDER BY CASE priority WHEN \'high\' THEN 1 WHEN \'medium\' THEN 2 ELSE 3 END'
     ).all(req.params.id);
@@ -106,22 +98,19 @@ router.delete('/:id', (req, res) => {
     db.prepare('DELETE FROM analyses WHERE id = ?').run(req.params.id);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    handleError(res, error, '删除记录');
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// 清空所有记录（仅管理员）
-router.delete('/', authMiddleware, (req, res) => {
+// 清空所有记录
+router.delete('/', (req, res) => {
   try {
-    if (!canSeeAll(req)) {
-      return res.status(403).json({ error: '仅管理员可清空所有记录' });
-    }
     db.prepare('DELETE FROM suggestions WHERE analysis_id IN (SELECT id FROM analyses)').run();
     db.prepare('DELETE FROM analyses').run();
 
     res.json({ success: true, message: '已清空所有记录' });
   } catch (error) {
-    handleError(res, error, '获取记录详情');
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

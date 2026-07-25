@@ -45,7 +45,7 @@ export function ChatPanel({ mode, systemPrompt, suggestions = [] }: ChatPanelPro
         className="chat-toggle"
         title={`AI ${mode}`}
       >
-        <span style={{ fontFamily: '-apple-system, "Noto Serif SC", serif', fontSize: 13, fontWeight: 700, userSelect: 'none', lineHeight: 1, letterSpacing: '0.02em' }}>解惑</span>
+        <span style={{ fontFamily: 'var(--font-title)', fontSize: 18, fontWeight: 700, userSelect: 'none', lineHeight: 1 }}>灵</span>
       </button>
     )
   }
@@ -54,7 +54,7 @@ export function ChatPanel({ mode, systemPrompt, suggestions = [] }: ChatPanelPro
     <div className="chat-panel">
       <div className="chat-head">
         <div className="chat-head-left">
-          <span className="chat-icon">解</span>
+          <span className="chat-icon">灵</span>
           <span className="chat-title">AI {mode}</span>
         </div>
         <button onClick={() => setOpen(false)} className="modal-close">✕</button>
