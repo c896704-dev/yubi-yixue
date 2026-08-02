@@ -35,8 +35,8 @@ export function useBazi() {
     try {
       const insight = await generateBaziInsight(report, `${person.name}，${person.gender}，生于${person.birthYear}年`)
       setAiInsight(insight)
-      // Persist AI insight to both IndexedDB and server
-      saveRecord(person, analysisResultRef.current || undefined, insight).catch(() => {})
+      // 更新已保存的记录（补齐 AI 解读和结果数据）
+      await saveRecord(person, analysisResultRef.current || undefined, insight)
     } catch (e: any) {
       setAiError(e.message || 'AI 分析失败')
     } finally {

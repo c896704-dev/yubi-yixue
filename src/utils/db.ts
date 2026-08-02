@@ -3,7 +3,7 @@
  * 用于持久化保存排盘记录，支持历史查询、快速加载、删除
  */
 
-import type { PersonInfo, AnalysisResult } from '../types'
+import type { PersonInfo } from '../types'
 
 const DB_NAME = 'yubi-panguan'
 const DB_VERSION = 4
@@ -477,6 +477,11 @@ export async function saveDivinationRecord(record: DivinationRecord): Promise<vo
   store.put(record)
   await waitTx(tx)
   db.close()
+  // 同步到服务器（await 确保保存完成才返回）
+  try {
+    const api = await divApi()
+    await api.saveServerDivinationRecord(record)
+  } catch { /* server save best-effort */ }
 }
 
 export async function getAllDivinationRecords(): Promise<DivinationRecord[]> {
@@ -517,6 +522,11 @@ export async function deleteDivinationRecord(id: string): Promise<void> {
   store.delete(id)
   await waitTx(tx)
   db.close()
+  // 同步到服务器（await 确保完成）
+  try {
+    const api = await divApi()
+    await api.deleteServerDivinationRecord(id)
+  } catch { /* best-effort */ }
 }
 
 // ──────────────── 合盘记录 ────────────────

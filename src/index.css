@@ -1176,7 +1176,7 @@ textarea.field { resize: vertical; min-height: 80px; }
 .chat-toggle {
   position: fixed;
   bottom: var(--space-lg); right: var(--space-lg);
-  z-index: 35;
+  z-index: 45;
   width: 52px; height: 52px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
@@ -1194,7 +1194,7 @@ textarea.field { resize: vertical; min-height: 80px; }
 .chat-panel {
   position: fixed;
   bottom: 88px; right: var(--space-lg);
-  z-index: 35;
+  z-index: 45;
   width: 360px;
   max-width: calc(100vw - 32px);
   height: 480px;
@@ -1486,8 +1486,8 @@ textarea.field { resize: vertical; min-height: 80px; }
    ═══════════════════════════════════════════════════════════════ */
 
 @keyframes appleFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes appleScaleIn {

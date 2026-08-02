@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Loading } from '../../../components/ui/Loading'
@@ -100,29 +100,33 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
     return buildLiuyaoCodeAnalysis(result, question)
   }, [result, question])
 
+  const recordIdRef = useRef<string | null>(null)
+
   /** 自动 AI 解读 */
   const autoInterpret = useCallback(async (r: LiuyaoResult, q: string) => {
     if (!q.trim()) return // 未填问题则跳过AI解读
     setInterpreting(true)
     setInterpretError(null)
+
+    // 第一步：先生成 id 和 label
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+    const label = `${r.originalName}${r.changedName ? ' 之 ' + r.changedName : ''}`
+    recordIdRef.current = id
+
+    // 第二步：立即保存基础记录（不含 AI 解读）
+    const record: DivinationRecord = {
+      id, type: 'liuyao', method: r.method, question: q,
+      hexagramData: r, aiInterpretation: null, createdAt: Date.now(), label,
+    }
+    await saveDivinationRecord(record)
+
+    // 第三步：请求 AI，完成后更新记录
     try {
-      // 构建代码层分析
       const codeAnalysis = buildLiuyaoCodeAnalysis(r, q)
       const text = await generateLiuyaoInterpretation(r, q, undefined, codeAnalysis)
       setInterpretation(text)
-      // 自动保存记录
-      const label = `${r.originalName}${r.changedName ? ' 之 ' + r.changedName : ''}`
-      const record: DivinationRecord = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-        type: 'liuyao',
-        method: r.method,
-        question: q,
-        hexagramData: r,
-        aiInterpretation: text,
-        createdAt: Date.now(),
-        label,
-      }
-      await saveDivinationRecord(record)
+      // 用 AI 解读更新已保存的记录
+      await saveDivinationRecord({ ...record, aiInterpretation: text })
     } catch (e: any) {
       setInterpretError(e.message || 'AI解读失败')
     } finally {
