@@ -46,15 +46,15 @@ export function analyzePerson(person: PersonInfo): AnalysisResult {
   // 1. 旺衰判定（多维度综合加权法：月令+根气+生助+三围生克+连锁惩罚+寒暖修正）
   const strengthDetail = judgeBodyStrength(bazi)
 
-  // 2. 用神判定（四维加权：扶抑+调候+通关+病药）
-  const yongShen = determineYongShen(bazi, strengthDetail, fiveElementDistribution)
-
-  // 3. 格局判定（正八格 + 特殊格局）
+  // 2. 格局判定（正八格 + 特殊格局）——特殊格局需在用神判定前得出
   const geJu = determineGeJu(bazi)
   const specialGeJu = isCongGe(bazi, strengthDetail.totalScore)
     || isZhuanWangGe(bazi, fiveElementDistribution)
     || isHuaQiGe(bazi, fiveElementDistribution)
     || undefined
+
+  // 3. 用神判定（四维加权：扶抑+调候+通关+病药；从格/专旺格走特殊取法）
+  const yongShen = determineYongShen(bazi, strengthDetail, fiveElementDistribution, specialGeJu)
 
   // 4. 神煞（带上下文深度解读）
   const shenSha = calculateShenSha(
@@ -148,10 +148,13 @@ function generateWarnings(bazi: BaziChart, strength: string): string[] {
     warnings.push(`五行偏枯：${maxElem[0]}过旺，${maxElem[0]}对应的脏腑和运势需格外注意调理`)
   }
 
-  // 日主无根
-  const dayBranchElem = bazi.day.branchElement
-  if (dayBranchElem !== dmElem && strength === '身弱') {
-    warnings.push('日主无根：日支不载日主之气，命主一生漂泊感强，早年根基不稳')
+  // 日主无根：检查四柱地支藏干是否藏有日主本气/中气/余气（用通根而非日支五行）
+  const dayMasterInHidden = (branch: EarthlyBranch) =>
+    (HIDDEN_STEMS[branch] ?? []).includes(bazi.dayMaster)
+  const hasRoot = [bazi.year.branch, bazi.month.branch, bazi.day.branch, bazi.hour.branch]
+    .some(dayMasterInHidden)
+  if (!hasRoot && strength === '身弱') {
+    warnings.push('日主无根：四柱地支无日主通根（日主之气虚浮无依），命主一生漂泊感强，早年根基不稳')
   }
 
   return warnings
@@ -315,7 +318,8 @@ export function renderFundamentalReport(result: AnalysisResult): string {
 
   // 格局
   if (result.specialGeJu) {
-    md += `> **特殊格局：** ⚠️ 此命为「**${result.specialGeJu}**」，非寻常格局，论断需格外谨慎。\n\n`
+    md += `> **特殊格局：** ⚠️ 此命为「**${result.specialGeJu}**」，非寻常格局，论断需格外谨慎。`
+    md += `喜忌取法特殊：**弃命从势，顺其势而逆扶抑**（喜用神 ${result.favorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')}，忌神 ${result.unfavorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')}）。\n\n`
   }
 
   // 寒暖燥湿

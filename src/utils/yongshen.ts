@@ -2,12 +2,71 @@
  * 用神判定引擎 — 基于《滴天髓》道有体用、《穷通宝鉴》调候
  *
  * 四维用神：扶抑 + 调候 + 通关 + 病药 → 加权综合
+ * 特殊格局（从格/专旺格）：弃命从势，喜忌反常规，优先于四维
  */
 
 import type { HeavenlyStem, EarthlyBranch, FiveElement } from '../constants'
 import { FIVE_ELEMENTS, STEM_ELEMENT } from '../constants'
 import type { BaziChart } from '../types'
 import type { StrengthResult } from './wangshuai'
+
+/** 五行生克 */
+function generates(a: FiveElement, b: FiveElement): boolean {
+  return (a === '木' && b === '火') || (a === '火' && b === '土') ||
+    (a === '土' && b === '金') || (a === '金' && b === '水') || (a === '水' && b === '木')
+}
+function controls(a: FiveElement, b: FiveElement): boolean {
+  return (a === '金' && b === '木') || (a === '木' && b === '土') ||
+    (a === '土' && b === '水') || (a === '水' && b === '火') || (a === '火' && b === '金')
+}
+
+// ============================================================
+// 特殊格局用神 — 从格 / 专旺格（弃命从势，喜忌反常规）
+// ============================================================
+
+/** 从格的喜用神：顺其势 —— 用神 = 命局最旺之势（从财/从官杀/从儿），
+ *  喜神 = 生助旺势者，忌神 = 生扶日主之比劫印（犯旺破格） */
+export function getCongGeYongShen(
+  specialGeJu: string,
+  dayMaster: HeavenlyStem,
+  dist: Record<FiveElement, number>,
+): { favorable: FiveElement[]; unfavorable: FiveElement[] } | null {
+  const dmElem = STEM_ELEMENT[dayMaster]
+
+  // 专旺格（曲直/炎上/稼穑/从革/润下）：日主一方独旺，喜比劫印（顺其旺势），忌克泄耗
+  const ZHUAN_WANG_NAMES = ['曲直格', '炎上格', '稼穑格', '从革格', '润下格']
+  if (ZHUAN_WANG_NAMES.includes(specialGeJu)) {
+    const helpful: FiveElement[] = [dmElem]
+    const generator = FIVE_ELEMENTS.find(e => generates(e, dmElem))
+    if (generator) helpful.push(generator)
+    const unfavorable = FIVE_ELEMENTS.filter(e => !helpful.includes(e) && e !== dmElem)
+    return { favorable: [...new Set(helpful)], unfavorable: [...new Set(unfavorable)] }
+  }
+
+  // 从格：日主弱极无依，从强旺之神
+  if (specialGeJu.startsWith('从')) {
+    // 找出最旺的五行作为所从之势
+    const sorted = Object.entries(dist).sort((a, b) => b[1] - a[1])
+    const strongest = sorted[0]![0] as FiveElement
+    if (strongest === dmElem) return null // 日主本身最旺，不成从格，回到常规
+
+    // 从财格 / 从官杀格 / 从儿格：最旺者即用神
+    const favorable = [strongest]
+    // 喜神：生助最旺之势者（从财喜食伤，从官杀喜财，从儿喜食伤）
+    const supporter = FIVE_ELEMENTS.find(e => generates(e, strongest))
+    if (supporter && supporter !== dmElem) favorable.push(supporter)
+    // 忌神：生扶弱极日主之比劫、印星（犯旺破格），及克制所从之势者（破格）
+    const unfavorable = FIVE_ELEMENTS.filter(e => {
+      if (e === dmElem) return true // 比劫
+      if (generates(e, dmElem)) return true // 印星
+      if (controls(e, strongest)) return true // 克所从之势（如从官杀格之食伤）
+      return false
+    })
+    return { favorable: [...new Set(favorable)], unfavorable: [...new Set(unfavorable)] }
+  }
+
+  return null
+}
 
 // ============================================================
 // 1. 扶抑用神（身强克泄耗，身弱生扶）
@@ -208,14 +267,18 @@ export function getBingYaoYongShen(
 
     // 如果最弱五行生（生）日主→且日主已身强 → 不添加（再生日主会加剧身强）
     const minGeneratesDm = generatesMap[minElem] === dmElem
-    // 如果日主克（克）最弱五行→且日主身弱 → 不添加（日主已弱，不能再耗）
+    // 日主克最弱五行 → 日主泄气于它，生扶最弱五行可通关调和（如财多身弱补财源之根）
     const dmControlsMin = controlsMap[dmElem] === minElem
 
     if (isStrong && minGeneratesDm) {
       // 身强+最弱五行生身 → 不添加（会助长日主过旺）
       // e.g., 甲木身强+水枯→水生木，加水会助长木的过旺
-    } else if (isWeak && dmControlsMin) {
-      // 身弱+日主克最弱五行 → 不添加（会进一步消耗日主）
+    } else if (isWeak && minGeneratesDm) {
+      // 身弱+最弱五行生日主 → 最弱已帮身有限，且弱印被克泄，生扶意义不大；且会为日主招克
+      // 不添加
+    } else if (dmControlsMin && isWeak) {
+      // 身弱+日主克最弱五行 → 财星太弱而身不胜财，生扶财星反助日主耗泄；
+      // 但财弱本身非日主之患，此处不加
     } else {
       results.push(minElem)
     }
@@ -265,15 +328,42 @@ export interface YongShenResult {
  * 1. 病药 > 调候 > 扶抑 > 通关
  * 2. 若通关用神会生助忌神 → 舍弃该通关用神
  * 3. 若扶抑用神输出 ≥ 4 个五行 → 仅取得分最高的前 2 个
+ *
+ * 特殊格局（从格/专旺格）：弃命从势，喜忌反常规，直接采用特殊取法，跳过四维
  */
 export function determineYongShen(
   bazi: BaziChart,
   strength: StrengthResult,
   fiveElementDist: Record<FiveElement, number>,
+  specialGeJu?: string,
 ): YongShenResult {
   const dm = bazi.dayMaster
   const monthBranch = bazi.month.branch
   const dmElem = STEM_ELEMENT[dm]
+
+  // === 特殊格局优先：从格 / 专旺格 ===
+  const ZHUAN_WANG_NAMES = ['曲直格', '炎上格', '稼穑格', '从革格', '润下格']
+  if (specialGeJu && (specialGeJu.startsWith('从') || ZHUAN_WANG_NAMES.includes(specialGeJu))) {
+    const special = getCongGeYongShen(specialGeJu, dm, fiveElementDist)
+    if (special) {
+      const commentary = [
+        `特殊格局「${specialGeJu}」：弃命从势，喜忌反常规`,
+        `喜用神（顺其势）：${special.favorable.join('、')}`,
+        `忌神（犯旺破格）：${special.unfavorable.join('、')}`,
+      ]
+      return {
+        favorable: special.favorable,
+        unfavorable: special.unfavorable,
+        tiaoHou: [],
+        tiaoHouStems: [],
+        tongGuan: [],
+        bingYao: [],
+        fuYi: [],
+        scores: [],
+        commentary,
+      }
+    }
+  }
 
   // 四种用神分别计算
   const fuYi = getFuYiYongShen(strength.strength, dm)
@@ -283,21 +373,14 @@ export function determineYongShen(
 
   // === 冲突消解 ===
 
-  // 找出命局中最旺的忌神
+  // 找出命局中最旺的五行
   const sortedDist = Object.entries(fiveElementDist).sort((a, b) => b[1] - a[1])
   const strongestElem = sortedDist[0]![0] as FiveElement
   const dmIsStrongest = strongestElem === dmElem
 
-  // 判断最旺五行是否是忌神（非日主五行且克/耗日主）
-  const generates = (a: FiveElement, b: FiveElement) =>
-    (a === '木' && b === '火') || (a === '火' && b === '土') ||
-    (a === '土' && b === '金') || (a === '金' && b === '水') || (a === '水' && b === '木')
-  const controls = (a: FiveElement, b: FiveElement) =>
-    (a === '金' && b === '木') || (a === '木' && b === '土') ||
-    (a === '土' && b === '水') || (a === '水' && b === '火') || (a === '火' && b === '金')
-
+  // 判断最旺五行是否为忌神（非日主五行，且克/耗日主；相生者不算忌神）
   const strongestIsBad = !dmIsStrongest &&
-    (controls(strongestElem, dmElem) || (fiveElementDist[strongestElem] > 6 && !generates(dmElem, strongestElem) && !generates(strongestElem, dmElem)))
+    (controls(strongestElem, dmElem) || (generates(dmElem, strongestElem) && strength.strength !== '身强' && strength.strength !== '身偏旺'))
 
   // 冲突消解1：排除会生助忌神的通关用神
   if (strongestIsBad) {
@@ -310,26 +393,10 @@ export function determineYongShen(
     filteredFuYi = fuYi.slice(0, 2)
   }
 
-  // 冲突消解3：身强日主——生日的元素不应为喜用（会加剧过旺）
-  // 只有调候刚需（如冬木需火）可以例外
-  const isStrong = strength.strength === '身强' || strength.strength === '身偏旺'
-  if (isStrong) {
-    // 找出所有生成日主的元素
-    const generators = FIVE_ELEMENTS.filter(e => generates(e, dmElem))
-    // 从病药中排除那些会生助过旺日主的元素（除非调候刚需）
-    // 已在 getBingYaoYongShen 中处理，此处做二次校验
-    for (const gen of generators) {
-      // 如果某元素在病药中且生成日主→移除（除非调候必需）
-      if (bingYao.includes(gen) && !tiaoHou.includes(gen)) {
-        // 已在病药函数中过滤，此处标记
-      }
-    }
-  }
-
-  // 加权计算（病药权重提高）
+  // 加权计算（调候为急：调候权重最高，极端寒暖燥湿时保底入喜用）
   const scores: YongShenScore[] = FIVE_ELEMENTS.map(elem => {
-    const fy = filteredFuYi.includes(elem) ? 25 : 0
-    const th = tiaoHou.includes(elem) ? 30 : 0
+    const fy = filteredFuYi.includes(elem) ? 20 : 0
+    const th = tiaoHou.includes(elem) ? 35 : 0
     const tg = tongGuan.includes(elem) ? 15 : 0
     const by = bingYao.includes(elem) ? 30 : 0
     return { element: elem, fuYi: fy, tiaoHou: th, tongGuan: tg, bingYao: by, total: fy + th + tg + by }
@@ -339,8 +406,27 @@ export function determineYongShen(
   scores.sort((a, b) => b.total - a.total)
   const favorable = scores.slice(0, 2).filter(s => s.total > 0).map(s => s.element)
 
+  // 调候保底：极端寒暖（三冬/三夏，且对应调候元素在命局中偏弱）时，
+  // 调候用神必须保留在喜用中（《穷通宝鉴》"调候为急"）
+  const coldMonths: EarthlyBranch[] = ['亥', '子', '丑']
+  const hotMonths: EarthlyBranch[] = ['巳', '午', '未']
+  const extremeClimate =
+    (coldMonths.includes(monthBranch) && fiveElementDist['火'] < 3) ||
+    (hotMonths.includes(monthBranch) && fiveElementDist['水'] < 3)
+  if (extremeClimate && tiaoHou.length > 0) {
+    for (const th of tiaoHou) {
+      if (!favorable.includes(th)) favorable.push(th)
+    }
+    // 喜用至多3个
+    if (favorable.length > 3) favorable.length = 3
+  }
+
   // 忌神 = 非喜用且得分最低的
   const unfavorable = scores.filter(s => !favorable.includes(s.element)).slice(-2).map(s => s.element)
+
+  const climateNote = extremeClimate
+    ? `调候保底：${coldMonths.includes(monthBranch) ? '三冬寒局' : '三夏燥局'}，${tiaoHou.join('、')}为调候之必需，强制保留为喜用`
+    : ''
 
   const commentary = [
     `扶抑用神（身${strength.strength}）：${filteredFuYi.join('、')}${fuYi.length !== filteredFuYi.length ? `（原为${fuYi.join('、')}，经消解精简）` : ''}`,
@@ -348,6 +434,7 @@ export function determineYongShen(
     `通关用神：${tongGuan.length > 0 ? tongGuan.join('、') : '命局无明显相战或通关用神已消解'}`,
     `病药用神：${bingYao.length > 0 ? bingYao.join('、') : '命局五行无明显偏枯'}`,
     strongestIsBad ? `冲突消解：${strongestElem}为命局最旺忌神，排除生助${strongestElem}的用神` : '',
+    climateNote,
     `综合喜用神：${favorable.join('、')} | 忌神：${unfavorable.join('、')}`,
   ].filter(Boolean)
 

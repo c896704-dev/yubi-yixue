@@ -63,12 +63,17 @@ const MONTH_ELEMENT_MAP: Record<EarthlyBranch, FiveElement> = {
 type WangXiang = '旺' | '相' | '休' | '囚' | '死'
 
 const WANG_XIANG_SCORE: Record<WangXiang, number> = {
-  '旺': 6, '相': 4, '休': 1, '囚': -4, '死': -6,
+  '旺': 10, '相': 6, '休': 2, '囚': -4, '死': -6,
 }
 
 /** 判断某五行在月令的旺相休囚死 */
 export function getWangXiang(element: FiveElement, monthBranch: EarthlyBranch): WangXiang {
   const monthElem = MONTH_ELEMENT_MAP[monthBranch]
+  // 辰戌丑未四墓月：本气为土，但以"余气旺相"为法——日主若为木（辰）、金（戌）、
+  // 水（丑）、火（未），在墓月仍有余气之根（如木生辰月得乙木余气），不按"死"论
+  const tombBranches: Partial<Record<EarthlyBranch, FiveElement>> = {
+    '辰': '木', '戌': '金', '丑': '水', '未': '火',
+  }
 
   // 当令者旺
   if (element === monthElem) return '旺'
@@ -88,7 +93,9 @@ export function getWangXiang(element: FiveElement, monthBranch: EarthlyBranch): 
     (a === '水' && b === '火') || (a === '火' && b === '金') || (a === '金' && b === '木')
   if (controls(element, monthElem)) return '囚'
 
-  // 我克者死
+  // 我克者死；但墓月余气之五行不作"死"而作"囚"
+  if (tombBranches[monthBranch] === element) return '囚'
+
   return '死'
 }
 
@@ -104,6 +111,9 @@ interface RootDetail {
   score: number
 }
 
+/** 地支通根位置权重（日支最近最强，年支最远最弱） */
+const ROOT_POSITION_WEIGHT: number[] = [0.6, 1, 1.25, 0.8] // 年、月、日、时
+
 /** 计算日主天干在地支的根气总分 */
 export function getRootScore(dayMaster: HeavenlyStem, pillars: Pillar[]): { total: number; details: RootDetail[] } {
   const details: RootDetail[] = []
@@ -116,44 +126,58 @@ export function getRootScore(dayMaster: HeavenlyStem, pillars: Pillar[]): { tota
     const p = pillarsArr[i]!
     const branch = p.branch
     const hidden = p.hiddenStems
+    const posWeight = ROOT_POSITION_WEIGHT[i]!
+
+    // 禄刃根（临官/帝旺）：天干同五行强根，此时地支五行必与日主同类，藏干本气亦为日主
+    // ——先判禄刃，避免与下方本气根重复计分
+    const gong = SHI_ER_CHANG_SHENG[dayMaster][branch]
+    if (gong === '临官' || gong === '帝旺') {
+      const score = 4 * posWeight
+      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: gong === '临官' ? '禄根（临官）' : '刃根（帝旺）', score: Math.round(score * 10) / 10 })
+      total += score
+      continue
+    }
+
+    // 长生根：阳干顺行十二宫之长生气（如甲长生亥），为生旺之根，力次禄刃。
+    // 阴干长生按"阳顺阴逆"说视为余气之位（如己长生酉，实际力弱），故减半
+    if (gong === '长生') {
+      const isYinStem = HEAVENLY_STEMS.indexOf(dayMaster) % 2 === 1
+      const base = isYinStem ? 1.25 : 2.5
+      const score = base * posWeight
+      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '长生根', score: Math.round(score * 10) / 10 })
+      total += score
+      continue
+    }
+
+    // 墓库根：库中藏日主本气（如甲木墓未），"得一比肩不如得支中一墓库"，力同中气
+    if (gong === '墓') {
+      const score = 1.5 * posWeight
+      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '墓库根', score: Math.round(score * 10) / 10 })
+      total += score
+      continue
+    }
 
     // 1. 本气根：藏干主气（第一藏干）与日主相同
     if (hidden[0] === dayMaster) {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '本气根', score: 3 })
-      total += 3
+      const score = 3 * posWeight
+      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '本气根', score: Math.round(score * 10) / 10 })
+      total += score
       continue
     }
 
     // 2. 中气根
     if (hidden[1] === dayMaster) {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '中气根', score: 1 })
-      total += 1
+      const score = 1 * posWeight
+      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '中气根', score: Math.round(score * 10) / 10 })
+      total += score
       continue
     }
 
     // 3. 余气根
     if (hidden[2] === dayMaster) {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '余气根', score: 0.5 })
-      total += 0.5
-      continue
-    }
-
-    // 4. 禄刃根：地支为日主之临官（禄）或帝旺（刃）
-    const gong = SHI_ER_CHANG_SHENG[dayMaster][branch]
-    if (gong === '临官') {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '禄根（临官）', score: 4 })
-      total += 4
-    } else if (gong === '帝旺') {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '刃根（帝旺）', score: 4 })
-      total += 4
-    } else if (gong === '长生') {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '长生根', score: 2 })
-      total += 2
-    }
-    // 墓库根
-    else if (gong === '墓') {
-      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '墓库根', score: 1.5 })
-      total += 1.5
+      const score = 0.5 * posWeight
+      details.push({ pillar: pillarLabel[i]!, branch, hiddenStems: hidden, rootType: '余气根', score: Math.round(score * 10) / 10 })
+      total += score
     }
   }
 
@@ -164,17 +188,32 @@ export function getRootScore(dayMaster: HeavenlyStem, pillars: Pillar[]): { tota
 // 天干生助计算
 // ============================================================
 
-/** 计算天干中比劫印星对日主的生助力量 */
+/** 判断天干是否通根：四柱地支藏干含该天干，或该天干在地支处临官/帝旺/长生/墓之地 */
+function stemHasRoot(stem: HeavenlyStem, pillars: Pillar[]): boolean {
+  return pillars.some(p => {
+    if (p.hiddenStems.includes(stem)) return true
+    const gong = SHI_ER_CHANG_SHENG[stem]?.[p.branch]
+    return gong === '临官' || gong === '帝旺' || gong === '长生' || gong === '墓'
+  })
+}
+
+/** 计算天干中比劫印星对日主的生助力量（无根虚浮者力量减半）
+ *  注意：月干不计入本维度——月干的生扶已在三围生克维度全额计入，避免重复计分 */
 export function getHelpScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number {
   let score = 0
-  const otherPillars = [pillars[0]!, pillars[1]!, pillars[3]!] // 年、月、时
+  const otherPillars = [pillars[0]!, pillars[3]!] // 年、时（月干由三围维度负责）
 
   for (const p of otherPillars) {
     const god = p.tenGod
-    if (god === '比肩') score += 2
-    else if (god === '劫财') score += 2
-    else if (god === '正印') score += 1.5
-    else if (god === '偏印') score += 1
+    let s = 0
+    if (god === '比肩') s = 2
+    else if (god === '劫财') s = 2
+    else if (god === '正印') s = 1.5
+    else if (god === '偏印') s = 1
+    if (s === 0) continue
+    // "干多不如根重"：虚浮无根之透干，生扶力减半
+    if (!stemHasRoot(p.stem, pillars)) s *= 0.5
+    score += s
   }
 
   return score
@@ -184,33 +223,41 @@ export function getHelpScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number
 // 三围生克计算（《滴天髓》旺衰篇）
 // ============================================================
 
-/** 日主周围三柱（月干、日支、时干）对日主的影响 */
+/** 日主周围三柱（月干、日支、时干）对日主的影响
+ *  月干生扶日主在此全额计分（生助维度不计月干，避免双算）；虚浮透干减半 */
 export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number {
   let score = 0
   const dmElem = STEM_ELEMENT[dayMaster]
 
-  // 月干：直接影响最大的位置
+  // 月干：直接影响最大的位置（虚浮透干减半；比劫印生助在此全额计分，生助维度已排除月干）
   const monthStemElem = pillars[1]!.stemElement
-  if (monthStemElem === dmElem) score += 2 // 同五行
+  let monthContribution = 0
+  if (monthStemElem === dmElem) monthContribution = 2 // 同五行
   else {
     // 生我
     if (
       (monthStemElem === '木' && dmElem === '火') || (monthStemElem === '火' && dmElem === '土') ||
       (monthStemElem === '土' && dmElem === '金') || (monthStemElem === '金' && dmElem === '水') ||
       (monthStemElem === '水' && dmElem === '木')
-    ) score += 1.5
+    ) monthContribution = 1.5
     // 克我
     else if (
       (monthStemElem === '金' && dmElem === '木') || (monthStemElem === '木' && dmElem === '土') ||
       (monthStemElem === '土' && dmElem === '水') || (monthStemElem === '水' && dmElem === '火') ||
       (monthStemElem === '火' && dmElem === '金')
-    ) score -= 1.5
+    ) monthContribution = -1.5
+  }
+  if (monthContribution !== 0) {
+    if (!stemHasRoot(pillars[1]!.stem, pillars)) monthContribution *= 0.5
+    score += monthContribution
   }
 
-  // 日支：内心根基
+  // 日支：内心根基（日支之力在根气维度已全额计入，此处只论五行生克，不与根气重复）
   const dayBranchElem = pillars[2]!.branchElement
-  if (dayBranchElem === dmElem) score += 3
-  else {
+  if (dayBranchElem === dmElem) {
+    // 日支为日主同五行时，根气维度已按禄刃/本气根计分，此处仅补"贴身同类"之微力
+    score += 0.5
+  } else {
     const generates = (a: FiveElement, b: FiveElement) =>
       (a === '木' && b === '火') || (a === '火' && b === '土') ||
       (a === '土' && b === '金') || (a === '金' && b === '水') || (a === '水' && b === '木')
@@ -220,22 +267,30 @@ export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[]): nu
 
     if (generates(dayBranchElem, dmElem)) score += 1.5
     else if (controls(dayBranchElem, dmElem)) score -= 1.5
-    else if (generates(dmElem, dayBranchElem)) score -= 1
+    else if (generates(dmElem, dayBranchElem)) score -= 1 // 日主生支，泄身
   }
 
-  // 时干：晚年倚靠
+  // 时干：晚年倚靠（虚浮透干减半——比劫印部分的减半由生助维度统一处理，此处减半克泄耗贡献）
   const hourStemElem = pillars[3]!.stemElement
-  if (hourStemElem === dmElem) score += 1.5
+  const hourStem = pillars[3]!.stem
+  let hourContribution = 0
+  if (hourStemElem === dmElem) hourContribution = 1.5
   else if (
     (hourStemElem === '木' && dmElem === '火') || (hourStemElem === '火' && dmElem === '土') ||
     (hourStemElem === '土' && dmElem === '金') || (hourStemElem === '金' && dmElem === '水') ||
     (hourStemElem === '水' && dmElem === '木')
-  ) score += 1
+  ) hourContribution = 1
   else if (
     (hourStemElem === '金' && dmElem === '木') || (hourStemElem === '木' && dmElem === '土') ||
     (hourStemElem === '土' && dmElem === '水') || (hourStemElem === '水' && dmElem === '火') ||
     (hourStemElem === '火' && dmElem === '金')
-  ) score -= 1
+  ) hourContribution = -1
+
+  if (hourContribution !== 0) {
+    const isBiJieYin = ['比肩', '劫财', '正印', '偏印'].includes(pillars[3]!.tenGod)
+    if (!stemHasRoot(hourStem, pillars) && !isBiJieYin) hourContribution *= 0.5
+    score += hourContribution
+  }
 
   return score
 }
@@ -252,6 +307,7 @@ export interface StrengthResult {
   surroundScore: number
   chainPenalty: number
   coldPenalty: number
+  dryPenalty: number
   totalScore: number
   rootDetails: RootDetail[]
   details: string[]
@@ -315,17 +371,37 @@ function getColdPenalty(dayMaster: HeavenlyStem, monthBranch: EarthlyBranch, dis
   return 0
 }
 
+/** 燥局惩罚：巳午未月 + 水弱 → 火土炎燥，身亦受制（湿土稍缓） */
+function getDryPenalty(dayMaster: HeavenlyStem, monthBranch: EarthlyBranch, dist: Record<FiveElement, number>): number {
+  const dryMonths: EarthlyBranch[] = ['巳', '午', '未']
+  const dmElem = STEM_ELEMENT[dayMaster]
+  const waterScore = dist['水']
+
+  if (!dryMonths.includes(monthBranch)) return 0
+  if (waterScore >= 3) return 0
+
+  // 金日主在夏月最怕燥（熔金之象）
+  if (dmElem === '金') return -2
+  // 水日主在夏月需水调候（火炎水涸）
+  if (dmElem === '水') return -2
+  // 其他日主
+  return -1
+}
+
 export function judgeBodyStrength(bazi: BaziChart): StrengthResult {
   const dm = bazi.dayMaster
   const dmElem = STEM_ELEMENT[dm]
   const monthBranch = bazi.month.branch
   const pillars = [bazi.year, bazi.month, bazi.day, bazi.hour]
 
-  // 计算五行分布用于惩罚项
+  // 计算五行分布用于惩罚项（与 analysis.ts 的 calculateElementDistribution 同口径：含藏干）
   const dist: Record<FiveElement, number> = { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 }
   for (const p of pillars) {
     dist[p.stemElement] += 2
     dist[p.branchElement] += 1.5
+    for (const hs of p.hiddenStems) {
+      dist[STEM_ELEMENT[hs as HeavenlyStem]] += 0.5
+    }
   }
 
   // 1. 月令旺衰得分
@@ -344,18 +420,19 @@ export function judgeBodyStrength(bazi: BaziChart): StrengthResult {
   // 5. 连锁生克惩罚
   const chainPenalty = getChainPenalty(dm, pillars, dist)
 
-  // 6. 寒局惩罚
+  // 6. 寒暖惩罚（寒局 + 燥局）
   const coldPenalty = getColdPenalty(dm, monthBranch, dist)
+  const dryPenalty = getDryPenalty(dm, monthBranch, dist)
 
   // 总分
-  const totalScore = monthScore + rootResult.total + helpScore + surroundScore + chainPenalty + coldPenalty
+  const totalScore = monthScore + rootResult.total + helpScore + surroundScore + chainPenalty + coldPenalty + dryPenalty
 
-  // 判定身强身弱（调整阈值：-2~+2 为中和）
+  // 判定身强身弱
   let strength: StrengthResult['strength']
-  if (totalScore >= 8) strength = '身强'
-  else if (totalScore >= 3) strength = '身偏旺'
-  else if (totalScore >= -2) strength = '中和'
-  else if (totalScore >= -7) strength = '身偏弱'
+  if (totalScore >= 10) strength = '身强'
+  else if (totalScore >= 4) strength = '身偏旺'
+  else if (totalScore >= -3) strength = '中和'
+  else if (totalScore >= -8) strength = '身偏弱'
   else strength = '身弱'
 
   const details = [
@@ -365,6 +442,7 @@ export function judgeBodyStrength(bazi: BaziChart): StrengthResult {
     `三围生克：${surroundScore >= 0 ? '+' : ''}${surroundScore}`,
     chainPenalty !== 0 ? `连锁惩罚：${chainPenalty >= 0 ? '+' : ''}${chainPenalty}` : '',
     coldPenalty !== 0 ? `寒局惩罚：${coldPenalty >= 0 ? '+' : ''}${coldPenalty}` : '',
+    dryPenalty !== 0 ? `燥局惩罚：${dryPenalty >= 0 ? '+' : ''}${dryPenalty}` : '',
     `综合得分：${totalScore >= 0 ? '+' : ''}${totalScore.toFixed(1)} → ${strength}`,
   ].filter(Boolean)
 
@@ -376,6 +454,7 @@ export function judgeBodyStrength(bazi: BaziChart): StrengthResult {
     surroundScore,
     chainPenalty,
     coldPenalty,
+    dryPenalty,
     totalScore,
     rootDetails: rootResult.details,
     details,
