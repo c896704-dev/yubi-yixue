@@ -3,14 +3,14 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcryptjs';
 import { initDatabase } from './db.js';
 import db from './db.js';
+import { handleError } from './middleware/error-helper.js';
 import { deviceMiddleware } from './middleware/device.js';
-import { optionalAuth } from './middleware/auth.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { authMiddleware } from './middleware/auth.js';
+import { generalLimiter, authLimiter, aiChatLimiter, analysisLimiter } from './middleware/rate-limiter.js';
+import './middleware/error-helper.js';
+import helmet from 'helmet';
 import analyzeRouter from './routes/analyze.js';
 import recordsRouter from './routes/records.js';
 import settingsRouter from './routes/settings.js';
@@ -20,54 +20,65 @@ import compatRouter from './routes/compat.js';
 import baziRouter from './routes/bazi.js';
 import aiRouter from './routes/ai.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+  : ['http://localhost:5173', 'http://localhost:3002', 'https://yubiyixue.xyz', 'https://www.yubiyixue.xyz'];
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 
 // Middleware
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+}));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      connectSrc: ["'self'", "https:"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'self'"],
+      upgradeInsecureRequests: null,
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+app.use(generalLimiter);
+app.use(express.json({ limit: '5mb' }));
 app.use(deviceMiddleware);
 
 // Routes
-app.use('/api/auth', authRouter);
-app.use('/api/analyze', analyzeRouter);
+app.use('/api/auth', authLimiter, authRouter);
+app.use('/api/analyze', analysisLimiter, analyzeRouter);
 app.use('/api/records', recordsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/divination', divinationRouter);
 app.use('/api/compat', compatRouter);
 app.use('/api/bazi', baziRouter);
-app.use('/api/ai', aiRouter);
+app.use('/api/ai', aiChatLimiter, aiRouter);
 
 // Migration import (admin-only, import browser IndexedDB data)
-app.post('/api/migrate/import', optionalAuth, async (req, res) => {
+app.post('/api/migrate/import', authMiddleware, async (req, res) => {
   try {
     const { baziRecords, divinationRecords, compatRecords } = req.body;
 
-    // 校验管理员身份（JWT 或密码兜底）
-    let adminId = null;
-    // 优先用 JWT 登录态
-    if (req.isAdmin) {
-      adminId = req.userId;
+    if (!req.isAdmin) {
+      return res.status(403).json({ error: '无迁移权限，请先登录管理员账号' });
     }
-    // 如果没有 JWT，用密码兜底
-    if (!adminId) {
-      const token = process.env.ADMIN_MIGRATE_TOKEN || 'yubi-migrate-2024';
-      if (req.body.adminPassword !== token) {
-        return res.status(403).json({ error: '无迁移权限，请先登录管理员账号' });
-      }
-      const adminEmail = 'cyh20101224@126.com';
-      let admin = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
-      if (!admin) {
-        const { v4: uuidv4 } = await import('uuid');
-        const bcrypt = await import('bcryptjs');
-        const adminId2 = uuidv4();
-        const hash = bcrypt.hashSync('admin123', 10);
-        db.prepare('INSERT INTO users (id, email, username, password_hash) VALUES (?, ?, ?, ?)')
-          .run(adminId2, adminEmail, '管理员', hash);
-        admin = { id: adminId2 };
-      }
-      adminId = admin.id;
-    }
+    const adminId = req.userId;
 
     let imported = { bazi: 0, divination: 0, compat: 0, skipped: 0 };
 
@@ -114,7 +125,7 @@ app.post('/api/migrate/import', optionalAuth, async (req, res) => {
 
     res.json({ success: true, imported });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    handleError(res, e, '数据迁移');
   }
 });
 
@@ -137,6 +148,18 @@ app.get('*', (_req, res, next) => {
 // Initialize database
 initDatabase();
 
+if (process.env.NODE_ENV === 'production' && process.env.FORCE_HTTPS === 'true') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`御笔易学服务端运行在 http://localhost:${PORT}`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log('[WARN] 生产环境建议配置 HTTPS（反向代理 + TLS 证书）');
+  }
 });

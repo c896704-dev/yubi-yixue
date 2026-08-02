@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { optionalAuth, ADMIN_EMAIL } from '../middleware/auth.js';
+import { optionalAuth } from '../middleware/auth.js';
+import { handleError } from '../middleware/error-helper.js';
 
 const router = Router();
 router.use(optionalAuth);
 
-function canSeeAll(req) { return req.isAdmin || req.userEmail === ADMIN_EMAIL; }
+function canSeeAll(req) { return req.isAdmin; }
 
 /** Save (always works) */
 router.post('/records', (req, res) => {
