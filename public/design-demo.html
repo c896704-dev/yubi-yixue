@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>御笔易学 · 古籍数字化 AI 推演平台</title>
+  <meta name="description" content="以古籍为骨，以AI为笔，以数据为墨。八字·紫微·六爻·奇门·大六壬，RAG古籍锚定，可溯源·可验证。" />
+  <meta name="theme-color" content="#fbfaf5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#14181a" media="(prefers-color-scheme: dark)" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       御笔易学 · 仿青囊古籍美学设计系统 v2
+       基于真实 qingnang.cc 前端重新探索后升级
+       ============================================================ */
+
+    /* ── Design Tokens ── */
+    :root {
+      --radius: 0.5rem;
+
+      /* 古籍配色 */
+      --xuan-zhi: #fbfaf5;
+      --xuan-zhi-dark: #f4f1e8;
+      --dai-qing: #004d4d;
+      --dai-qing-light: #006666;
+      --dai-qing-dark: #003333;
+      --hu-po-jin: #d4af37;
+      --hu-po-jin-light: #e8c84a;
+      --hu-po-jin-dark: #b8960f;
+      --zhu-sha: #9c3d54;
+      --cang-cui: #2d6a4f;
+      --dan-mo: rgba(0, 0, 0, 0.06);
+      --border: rgba(0, 0, 0, 0.08);
+
+      /* rgb 玻璃变量（qingnang 核心改进） */
+      --rgb-ink: 0, 77, 77;
+      --rgb-paper: 251, 250, 245;
+
+      --shadow: 0 8px 30px rgba(var(--rgb-ink), 0.08);
+      --shadow-lg: 0 12px 40px rgba(var(--rgb-ink), 0.12);
+      --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Source Han Serif CN', 'Songti SC', 'STSong', 'SimSun', serif;
+      --font-sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    }
+
+    /* ── Dark Theme ── */
+    [data-theme="dark"] {
+      --xuan-zhi: #14181a;
+      --xuan-zhi-dark: #1c2225;
+      --dai-qing: #e8e8e3;
+      --dai-qing-light: #a8b0ac;
+      --dai-qing-dark: #2a3033;
+      --hu-po-jin: #c9a14a;
+      --hu-po-jin-light: #dbc066;
+      --hu-po-jin-dark: #a8842e;
+      --zhu-sha: #b24a63;
+      --cang-cui: #4a9e76;
+      --dan-mo: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.1);
+      --rgb-ink: 232, 232, 227;
+      --rgb-paper: 20, 24, 26;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--dai-qing);
+      background: var(--xuan-zhi);
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "palt";
+      transition: background 0.3s, color 0.3s;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Paper Texture ── */
+    .paper-texture {
+      background-color: var(--xuan-zhi);
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(var(--rgb-ink), 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(var(--rgb-ink), 0.02) 0%, transparent 50%),
+        repeating-linear-gradient(
+          45deg,
+          transparent 0px,
+          transparent 2px,
+          rgba(var(--rgb-ink), 0.008) 2px,
+          rgba(var(--rgb-ink), 0.008) 4px
+        );
+      transition: background-color 0.3s;
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ============================================================
+       核心动画关键帧（扩展版）
+       ============================================================ */
+
+    @keyframes glow-breathe {
+      0%, 100% { filter: drop-shadow(0 0 2px rgba(212, 175, 55, 0.4)); text-shadow: 0 0 4px rgba(212, 175, 55, 0.3); }
+      50% { filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.7)); text-shadow: 0 0 12px rgba(212, 175, 55, 0.6); }
+    }
+    .animate-glow-breathe { animation: glow-breathe 3s ease-in-out infinite; }
+
+    @keyframes ink-spread {
+      0% { transform: scale(0.2); opacity: 0.7; filter: blur(8px); }
+      60% { opacity: 0.4; filter: blur(4px); }
+      100% { transform: scale(2.5); opacity: 0; filter: blur(12px); }
+    }
+    .animate-ink-spread { animation: ink-spread 2.5s ease-out infinite; }
+
+    @keyframes ink-wave-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    .animate-ink-wave-bob { animation: ink-wave-bob 6s ease-in-out infinite; }
+
+    @keyframes coin-flip {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(720deg); }
+    }
+    .animate-coin-flip { animation: coin-flip 1.2s ease-in-out infinite; transform-style: preserve-3d; }
+
+    @keyframes coin-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-coin-bounce { animation: coin-bounce 2s ease-in-out infinite; }
+
+    @keyframes foil-sheen {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .animate-foil-sheen { animation: foil-sheen 13s linear infinite; }
+
+    @keyframes btn-sheen {
+      0% { transform: translateX(-150%) skewX(-20deg); }
+      60%, 100% { transform: translateX(250%) skewX(-20deg); }
+    }
+
+    @keyframes blink-cursor {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .animate-blink-cursor { animation: blink-cursor 0.8s step-end infinite; }
+
+    @keyframes pulse-lamp {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.6); }
+      50% { box-shadow: 0 0 0 6px rgba(212, 175, 55, 0); }
+    }
+    .animate-pulse-lamp { animation: pulse-lamp 2.4s ease-in-out infinite; }
+
+    @keyframes glyph-float {
+      0% { transform: translateY(0) scale(1); opacity: 0; }
+      20% { opacity: 0.5; }
+      80% { opacity: 0.3; }
+      100% { transform: translateY(-80px) scale(1.2); opacity: 0; }
+    }
+    .animate-glyph-float { animation: glyph-float 10s ease-out infinite; }
+
+    @keyframes float-particle {
+      0%, 100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+      25% { transform: translateY(-20px) translateX(10px); opacity: 0.7; }
+      50% { transform: translateY(-10px) translateX(-10px); opacity: 0.5; }
+      75% { transform: translateY(-30px) translateX(5px); opacity: 0.6; }
+    }
+    .animate-float-particle { animation: float-particle 8s ease-in-out infinite; }
+
+    @keyframes anchor-radiate {
+      0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.5); }
+      100% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0); }
+    }
+    .animate-anchor-radiate { animation: anchor-radiate 2s ease-out infinite; }
+
+    @keyframes ring-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .animate-ring-rotate { animation: ring-rotate 20s linear infinite; }
+
+    @keyframes trinity-flow {
+      0% { stroke-dashoffset: 100; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    @keyframes marquee-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    @keyframes scroll-indicator-bounce {
+      0%, 100% { transform: translateY(0); opacity: 0.6; }
+      50% { transform: translateY(6px); opacity: 1; }
+    }
+
+    /* ============================================================
+       特效组件
+       ============================================================ */
+
+    /* .gold-foil-text（带 SVG noise） */
+    .gold-foil-text {
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E"),
+        linear-gradient(
+          135deg,
+          #c9a14a 0%,
+          #d4af37 20%,
+          #f5e6a8 40%,
+          #d4af37 60%,
+          #b8941f 80%,
+          #d4af37 100%
+        );
+      background-size: 200px 200px, 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: foil-sheen 13s linear infinite;
+    }
+
+    /* .ink-border */
+    .ink-border { position: relative; }
+    .ink-border::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(
+        135deg,
+        rgba(var(--rgb-ink), 0.4) 0%,
+        rgba(212, 175, 55, 0.5) 50%,
+        rgba(156, 61, 84, 0.3) 100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* .spotlight-card */
+    .spotlight-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .spotlight-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(212, 175, 55, 0.15),
+        transparent 40%
+      );
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .spotlight-card:hover::after { opacity: 1; }
+
+    /* .divider-ink */
+    .divider-ink {
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(var(--rgb-ink), 0.5) 20%,
+        rgba(212, 175, 55, 0.7) 50%,
+        rgba(var(--rgb-ink), 0.5) 80%,
+        transparent 100%
+      );
+      border: none;
+    }
+
+    /* .yb-seal */
+    .yb-seal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--zhu-sha);
+      color: var(--xuan-zhi);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      border-radius: 4px;
+      box-shadow:
+        inset 0 0 0 2px rgba(var(--rgb-paper), 0.25),
+        inset 0 0 6px rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.15);
+      letter-spacing: 0.05em;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .yb-seal::before {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border: 1px solid rgba(var(--rgb-paper), 0.3);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    /* .marquee */
+    .marquee {
+      display: flex;
+      overflow: hidden;
+      user-select: none;
+      mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    }
+    .marquee-track {
+      flex-shrink: 0;
+      display: flex;
+      gap: 3rem;
+      min-width: 100%;
+      animation: marquee-scroll 40s linear infinite;
+      padding-right: 3rem;
+    }
+
+    /* .ink-dot */
+    .ink-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--hu-po-jin);
+      vertical-align: middle;
+    }
+
+    /* ============================================================
+       Navbar
+       ============================================================ */
+    .yb-navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      transition: all 0.3s ease;
+      background: transparent;
+      border-bottom: 1px solid transparent;
+    }
+    .yb-navbar.scrolled {
+      background: rgba(var(--rgb-paper), 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--dan-mo);
+      box-shadow: 0 1px 8px rgba(var(--rgb-ink), 0.04);
+    }
+    .yb-navbar-inner {
+      max-width: 1152px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .yb-brand { display: flex; align-items: center; gap: 12px; }
+    .yb-brand-seal { width: 36px; height: 36px; font-size: 13px; }
+    .yb-brand-name {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--dai-qing);
+      animation: glow-breathe 3s ease-in-out infinite;
+      transition: color 0.3s;
+      line-height: 1;
+    }
+    .yb-brand:hover .yb-brand-name { color: var(--dai-qing-light); }
+    .yb-brand-en {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      margin-top: 3px;
+      line-height: 1;
+    }
+    .yb-nav-links { display: flex; align-items: center; gap: 4px; list-style: none; }
+    .yb-nav-links a {
+      position: relative;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dai-qing-light);
+      transition: color 0.3s;
+    }
+    .yb-nav-links a:hover { color: var(--dai-qing); }
+    .yb-nav-links a::after {
+      content: '';
+      position: absolute;
+      left: 12px; right: 12px;
+      bottom: 2px;
+      height: 1px;
+      background: var(--hu-po-jin);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .yb-nav-links a:hover::after { transform: scaleX(1); }
+    .yb-nav-actions { display: flex; align-items: center; gap: 8px; }
+    .yb-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 6px;
+      color: var(--dai-qing-light);
+      transition: all 0.3s;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+    }
+    .yb-icon-btn:hover { background: rgba(var(--rgb-ink), 0.06); color: var(--dai-qing); }
+    .yb-icon-btn-coin { border-radius: 50%; color: var(--hu-po-jin); }
+    .yb-login-btn {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 6px;
+      background: var(--dai-qing);
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--xuan-zhi);
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s;
+    }
+    .yb-login-btn:hover { background: var(--dai-qing-light); }
+    .yb-sheen-overlay { pointer-events: none; position: absolute; inset: 0; transform: translateX(-150%); }
+    .yb-login-btn:hover .yb-sheen-overlay,
+    .yb-btn-primary:hover .yb-sheen-overlay { animation: btn-sheen 4.8s ease-in-out infinite; }
+    .yb-sheen-bar {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 0;
+      width: 33%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-20deg);
+    }
+
+    /* ============================================================
+       Hero
+       ============================================================ */
+    .yb-hero {
+      position: relative;
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding-top: 64px;
+      background: linear-gradient(180deg, var(--xuan-zhi) 0%, var(--dai-qing-dark) 100%);
+    }
+    [data-theme="dark"] .yb-hero {
+      background: linear-gradient(180deg, var(--xuan-zhi) 0%, var(--dai-qing-dark) 100%);
+    }
+    .yb-hero-blobs { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .yb-hero-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(48px);
+    }
+    .yb-hero-glyphs { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .yb-hero-glyph {
+      position: absolute;
+      font-family: var(--font-serif);
+      font-size: 24px;
+      color: rgba(var(--rgb-ink), 0.15);
+    }
+
+    /* CSS ink-sea waves */
+    .yb-ink-sea {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 35%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .yb-ink-wave {
+      position: absolute;
+      bottom: 0;
+      left: -10%;
+      width: 120%;
+      height: 100%;
+      border-radius: 100% 100% 0 0 / 60% 60% 0 0;
+      background: linear-gradient(180deg, rgba(var(--rgb-ink), 0.04) 0%, rgba(var(--rgb-ink), 0.18) 100%);
+    }
+    .yb-ink-wave:nth-child(1) { bottom: -5%; animation: ink-wave-bob 7s ease-in-out infinite; opacity: 0.6; }
+    .yb-ink-wave:nth-child(2) { bottom: -12%; animation: ink-wave-bob 8s ease-in-out infinite 1s; opacity: 0.4; }
+    .yb-ink-wave:nth-child(3) { bottom: -18%; animation: ink-wave-bob 9s ease-in-out infinite 2s; opacity: 0.25; }
+
+    .yb-hero-content {
+      position: relative;
+      z-index: 10;
+      max-width: 896px;
+      margin: 0 auto;
+      padding: 0 16px;
+      text-align: center;
+    }
+    .yb-hero-kicker {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+    .yb-hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(56px, 10vw, 96px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      line-height: 1.05;
+    }
+    .yb-hero-subtitle {
+      font-family: var(--font-serif);
+      font-size: clamp(18px, 3vw, 24px);
+      color: var(--dai-qing-light);
+      margin-bottom: 24px;
+      letter-spacing: 0.12em;
+    }
+    .yb-hero-typewriter-wrap {
+      height: 32px;
+      margin-bottom: 40px;
+      font-size: 16px;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+    }
+    .yb-typewriter { display: inline-flex; align-items: center; }
+    .yb-typewriter-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--hu-po-jin);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink-cursor 0.8s step-end infinite;
+    }
+    .yb-cta-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+    @media (min-width: 640px) {
+      .yb-cta-group { flex-direction: row; justify-content: center; }
+    }
+    .yb-btn-primary {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: var(--dai-qing);
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--xuan-zhi);
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 20px rgba(var(--rgb-ink), 0.2);
+    }
+    .yb-btn-primary:hover {
+      background: var(--dai-qing-light);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(var(--rgb-ink), 0.28);
+    }
+    .yb-btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: rgba(var(--rgb-paper), 0.5);
+      border: 1px solid var(--dan-mo);
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--dai-qing);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      backdrop-filter: blur(4px);
+    }
+    .yb-btn-outline:hover { background: rgba(var(--rgb-paper), 0.8); transform: translateY(-2px); }
+
+    .yb-hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    @media (min-width: 640px) {
+      .yb-hero-stats { grid-template-columns: repeat(4, 1fr); }
+    }
+    .yb-hero-stat { text-align: center; }
+    .yb-hero-stat-num {
+      font-family: var(--font-serif);
+      font-size: clamp(32px, 5vw, 44px);
+      font-weight: 700;
+      color: var(--hu-po-jin);
+      line-height: 1;
+    }
+    .yb-hero-stat-label {
+      font-size: 12px;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      margin-top: 6px;
+      letter-spacing: 0.05em;
+    }
+    .yb-scroll-indicator {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--dai-qing-light);
+      opacity: 0.5;
+      animation: scroll-indicator-bounce 2s ease-in-out infinite;
+      cursor: pointer;
+    }
+    .yb-scroll-indicator-ring {
+      width: 24px; height: 36px;
+      border: 1px solid currentColor;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      padding-top: 6px;
+    }
+    .yb-scroll-indicator-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ============================================================
+       Section Heading
+       ============================================================ */
+    .yb-section { padding: 80px 0; }
+    @media (min-width: 640px) { .yb-section { padding: 112px 0; } }
+    .yb-section-inner {
+      max-width: 1152px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    @media (min-width: 1024px) { .yb-section-inner { padding: 0 32px; } }
+    .yb-section-heading { text-align: center; margin-bottom: 48px; }
+    .yb-section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: var(--hu-po-jin);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .yb-section-kicker::before,
+    .yb-section-kicker::after {
+      content: '';
+      height: 1px;
+      width: 32px;
+      background: rgba(212, 175, 55, 0.5);
+    }
+    .yb-section-title {
+      font-family: var(--font-serif);
+      font-size: clamp(30px, 4vw, 36px);
+      font-weight: 700;
+      color: var(--dai-qing);
+      margin-bottom: 12px;
+    }
+    .yb-section-subtitle {
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      max-width: 672px;
+      margin: 0 auto;
+      font-size: 15px;
+    }
+
+    /* ============================================================
+       Daily Almanac
+       ============================================================ */
+    .yb-almanac-card {
+      position: relative;
+      max-width: 896px;
+      margin: 0 auto;
+      border-radius: 16px;
+      background: rgba(var(--rgb-paper), 0.7);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--dan-mo);
+    }
+    @media (min-width: 768px) { .yb-almanac-card { padding: 40px; } }
+    .yb-almanac-grid { display: grid; gap: 32px; }
+    @media (min-width: 768px) {
+      .yb-almanac-grid { grid-template-columns: auto 1fr; }
+    }
+    .yb-almanac-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .yb-almanac-left {
+        flex-direction: column;
+        align-items: flex-start;
+        border-right: 1px solid var(--dan-mo);
+        padding-right: 32px;
+      }
+    }
+    .yb-almanac-date-label { font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; margin-bottom: 4px; }
+    .yb-almanac-date-num { font-family: var(--font-serif); font-size: 48px; font-weight: 700; color: var(--dai-qing); line-height: 1; }
+    .yb-almanac-date-sub { font-size: 14px; color: var(--dai-qing-light); margin-top: 4px; }
+    .yb-almanac-meta { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+    .yb-almanac-meta-row { display: flex; align-items: center; gap: 8px; }
+    .yb-almanac-meta-label { color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-almanac-meta-val-serif { font-family: var(--font-serif); font-weight: 500; color: var(--dai-qing); }
+    .yb-almanac-meta-val-gold { font-family: var(--font-serif); font-weight: 500; color: var(--hu-po-jin); }
+    .yb-almanac-meta-val-zhu { font-family: var(--font-serif); font-weight: 500; color: var(--zhu-sha); }
+    .yb-almanac-dot-zhu {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--zhu-sha);
+      animation: pulse-lamp 2.4s ease-in-out infinite;
+    }
+    .yb-almanac-right { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .yb-almanac-yi-header, .yb-almanac-ji-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .yb-almanac-yi-label { font-family: var(--font-serif); font-size: 18px; font-weight: 700; color: var(--cang-cui); }
+    .yb-almanac-ji-label { font-family: var(--font-serif); font-size: 18px; font-weight: 700; color: var(--zhu-sha); }
+    .yb-almanac-yi-line { height: 1px; flex: 1; background: rgba(45, 106, 79, 0.3); }
+    .yb-almanac-ji-line { height: 1px; flex: 1; background: rgba(156, 61, 84, 0.3); }
+    .yb-almanac-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .yb-tag-yi {
+      border-radius: 4px;
+      border: 1px solid rgba(45, 106, 79, 0.3);
+      background: rgba(45, 106, 79, 0.08);
+      padding: 4px 10px;
+      font-size: 14px;
+      color: var(--cang-cui);
+    }
+    .yb-tag-ji {
+      border-radius: 4px;
+      border: 1px solid rgba(156, 61, 84, 0.3);
+      background: rgba(156, 61, 84, 0.08);
+      padding: 4px 10px;
+      font-size: 14px;
+      color: var(--zhu-sha);
+    }
+    .yb-almanac-shichen {
+      grid-column: span 2;
+      margin-top: 8px;
+      border-radius: 8px;
+      background: var(--xuan-zhi-dark);
+      padding: 16px;
+    }
+    .yb-almanac-shichen-label { font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; margin-bottom: 8px; }
+    .yb-almanac-shichen-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; text-align: center; font-size: 12px; }
+    .yb-shichen-item { border-radius: 4px; background: var(--xuan-zhi); padding: 6px 0; }
+    .yb-shichen-glyph { font-family: var(--font-serif); font-size: 14px; color: var(--dai-qing); }
+    .yb-shichen-fortune { font-size: 10px; }
+    .yb-shichen-fortune-ji { color: var(--cang-cui); }
+    .yb-shichen-fortune-xiong { color: var(--zhu-sha); }
+    .yb-shichen-fortune-zhong { color: var(--hu-po-jin); }
+
+    /* ============================================================
+       Features Grid
+       ============================================================ */
+    .yb-features-bg { background: rgba(var(--rgb-ink), 0.03); }
+    .yb-features-grid { display: grid; gap: 20px; }
+    @media (min-width: 640px) { .yb-features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .yb-features-grid { grid-template-columns: repeat(3, 1fr); } }
+    .yb-feature-card {
+      position: relative;
+      border-radius: 12px;
+      background: rgba(var(--rgb-paper), 0.7);
+      padding: 24px;
+      border: 1px solid var(--dan-mo);
+      transition: all 0.3s;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .yb-feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      background: rgba(var(--rgb-paper), 0.9);
+    }
+    .yb-feature-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+    .yb-feature-icon {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px;
+      font-size: 22px;
+    }
+    .yb-feature-tag {
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+    .yb-feature-en {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      color: var(--dai-qing-light);
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+    .yb-feature-title {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--dai-qing);
+      margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+    .yb-feature-card:hover .yb-feature-title { color: var(--dai-qing-light); }
+    .yb-feature-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      margin-bottom: 16px;
+    }
+    .yb-feature-link {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dai-qing-light);
+      transition: color 0.3s;
+    }
+    .yb-feature-card:hover .yb-feature-link { color: var(--hu-po-jin); }
+    .yb-feature-arrow { transition: transform 0.3s; }
+    .yb-feature-card:hover .yb-feature-arrow { transform: translateX(4px); }
+
+    /* ============================================================
+       Persona + Depth Demo（qingnang 核心交互）
+       ============================================================ */
+    .yb-demo-bg { background: linear-gradient(180deg, var(--xuan-zhi) 0%, var(--xuan-zhi-dark) 100%); }
+    .yb-demo-personas { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .yb-demo-persona {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--dan-mo);
+      background: rgba(var(--rgb-paper), 0.6);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .yb-demo-persona:hover { background: rgba(var(--rgb-paper), 0.9); }
+    .yb-demo-persona.active {
+      border-color: var(--hu-po-jin);
+      background: rgba(212, 175, 55, 0.08);
+      box-shadow: 0 0 0 1px var(--hu-po-jin);
+    }
+    .yb-demo-persona-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      background: rgba(var(--rgb-ink), 0.06);
+    }
+    .yb-demo-persona-name { font-family: var(--font-serif); font-weight: 700; color: var(--dai-qing); font-size: 14px; }
+    .yb-demo-persona-desc { font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-demo-depth { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .yb-demo-depth-btn {
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--dan-mo);
+      background: transparent;
+      color: var(--dai-qing-light);
+      transition: all 0.3s;
+    }
+    .yb-demo-depth-btn.active { background: var(--dai-qing); color: var(--xuan-zhi); border-color: var(--dai-qing); }
+    .yb-demo-output {
+      max-width: 768px;
+      margin: 0 auto;
+      border-radius: 16px;
+      background: rgba(var(--rgb-paper), 0.8);
+      border: 1px solid var(--dan-mo);
+      padding: 28px;
+      min-height: 180px;
+      backdrop-filter: blur(8px);
+    }
+    .yb-demo-output-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-demo-output-body { font-size: 15px; line-height: 1.9; color: var(--dai-qing); }
+    .yb-demo-output-body mark {
+      background: rgba(212, 175, 55, 0.25);
+      color: var(--dai-qing);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .yb-demo-cta { text-align: center; margin-top: 32px; }
+
+    /* ============================================================
+       RAG Classics
+       ============================================================ */
+    .yb-rag-grid { display: grid; gap: 24px; }
+    @media (min-width: 1024px) { .yb-rag-grid { grid-template-columns: 1fr 1fr; } }
+    .yb-rag-ai-card {
+      border-radius: 12px;
+      background: rgba(var(--rgb-paper), 0.7);
+      padding: 24px;
+      border: 1px solid var(--dan-mo);
+      backdrop-filter: blur(4px);
+    }
+    @media (min-width: 640px) { .yb-rag-ai-card { padding: 32px; } }
+    .yb-rag-ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .yb-rag-ai-icon {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: var(--dai-qing);
+      color: var(--xuan-zhi);
+      font-size: 14px;
+    }
+    .yb-rag-ai-title { font-family: var(--font-serif); font-weight: 700; color: var(--dai-qing); }
+    .yb-rag-ai-sub { font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-rag-ai-body p { font-size: 14px; line-height: 1.8; margin-bottom: 12px; }
+    .yb-rag-highlight {
+      background: rgba(212, 175, 55, 0.25);
+      color: var(--dai-qing);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .yb-rag-ai-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      padding-top: 8px;
+    }
+    .yb-rag-classics { display: flex; flex-direction: column; gap: 16px; }
+    .yb-rag-classic-card {
+      border-radius: 12px;
+      background: var(--xuan-zhi-dark);
+      padding: 24px;
+      border: 1px solid var(--dan-mo);
+    }
+    .yb-rag-classic-header { display: flex; gap: 12px; margin-bottom: 12px; }
+    .yb-rag-classic-icon { color: var(--zhu-sha); flex-shrink: 0; margin-top: 2px; }
+    .yb-rag-classic-title { font-family: var(--font-serif); font-weight: 700; color: var(--dai-qing); }
+    .yb-rag-classic-meta { font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-rag-classic-text {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      line-height: 2;
+      color: var(--dai-qing-light);
+      padding-left: 32px;
+      border-left: 2px solid rgba(212, 175, 55, 0.4);
+    }
+
+    /* ============================================================
+       Classics Marquee
+       ============================================================ */
+    .yb-classics {
+      padding: 48px 0;
+      border-top: 1px solid var(--dan-mo);
+      border-bottom: 1px solid var(--dan-mo);
+      background: var(--dai-qing);
+    }
+    .yb-classics-inner { max-width: 1152px; margin: 0 auto; padding: 0 24px; }
+    .yb-classic-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
+    }
+    .yb-classic-icon { color: var(--hu-po-jin); flex-shrink: 0; }
+    .yb-classic-text { font-family: var(--font-serif); font-size: 18px; color: var(--xuan-zhi); }
+    .yb-classic-src { font-size: 14px; color: rgba(212, 175, 55, 0.8); }
+
+    /* ============================================================
+       PWA Section
+       ============================================================ */
+    .yb-pwa {
+      padding: 80px 0;
+      background: linear-gradient(180deg, var(--xuan-zhi-dark) 0%, var(--xuan-zhi) 100%);
+    }
+    .yb-pwa-grid {
+      display: grid;
+      gap: 32px;
+      align-items: center;
+    }
+    @media (min-width: 768px) { .yb-pwa-grid { grid-template-columns: 1fr 1fr; } }
+    .yb-pwa-phone {
+      position: relative;
+      width: 220px;
+      height: 420px;
+      margin: 0 auto;
+      border-radius: 32px;
+      border: 10px solid var(--dai-qing);
+      background: var(--xuan-zhi);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .yb-pwa-phone-screen {
+      height: 100%;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--xuan-zhi);
+    }
+    .yb-pwa-phone-header { display: flex; align-items: center; gap: 8px; }
+    .yb-pwa-phone-title { font-family: var(--font-serif); font-weight: 700; color: var(--dai-qing); font-size: 14px; }
+    .yb-pwa-phone-card {
+      border-radius: 10px;
+      background: var(--xuan-zhi-dark);
+      padding: 12px;
+      border: 1px solid var(--dan-mo);
+    }
+    .yb-pwa-phone-card-title { font-family: var(--font-serif); font-size: 12px; color: var(--dai-qing); margin-bottom: 4px; }
+    .yb-pwa-phone-card-text { font-size: 10px; color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-pwa-content { text-align: center; }
+    @media (min-width: 768px) { .yb-pwa-content { text-align: left; } }
+    .yb-pwa-title {
+      font-family: var(--font-serif);
+      font-size: clamp(26px, 4vw, 32px);
+      font-weight: 700;
+      color: var(--dai-qing);
+      margin-bottom: 12px;
+    }
+    .yb-pwa-desc { color: var(--dai-qing-light); opacity: 0.7; margin-bottom: 24px; line-height: 1.8; }
+
+    /* ============================================================
+       Footer
+       ============================================================ */
+    .yb-footer { background: var(--xuan-zhi-dark); border-top: 1px solid var(--dan-mo); }
+    .yb-footer-inner { max-width: 1152px; margin: 0 auto; padding: 48px 24px; }
+    @media (min-width: 1024px) { .yb-footer-inner { padding: 48px 32px; } }
+    .yb-footer-grid { display: grid; gap: 32px; }
+    @media (min-width: 768px) { .yb-footer-grid { grid-template-columns: 1.5fr 1fr 1fr 1fr; } }
+    .yb-footer-brand-seal { width: 40px; height: 40px; font-size: 14px; }
+    .yb-footer-brand-name { font-family: var(--font-serif); font-weight: 700; font-size: 18px; color: var(--dai-qing); }
+    .yb-footer-brand-tag { font-size: 12px; color: var(--dai-qing-light); opacity: 0.7; }
+    .yb-footer-brand-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--dai-qing-light);
+      opacity: 0.7;
+      margin: 16px 0;
+      max-width: 320px;
+    }
+    .yb-footer-copy { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dai-qing-light); opacity: 0.6; }
+    .yb-footer-col-title { font-family: var(--font-serif); font-weight: 700; color: var(--dai-qing); margin-bottom: 12px; }
+    .yb-footer-col-links { list-style: none; }
+    .yb-footer-col-links li { margin-bottom: 8px; }
+    .yb-footer-col-links a { font-size: 14px; color: var(--dai-qing-light); opacity: 0.7; transition: color 0.3s; }
+    .yb-footer-col-links a:hover { color: var(--hu-po-jin); opacity: 1; }
+    .yb-footer-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--dai-qing-light);
+      opacity: 0.6;
+    }
+    @media (min-width: 640px) { .yb-footer-bottom { flex-direction: row; justify-content: space-between; } }
+    .yb-footer-bottom-left { display: flex; align-items: center; gap: 12px; }
+    .yb-footer-bottom-right { font-family: var(--font-serif); }
+
+    /* ============================================================
+       Mobile Bottom Nav
+       ============================================================ */
+    .yb-mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 64px;
+      padding-bottom: env(safe-area-inset-bottom);
+      background: rgba(var(--rgb-paper), 0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--dan-mo);
+    }
+    @media (min-width: 768px) { .yb-mobile-nav { display: none; } }
+    .yb-mobile-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+      color: var(--dai-qing-light);
+      font-size: 10px;
+      transition: color 0.3s;
+    }
+    .yb-mobile-nav-item.active { color: var(--hu-po-jin); }
+    .yb-mobile-nav-item svg { width: 20px; height: 20px; }
+
+    /* ============================================================
+       Utilities
+       ============================================================ */
+    .yb-particles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+    .yb-particle {
+      position: absolute;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.3);
+      animation: float-particle 8s ease-in-out infinite;
+    }
+
+    /* ============================================================
+       Responsive
+       ============================================================ */
+    @media (max-width: 1023px) { .yb-nav-links { display: none; } }
+    @media (max-width: 767px) {
+      .yb-navbar-inner { padding: 0 16px; }
+      .yb-section { padding: 64px 0; }
+      .yb-section-inner { padding: 0 16px; }
+      .yb-footer { padding-bottom: 64px; }
+      .yb-hero { min-height: 92vh; }
+      .yb-hero-stats { grid-template-columns: repeat(2, 1fr); }
+      .yb-almanac-right { grid-template-columns: 1fr; }
+      .yb-almanac-shichen { grid-column: span 1; }
+      .yb-almanac-shichen-grid { grid-template-columns: repeat(3, 1fr); }
+      .yb-demo-personas { flex-direction: column; align-items: stretch; }
+      .yb-demo-persona { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating particles -->
+  <div class="yb-particles" id="particles"></div>
+
+  <!-- ============================================================
+       Navbar
+       ============================================================ -->
+  <header class="yb-navbar" id="navbar">
+    <nav class="yb-navbar-inner">
+      <a href="#hero" class="yb-brand">
+        <span class="yb-seal yb-brand-seal">御笔</span>
+        <span>
+          <span class="yb-brand-name">御笔易学</span>
+          <span class="yb-brand-en">YUBI · YIXUE</span>
+        </span>
+      </a>
+      <ul class="yb-nav-links">
+        <li><a href="#hero">首页</a></li>
+        <li><a href="#features">八字</a></li>
+        <li><a href="#features">紫微</a></li>
+        <li><a href="#features">六爻</a></li>
+        <li><a href="#features">奇门</a></li>
+        <li><a href="#daily">时令</a></li>
+        <li><a href="#demo">体验</a></li>
+      </ul>
+      <div class="yb-nav-actions">
+        <button class="yb-icon-btn" id="themeToggle" aria-label="切换主题">
+          <svg id="moonIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg id="sunIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        </button>
+        <button class="yb-icon-btn yb-icon-btn-coin" aria-label="六爻起卦">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-coin-flip"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="yb-login-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.246 12.411a8 8 0 0 1-15.492 2.584 8 8 0 0 1 15.492-2.584Z"/><path d="M12 19v-7"/><path d="m9 15 3 3 3-3"/></svg>
+          <span>登录 / 注册</span>
+          <span class="yb-sheen-overlay"><span class="yb-sheen-bar"></span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============================================================
+       Hero
+       ============================================================ -->
+  <section id="hero" class="yb-hero">
+    <div class="yb-hero-blobs">
+      <div class="yb-hero-blob animate-ink-spread" style="top:20%;left:20%;width:280px;height:280px;background:rgba(212,175,55,0.08)"></div>
+      <div class="yb-hero-blob animate-ink-spread" style="top:40%;right:15%;width:320px;height:320px;background:rgba(var(--rgb-ink),0.06);animation-delay:1.2s"></div>
+      <div class="yb-hero-blob animate-ink-spread" style="bottom:30%;left:35%;width:260px;height:260px;background:rgba(156,61,84,0.06);animation-delay:2s"></div>
+    </div>
+
+    <div class="yb-hero-glyphs" id="heroGlyphs"></div>
+
+    <!-- CSS ink-sea -->
+    <div class="yb-ink-sea">
+      <div class="yb-ink-wave"></div>
+      <div class="yb-ink-wave"></div>
+      <div class="yb-ink-wave"></div>
+    </div>
+
+    <div class="yb-hero-content">
+      <div class="yb-hero-kicker">AETHER BRUSH · 古籍数字化 AI 推演平台</div>
+
+      <h1 class="yb-hero-title">
+        <span class="gold-foil-text">御笔易学</span>
+      </h1>
+
+      <p class="yb-hero-subtitle">古籍为根 · AI 参详</p>
+
+      <div class="yb-hero-typewriter-wrap">
+        <span class="yb-typewriter" id="typewriter"></span><span class="yb-typewriter-cursor"></span>
+      </div>
+
+      <div class="yb-cta-group">
+        <button class="yb-btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.132 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+          开始排盘
+          <span class="yb-sheen-overlay"><span class="yb-sheen-bar"></span></span>
+        </button>
+        <a href="#demo" class="yb-btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          体验 AI 解读
+        </a>
+      </div>
+
+      <div class="yb-hero-stats">
+        <div class="yb-hero-stat">
+          <div class="yb-hero-stat-num">6</div>
+          <div class="yb-hero-stat-label">大推演模块</div>
+        </div>
+        <div class="yb-hero-stat">
+          <div class="yb-hero-stat-num">64×18</div>
+          <div class="yb-hero-stat-label">维交互模式</div>
+        </div>
+        <div class="yb-hero-stat">
+          <div class="yb-hero-stat-num">12</div>
+          <div class="yb-hero-stat-label">注册即赠灵签</div>
+        </div>
+        <div class="yb-hero-stat">
+          <div class="yb-hero-stat-num">0</div>
+          <div class="yb-hero-stat-label">月费订阅</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="#daily" class="yb-scroll-indicator" aria-label="向下滚动">
+      <div class="yb-scroll-indicator-ring"><div class="yb-scroll-indicator-dot"></div></div>
+    </a>
+  </section>
+
+  <!-- ============================================================
+       Classics Marquee (under hero, qingnang style)
+       ============================================================ -->
+  <section class="yb-classics">
+    <div class="yb-classics-inner">
+      <div class="marquee">
+        <div class="marquee-track" id="marqueeTrack"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       Daily Almanac
+       ============================================================ -->
+  <section id="daily" class="yb-section paper-texture">
+    <div class="yb-section-inner">
+      <div class="yb-section-heading">
+        <div class="yb-section-kicker">DAILY ALMANAC</div>
+        <h2 class="yb-section-title">每日时令</h2>
+        <p class="yb-section-subtitle">当日干支、节气、宜忌与五行日主，零成本高留存的每日入口。</p>
+      </div>
+
+      <div class="spotlight-card ink-border yb-almanac-card" data-spotlight>
+        <div class="yb-almanac-grid">
+          <div class="yb-almanac-left">
+            <div>
+              <div class="yb-almanac-date-label">农历丙午年</div>
+              <div class="yb-almanac-date-num">26</div>
+              <div class="yb-almanac-date-sub">六月 · 周四</div>
+            </div>
+            <div class="yb-almanac-meta">
+              <div class="yb-almanac-meta-row">
+                <span class="yb-almanac-meta-label">干支</span>
+                <span class="yb-almanac-meta-val-serif">丙午年 甲午月 庚寅日</span>
+              </div>
+              <div class="yb-almanac-meta-row">
+                <span class="yb-almanac-meta-label">节气</span>
+                <span class="yb-almanac-meta-val-gold">夏至 · 第三日</span>
+              </div>
+              <div class="yb-almanac-meta-row">
+                <span class="yb-almanac-meta-label">日主</span>
+                <span class="yb-almanac-dot-zhu"></span>
+                <span class="yb-almanac-meta-val-zhu">庚金 · 旺盛</span>
+              </div>
+            </div>
+          </div>
+          <div class="yb-almanac-right">
+            <div>
+              <div class="yb-almanac-yi-header">
+                <span class="yb-almanac-yi-label">宜</span>
+                <span class="yb-almanac-yi-line"></span>
+              </div>
+              <div class="yb-almanac-tags">
+                <span class="yb-tag-yi">祭祀</span>
+                <span class="yb-tag-yi">祈福</span>
+                <span class="yb-tag-yi">开市</span>
+                <span class="yb-tag-yi">立券</span>
+                <span class="yb-tag-yi">交易</span>
+                <span class="yb-tag-yi">纳财</span>
+              </div>
+            </div>
+            <div>
+              <div class="yb-almanac-ji-header">
+                <span class="yb-almanac-ji-label">忌</span>
+                <span class="yb-almanac-ji-line"></span>
+              </div>
+              <div class="yb-almanac-tags">
+                <span class="yb-tag-ji">嫁娶</span>
+                <span class="yb-tag-ji">安葬</span>
+                <span class="yb-tag-ji">破土</span>
+                <span class="yb-tag-ji">行丧</span>
+              </div>
+            </div>
+            <div class="yb-almanac-shichen">
+              <div class="yb-almanac-shichen-label">时辰吉凶</div>
+              <div class="yb-almanac-shichen-grid">
+                <div class="yb-shichen-item"><div class="yb-shichen-glyph">子</div><div class="yb-shichen-fortune yb-shichen-fortune-ji">吉</div></div>
+                <div class="yb-shichen-item"><div class="yb-shichen-glyph">丑</div><div class="yb-shichen-fortune yb-shichen-fortune-xiong">凶</div></div>
+                <div class="yb-shichen-item"><div class="yb-shichen-glyph">寅</div><div class="yb-shichen-fortune yb-shichen-fortune-ji">吉</div></div>
+                <div class="yb-shichen-item"><div class="yb-shichen-glyph">卯</div><div class="yb-shichen-fortune yb-shichen-fortune-zhong">中</div></div>
+                <div class="yb-shichen-item"><div class="yb-shichen-glyph">辰</div><div class="yb-shichen-fortune yb-shichen-fortune-ji">吉</div></div>
+                <div class="yb-shichen-item"><div class="yb-shichen-glyph">巳</div><div class="yb-shichen-fortune yb-shichen-fortune-xiong">凶</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       Features Grid
+       ============================================================ -->
+  <section id="features" class="yb-section yb-features-bg">
+    <div class="yb-section-inner">
+      <div class="yb-section-heading">
+        <div class="yb-section-kicker">FEATURE MATRIX</div>
+        <h2 class="yb-section-title">核心功能</h2>
+        <p class="yb-section-subtitle">每一句解读都引自古籍原文，可溯源、不空谈、千人千面。</p>
+      </div>
+
+      <div class="yb-features-grid" id="featuresGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       Persona + Depth Demo（qingnang 核心交互）
+       ============================================================ -->
+  <section id="demo" class="yb-section yb-demo-bg">
+    <div class="yb-section-inner">
+      <div class="yb-section-heading">
+        <div class="yb-section-kicker">PERSONA & DEPTH</div>
+        <h2 class="yb-section-title">两种人格 · 两种深度</h2>
+        <p class="yb-section-subtitle">同一张盘，两种讲法——点下方按钮，现场感受。</p>
+      </div>
+
+      <div class="yb-demo-personas">
+        <div class="yb-demo-persona active" data-persona="scholar">
+          <div class="yb-demo-persona-icon">🧑‍🏫</div>
+          <div>
+            <div class="yb-demo-persona-name">严谨学者</div>
+            <div class="yb-demo-persona-desc">客观、专业、克制，如博导般引经据典</div>
+          </div>
+        </div>
+        <div class="yb-demo-persona" data-persona="hermit">
+          <div class="yb-demo-persona-icon">🍶</div>
+          <div>
+            <div class="yb-demo-persona-name">幽默隐士</div>
+            <div class="yb-demo-persona-desc">随性、风趣、一针见血，如酒后老友</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="yb-demo-depth">
+        <button class="yb-demo-depth-btn active" data-depth="full">专业级完整推演</button>
+        <button class="yb-demo-depth-btn" data-depth="simple">通俗级直给结论</button>
+      </div>
+
+      <div class="spotlight-card ink-border yb-demo-output" data-spotlight>
+        <div class="yb-demo-output-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.132 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+          <span id="demoOutputLabel">参详输出 · 博导模式 · 完整推演</span>
+        </div>
+        <div class="yb-demo-output-body" id="demoOutputBody"></div>
+      </div>
+
+      <div class="yb-demo-cta">
+        <a href="#" class="yb-btn-outline">免费排一张自己的盘试试 →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       RAG Classics
+       ============================================================ -->
+  <section id="rag" class="yb-section paper-texture">
+    <div class="yb-section-inner" style="max-width:1152px;">
+      <div class="yb-section-heading">
+        <div class="yb-section-kicker">RAG ANCHORING</div>
+        <h2 class="yb-section-title">每一句解读 · 皆有古籍为证</h2>
+        <p class="yb-section-subtitle">基于本地向量化的 RAG 检索，AI 每一句推论都引用古籍原文，可溯源、可验证。</p>
+      </div>
+
+      <div class="yb-rag-grid">
+        <div class="yb-rag-ai-card">
+          <div class="yb-rag-ai-header">
+            <div class="yb-rag-ai-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.132 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+            </div>
+            <div>
+              <div class="yb-rag-ai-title">AI 解读</div>
+              <div class="yb-rag-ai-sub">博导模式 · 引经据典</div>
+            </div>
+          </div>
+          <div class="yb-rag-ai-body">
+            <p>日主 <mark class="yb-rag-highlight">甲木</mark> 生于 <mark class="yb-rag-highlight">午月</mark>，火旺木渴，亟需水以济之。</p>
+            <p>年支见 <mark class="yb-rag-highlight">子水</mark> 为印，然子午相冲，水气受损，格局由强转弱。</p>
+            <p>大运逆行，初走 <span class="yb-almanac-meta-val-serif">辛未</span>、<span class="yb-almanac-meta-val-serif">壬申</span>，金水相生，少年得志；中运 <span class="yb-almanac-meta-val-serif">癸酉</span> 印星到位，学业有成。</p>
+            <div class="yb-rag-ai-footer">
+              <span class="ink-dot"></span>
+              引用 3 部古籍 · 共 5 处锚点
+            </div>
+          </div>
+        </div>
+
+        <div class="yb-rag-classics">
+          <div class="ink-border yb-rag-classic-card">
+            <div class="yb-rag-classic-header">
+              <svg class="yb-rag-classic-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h3.5"/><path d="M21 21c-3 0-7-1-7-8V5c0-1.25.757-2 2-2h4c1.25 0 2 .75 2 2v6c0 1.25-.75 2-2 2h-3.5"/></svg>
+              <div>
+                <div class="yb-rag-classic-title">《滴天髓》</div>
+                <div class="yb-rag-classic-meta">[清] 任铁樵 注 · 论木</div>
+              </div>
+            </div>
+            <p class="yb-rag-classic-text">
+              甲木参天，脱胎要火；春不容金，秋不容土；<br />
+              火炽乘龙，水荡骑虎；地润天和，植立千古。
+            </p>
+          </div>
+
+          <div class="ink-border yb-rag-classic-card">
+            <div class="yb-rag-classic-header">
+              <svg class="yb-rag-classic-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h3.5"/><path d="M21 21c-3 0-7-1-7-8V5c0-1.25.757-2 2-2h4c1.25 0 2 .75 2 2v6c0 1.25-.75 2-2 2h-3.5"/></svg>
+              <div>
+                <div class="yb-rag-classic-title">《三命通会》</div>
+                <div class="yb-rag-classic-meta">[明] 万民英 · 卷四</div>
+              </div>
+            </div>
+            <p class="yb-rag-classic-text">
+              甲生午月，木性虚焦，必须有水滋培，<br />
+              若见子水相冲，须察其根之深浅。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PWA / Add to Home
+       ============================================================ -->
+  <section class="yb-pwa paper-texture">
+    <div class="yb-section-inner">
+      <div class="yb-pwa-grid">
+        <div class="yb-pwa-phone animate-coin-bounce">
+          <div class="yb-pwa-phone-screen paper-texture">
+            <div class="yb-pwa-phone-header">
+              <span class="yb-seal" style="width:24px;height:24px;font-size:10px;">御笔</span>
+              <span class="yb-pwa-phone-title">御笔易学</span>
+            </div>
+            <div class="yb-pwa-phone-card">
+              <div class="yb-pwa-phone-card-title">今日宜忌</div>
+              <div class="yb-pwa-phone-card-text">宜祭祀 · 忌嫁娶</div>
+            </div>
+            <div class="yb-pwa-phone-card">
+              <div class="yb-pwa-phone-card-title">八字排盘</div>
+              <div class="yb-pwa-phone-card-text">丙午年 甲午月 庚寅日</div>
+            </div>
+            <div class="yb-pwa-phone-card">
+              <div class="yb-pwa-phone-card-title">AI 参详</div>
+              <div class="yb-pwa-phone-card-text">日主甲木，火旺木渴...</div>
+            </div>
+          </div>
+        </div>
+        <div class="yb-pwa-content">
+          <h2 class="yb-pwa-title">随身携带你的御笔</h2>
+          <p class="yb-pwa-desc">添加到手机桌面，像原生 App 一样随时打开。<br />无需下载，无需应用商店，一键直达古籍 AI 推演。</p>
+          <button class="yb-btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            添加到主屏幕
+            <span class="yb-sheen-overlay"><span class="yb-sheen-bar"></span></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       Footer
+       ============================================================ -->
+  <footer class="yb-footer">
+    <div class="yb-footer-inner">
+      <div class="yb-footer-grid">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <span class="yb-seal yb-footer-brand-seal">御笔</span>
+            <div>
+              <div class="yb-footer-brand-name">御笔易学</div>
+              <div class="yb-footer-brand-tag">古籍数字化 AI 推演平台</div>
+            </div>
+          </div>
+          <p class="yb-footer-brand-desc">
+            以宣纸为底，黛青为骨，琥珀为金。融合八字、紫微、六爻、奇门、大六壬与每日时令，每一句解读皆有古籍为证。
+          </p>
+          <div class="yb-footer-copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <span>仿青囊(qingnang.cc)美学体系重构</span>
+          </div>
+        </div>
+        <div>
+          <h4 class="yb-footer-col-title">术数</h4>
+          <ul class="yb-footer-col-links">
+            <li><a href="#">八字排盘</a></li>
+            <li><a href="#">紫微斗数</a></li>
+            <li><a href="#">六爻起卦</a></li>
+            <li><a href="#">奇门遁甲</a></li>
+            <li><a href="#">大六壬</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="yb-footer-col-title">资源</h4>
+          <ul class="yb-footer-col-links">
+            <li><a href="#">每日时令</a></li>
+            <li><a href="#">藏经阁 Wiki</a></li>
+            <li><a href="#">百宝袋</a></li>
+            <li><a href="#">古籍溯源</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="yb-footer-col-title">关于</h4>
+          <ul class="yb-footer-col-links">
+            <li><a href="#">关于御笔</a></li>
+            <li><a href="#">使用条款</a></li>
+            <li><a href="#">隐私政策</a></li>
+            <li><a href="#">联系我们</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="divider-ink" style="margin:32px 0;" />
+
+      <div class="yb-footer-bottom">
+        <div class="yb-footer-bottom-left">
+          <span>© 2026 御笔易学</span>
+          <span class="ink-dot" style="opacity:0.5;"></span>
+          <span>沪ICP备XXXXXXXX号-1</span>
+        </div>
+        <div class="yb-footer-bottom-right">墨韵 · 古意 · 新知</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       Mobile Bottom Nav
+       ============================================================ -->
+  <nav class="yb-mobile-nav" aria-label="移动端主导航">
+    <a href="#hero" class="yb-mobile-nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      首页
+    </a>
+    <a href="#features" class="yb-mobile-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+      八字
+    </a>
+    <a href="#features" class="yb-mobile-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 12Z"/><path d="M21 3v9h-9"/></svg>
+      紫微
+    </a>
+    <a href="#demo" class="yb-mobile-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      更多
+    </a>
+    <a href="#" class="yb-mobile-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      我的
+    </a>
+  </nav>
+
+  <!-- ============================================================
+       Scripts
+       ============================================================ -->
+  <script>
+    // ── Navbar scroll effect ──
+    const navbar = document.getElementById('navbar');
+    const onScroll = () => navbar.classList.toggle('scrolled', window.scrollY > 20);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // ── Theme toggle ──
+    const html = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const moonIcon = document.getElementById('moonIcon');
+    const sunIcon = document.getElementById('sunIcon');
+    const savedTheme = localStorage.getItem('yb-theme') || 'light';
+    html.setAttribute('data-theme', savedTheme);
+    updateThemeIcons(savedTheme);
+    themeToggle.addEventListener('click', () => {
+      const current = html.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('yb-theme', next);
+      updateThemeIcons(next);
+    });
+    function updateThemeIcons(theme) {
+      if (theme === 'dark') { moonIcon.style.display = 'none'; sunIcon.style.display = 'block'; }
+      else { moonIcon.style.display = 'block'; sunIcon.style.display = 'none'; }
+    }
+
+    // ── Spotlight cards ──
+    function bindSpotlight(root = document) {
+      root.querySelectorAll('[data-spotlight]').forEach(card => {
+        card.addEventListener('mousemove', e => {
+          const rect = card.getBoundingClientRect();
+          card.style.setProperty('--mouse-x', (e.clientX - rect.left) + 'px');
+          card.style.setProperty('--mouse-y', (e.clientY - rect.top) + 'px');
+        });
+      });
+    }
+    bindSpotlight();
+
+    // ── Typewriter ──
+    (function() {
+      const texts = [
+        "《周易》《滴天髓》《三命通会》原文为根",
+        "AI 逐句参详，专业克制，按次计费，不订阅",
+        "八字 · 紫微 · 六爻 · 奇门 · 大六壬 · 每日时令",
+        "RAG 古籍锚定，可溯源 · 可验证",
+      ];
+      const el = document.getElementById('typewriter');
+      let idx = 0, display = '', deleting = false;
+      const typeSpeed = 90, deleteSpeed = 45, pause = 1800;
+      function tick() {
+        const current = texts[idx % texts.length];
+        let timeout;
+        if (!deleting && display === current) {
+          timeout = setTimeout(() => { deleting = true; tick(); }, pause);
+        } else if (deleting && display === '') {
+          deleting = false; idx++;
+          timeout = setTimeout(tick, typeSpeed);
+        } else {
+          display = deleting ? current.slice(0, display.length - 1) : current.slice(0, display.length + 1);
+          el.textContent = display;
+          timeout = setTimeout(tick, deleting ? deleteSpeed : typeSpeed);
+        }
+      }
+      tick();
+    })();
+
+    // ── Hero floating glyphs ──
+    (function() {
+      const glyphs = ["乾", "坤", "震", "巽", "坎", "离", "艮", "兑"];
+      const container = document.getElementById('heroGlyphs');
+      glyphs.forEach((g, i) => {
+        const span = document.createElement('span');
+        span.className = 'yb-hero-glyph animate-glyph-float';
+        span.textContent = g;
+        span.style.left = (10 + i * 11) + '%';
+        span.style.top = (20 + ((i * 37) % 60)) + '%';
+        span.style.animationDelay = (i * 1.25) + 's';
+        span.style.animationDuration = (10 + (i % 3) * 2) + 's';
+        container.appendChild(span);
+      });
+    })();
+
+    // ── Floating particles ──
+    (function() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'yb-particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDuration = (6 + Math.random() * 6) + 's';
+        p.style.animationDelay = (Math.random() * 5) + 's';
+        p.style.opacity = 0.2 + Math.random() * 0.4;
+        container.appendChild(p);
+      }
+    })();
+
+    // ── Features grid ──
+    (function() {
+      const features = [
+        { icon: '☯', title: '三术合参', en: 'HECAN', desc: '旗舰 · 三盘互证概览免费。八字 × 紫微 × 七政三盘互证 — 信度分级的旗舰整合解读。', tag: '旗舰', accent: '#004d4d' },
+        { icon: '📜', title: '八字排盘', en: 'BAZI', desc: '录入生辰，按古法自动起盘排柱。RAG 锚定古籍原文，AI 逐柱参详。', tag: '免费', accent: '#004d4d' },
+        { icon: '🌌', title: '紫微斗数', en: 'ZIWEI', desc: '十二宫排盘，看主星四化与大限流年。', tag: '免费', accent: '#d4af37' },
+        { icon: '🪙', title: '六爻起卦', en: 'LIUYAO', desc: '依《增删卜易》《卜筮正宗》参详卦象。铜钱起卦法，含梅花易数。', tag: '含梅花', accent: '#9c3d54' },
+        { icon: '🧭', title: '奇门遁甲', en: 'QIMEN', desc: '据时起局，用神锚定 — 古籍策略推演。天地人三盘排布，九宫八门九星三奇六仪。', tag: '免费', accent: '#2d6a4f' },
+        { icon: '✨', title: '大六壬', en: 'DA LIU REN', desc: '月将加时 · 三传定事之始中末 — 一课通断万事。四课三传排盘，天将天神课体分析。', tag: '免费', accent: '#006666' },
+        { icon: '📅', title: '每日时令', en: 'DAILY', desc: '结合本命与节气，参考宜忌与日辰。当日干支、节气、宜忌、五行日主颜色指示。', tag: '高留存', accent: '#d4af37' },
+        { icon: '🧰', title: '百宝袋', en: 'TOOLKIT', desc: '寻时定盘 · 实用小工具集，持续上新。', tag: '免费', accent: '#004d4d' },
+      ];
+      const grid = document.getElementById('featuresGrid');
+      features.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'spotlight-card ink-border yb-feature-card';
+        card.setAttribute('data-spotlight', '');
+        card.innerHTML = `
+          <div class="yb-feature-card-top">
+            <div class="yb-feature-icon" style="background:${f.accent}14;color:${f.accent};">${f.icon}</div>
+            <span class="yb-feature-tag" style="background:${f.accent}14;color:${f.accent};">${f.tag}</span>
+          </div>
+          <div class="yb-feature-en">${f.en}</div>
+          <h3 class="yb-feature-title">${f.title}</h3>
+          <p class="yb-feature-desc">${f.desc}</p>
+          <div class="yb-feature-link">
+            进入排盘
+            <svg class="yb-feature-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      bindSpotlight(grid);
+    })();
+
+    // ── Classics marquee ──
+    (function() {
+      const classics = [
+        { text: "天行健，君子以自强不息", src: "《周易·乾卦》" },
+        { text: "地势坤，君子以厚德载物", src: "《周易·坤卦》" },
+        { text: "积善之家，必有余庆", src: "《周易·文言》" },
+        { text: "穷则变，变则通，通则久", src: "《周易·系辞》" },
+        { text: "一阴一阳之谓道", src: "《周易·系辞》" },
+        { text: "形而上者谓之道，形而下者谓之器", src: "《周易·系辞》" },
+      ];
+      const track = document.getElementById('marqueeTrack');
+      const items = [...classics, ...classics];
+      items.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'yb-classic-item';
+        div.innerHTML = `
+          <svg class="yb-classic-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+          <span class="yb-classic-text">${c.text}</span>
+          <span class="yb-classic-src">— ${c.src}</span>
+          <span class="ink-dot" style="margin-left:12px;"></span>
+        `;
+        track.appendChild(div);
+      });
+    })();
+
+    // ── Persona + Depth demo ──
+    (function() {
+      const outputs = {
+        scholar: {
+          full: "日主<mark>甲木</mark>生于<mark>午月</mark>，火旺木渴，亟需水以济之。年支见<mark>子水</mark>为印，然子午相冲，水气受损，格局由强转弱。大运逆行，初走<mark>辛未</mark>、<mark>壬申</mark>，金水相生，少年得志；中运<mark>癸酉</mark>印星到位，学业有成。此造用神首取<mark>水</mark>，喜<mark>金</mark>生之，忌<mark>火</mark>再来耗木。",
+          simple: "你这盘木被火烤得有点干，最需要的其实是水。年轻时金水运不错，读书有戏。中年后印星给力，事业稳。记住：水是你的贵人，火多则燥。"
+        },
+        hermit: {
+          full: "哥们儿，你这甲木生在夏天，就跟大树被架在火炉上烤似的，叶子都快卷了。年支那点子水本来是救命的，结果跟午火一冲，洒了一半。好在你早年走<mark>辛未</mark>、<mark>壬申</mark>，相当于有人端着水壶来救场，读书这块儿差不了。中运<mark>癸酉</mark>更是直接泡水里，美滋滋。",
+          simple: "简单说：你命里缺水，年轻时候有人帮，中年运势更顺。多靠近水，少往火坑里跳。"
+        }
+      };
+      const personaBtns = document.querySelectorAll('[data-persona]');
+      const depthBtns = document.querySelectorAll('[data-depth]');
+      const outputBody = document.getElementById('demoOutputBody');
+      const outputLabel = document.getElementById('demoOutputLabel');
+      let currentPersona = 'scholar';
+      let currentDepth = 'full';
+
+      function typeOutput(text) {
+        outputBody.innerHTML = '';
+        let i = 0;
+        function step() {
+          if (i < text.length) {
+            outputBody.innerHTML = text.slice(0, i + 1);
+            i++;
+            setTimeout(step, 18);
+          }
+        }
+        step();
+      }
+
+      function update() {
+        personaBtns.forEach(b => b.classList.toggle('active', b.dataset.persona === currentPersona));
+        depthBtns.forEach(b => b.classList.toggle('active', b.dataset.depth === currentDepth));
+        const pName = currentPersona === 'scholar' ? '博导模式' : '老友模式';
+        const dName = currentDepth === 'full' ? '完整推演' : '直给结论';
+        outputLabel.textContent = `参详输出 · ${pName} · ${dName}`;
+        typeOutput(outputs[currentPersona][currentDepth]);
+      }
+
+      personaBtns.forEach(btn => btn.addEventListener('click', () => { currentPersona = btn.dataset.persona; update(); }));
+      depthBtns.forEach(btn => btn.addEventListener('click', () => { currentDepth = btn.dataset.depth; update(); }));
+      update();
+    })();
+  </script>
+</body>
+</html>
