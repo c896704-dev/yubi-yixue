@@ -23,18 +23,32 @@ function yearGanzhi(y: number): { gan: string; zhi: string } {
   return { gan: GAN[idx % 10], zhi: ZHI[idx % 12] }
 }
 
-/** 月柱：立春起寅月 */
+/** 节气定月支表（每个节气的起点日期 → 该节气开始的月支）
+ *  按自然年循环顺序排列：1月小寒 → 12月大雪（倒序遍历找最近已过节气） */
+const SOLAR_TERM_MONTH: { m: number; d: number; zhi: string }[] = [
+  { m: 1, d: 6,  zhi: '丑' }, // 小寒
+  { m: 2, d: 4,  zhi: '寅' }, // 立春
+  { m: 3, d: 6,  zhi: '卯' }, // 惊蛰
+  { m: 4, d: 5,  zhi: '辰' }, // 清明
+  { m: 5, d: 5,  zhi: '巳' }, // 立夏
+  { m: 6, d: 5,  zhi: '午' }, // 芒种
+  { m: 7, d: 7,  zhi: '未' }, // 小暑
+  { m: 8, d: 7,  zhi: '申' }, // 立秋
+  { m: 9, d: 7,  zhi: '酉' }, // 白露
+  { m: 10, d: 8, zhi: '戌' }, // 寒露
+  { m: 11, d: 7, zhi: '亥' }, // 立冬
+  { m: 12, d: 7, zhi: '子' }, // 大雪
+]
+
+/** 月柱：节气定月支 + 五虎遁定月干 */
 function monthGanzhi(yearGan: string, m: number, d: number): { gan: string; zhi: string } {
-  const solarTerms = [
-    { m:2,d:4 },{ m:3,d:6 },{ m:4,d:5 },{ m:5,d:5 },{ m:6,d:5 },
-    { m:7,d:7 },{ m:8,d:7 },{ m:9,d:7 },{ m:10,d:8 },{ m:11,d:7 },
-    { m:12,d:7 },{ m:1,d:6 }
-  ]
-  let zhiIdx = 1 // 寅=1
-  for (let i = solarTerms.length - 1; i >= 0; i--) {
-    const st = solarTerms[i]
+  let zhiIdx = 0 // 子=0（默认兜底，正常情况下必被覆盖）
+  // 倒序遍历节气表，找最后一个已过的节气 → 该节气对应的月支
+  for (let i = SOLAR_TERM_MONTH.length - 1; i >= 0; i--) {
+    const st = SOLAR_TERM_MONTH[i]!
     if (m > st.m || (m === st.m && d >= st.d)) {
-      zhiIdx = (i + 1) % 12; break
+      zhiIdx = ZHI.indexOf(st.zhi)
+      break
     }
   }
   // 五虎遁—年干→正月月干映射

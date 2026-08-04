@@ -127,34 +127,16 @@ export function calculateBigFortunes(bazi: BaziChart, person: PersonInfo): BigFo
 
   const fortunes: BigFortune[] = []
 
-  for (let i = 0; i < daYunArr.length; i++) {
+  // 从 index=1 开始取：daYunArr[0] 是"出生→起运前"的胎运段（startAge=1、干支为空串），
+  // 非真大运。index≥1 的大运 startAge 由库保证连续（起运虚岁起每10年一柱），无需修复
+  for (let i = 1; i < daYunArr.length; i++) {
     const dy = daYunArr[i]!
     const ganzhi = dy.getGanZhi()
     const startAge = dy.getStartAge()
+    const endAge = startAge + 9
     const stem = toStem(ganzhi.charAt(0))
     const branch = toBranch(ganzhi.charAt(1))
     const tenGod = getTenGod(bazi.dayMaster, stem)
-
-    // 确保大运年龄连续不重叠：
-    // 如果前一个大运结束于 N 岁，当前大运从 N+1 开始
-    let endAge = startAge + 9
-    if (i > 0) {
-      const prevEnd = fortunes[i - 1]!.endAge
-      if (startAge <= prevEnd) {
-        // 修复重叠：当前大运从前一个大运结束后+1开始
-        const correctedStart = prevEnd + 1
-        endAge = correctedStart + 9
-        fortunes.push({
-          startAge: correctedStart,
-          endAge,
-          stem, branch,
-          naYin: SIXTY_JIAZI_NAYIN[ganzhi] ?? '',
-          tenGod,
-          element: STEM_ELEMENT[stem],
-        })
-        continue
-      }
-    }
 
     fortunes.push({
       startAge,
@@ -165,13 +147,6 @@ export function calculateBigFortunes(bazi: BaziChart, person: PersonInfo): BigFo
       tenGod,
       element: STEM_ELEMENT[stem],
     })
-  }
-
-  // 校验
-  for (let i = 1; i < fortunes.length; i++) {
-    if (fortunes[i]!.startAge <= fortunes[i - 1]!.endAge) {
-      console.warn(`大运重叠: [${i - 1}] ${fortunes[i - 1]!.startAge}-${fortunes[i - 1]!.endAge} 与 [${i}] ${fortunes[i]!.startAge}-${fortunes[i]!.endAge}`)
-    }
   }
 
   return fortunes
@@ -277,7 +252,9 @@ function godNameFromTenGod(god: string): string {
   }
 }
 
-/** 从格判定（日主极弱，全局皆从旺神） */
+/** 从格判定（日主极弱，全局皆从旺神）
+ *  从格命名取决于所从五行相对日主的十神身份：
+ *  我克=从财、克我=从官杀、生我=从印、我生=从儿 */
 export function isCongGe(bazi: BaziChart, strengthScore: number): string | null {
   if (strengthScore > -5) return null // 不够弱
 
@@ -288,20 +265,33 @@ export function isCongGe(bazi: BaziChart, strengthScore: number): string | null 
 
   if (maxVal < 10) return null
 
-  if (maxElem === '木') return '从财格（从木）'
-  if (maxElem === '火') return '从官杀格（从火）'
-  if (maxElem === '土') return '从财格（从土）'
-  if (maxElem === '金') return '从官杀格（从金）'
-  if (maxElem === '水') return '从官杀格（从水）'
-  return null
+  // 日主本身最旺时不算从格（那是专旺格的范围）
+  const dmElem = STEM_ELEMENT[bazi.dayMaster]
+  if (maxElem === dmElem) return null
+
+  // 用十神判定所从五行的身份：取所从五行对应天干与日主的关系
+  const targetStem = HEAVENLY_STEMS.find(s => STEM_ELEMENT[s] === maxElem)
+  if (!targetStem) return null
+  const god = getTenGod(bazi.dayMaster, targetStem)
+
+  switch (god) {
+    case '正财': case '偏财': return `从财格（从${maxElem}）`
+    case '正官': case '偏官': return `从官杀格（从${maxElem}）`
+    case '正印': case '偏印': return `从印格（从${maxElem}）`
+    case '食神': case '伤官': return `从儿格（从${maxElem}）`
+    default: return `从势格（从${maxElem}）`
+  }
 }
 
-/** 专旺格判定（一方五行独旺） */
+/** 专旺格判定（一方五行独旺）——充要条件：最旺五行必须就是日主五行 */
 export function isZhuanWangGe(bazi: BaziChart, dist: Record<FiveElement, number>): string | null {
+  const dmElem = STEM_ELEMENT[bazi.dayMaster]
   const sorted = Object.entries(dist).sort((a, b) => b[1] - a[1])
   const maxElem = sorted[0]![0] as FiveElement
   const maxVal = sorted[0]![1]
 
+  // 专旺格必须是日主一方独旺：最旺五行 == 日主五行，否则是从格或常格
+  if (maxElem !== dmElem) return null
   if (maxVal < 12) return null
 
   const names: Record<FiveElement, string> = {

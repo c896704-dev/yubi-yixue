@@ -3,31 +3,18 @@
  * 用于增强命理分析报告的自然语言生成 + AI 问答
  */
 
+import api from '../services/api'
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
 }
 
-interface ChatResponse {
-  content: string
-  error?: string
-}
-
 export async function chat(messages: ChatMessage[]): Promise<string> {
-  const res = await fetch('/api/ai/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ messages }),
-  })
-
-  const data: ChatResponse = await res.json().catch(() => ({ content: '', error: 'AI 服务返回异常' }))
-  if (!res.ok) {
-    throw new Error(data.error || `AI 服务请求失败 ${res.status}`)
-  }
-
-  return data.content ?? ''
+  // 走 api 实例（axios 拦截器自动附加 JWT 与 X-Device-Id；
+  // 响应拦截器已 unwrap res.data，此处用断言拿到响应体）
+  const data = await api.post<{ content: string }>('/ai/chat', { messages }) as unknown as { content: string }
+  return data?.content ?? ''
 }
 
 /** 构建命理问答的系统提示词，包含完整命盘上下文 */

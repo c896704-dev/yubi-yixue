@@ -126,7 +126,8 @@ const GUA_SU: Record<EarthlyBranch, EarthlyBranch> = {
 // ============================================================
 
 const HONG_YAN: Record<HeavenlyStem, EarthlyBranch> = {
-  '甲': '午', '乙': '午', '丙': '寅', '丁': '巳',
+  // 口诀"甲乙午申庚见戌，六丙逢寅辛见鸡，癸临申上丁见未，戊己怕辰壬怕子"
+  '甲': '午', '乙': '申', '丙': '寅', '丁': '未',
   '戊': '辰', '己': '辰', '庚': '戌', '辛': '酉',
   '壬': '子', '癸': '申',
 }
@@ -185,9 +186,10 @@ const LU_SHEN: Record<HeavenlyStem, EarthlyBranch> = {
 // ============================================================
 
 const JIN_YU: Record<HeavenlyStem, EarthlyBranch> = {
-  '甲': '辰', '乙': '巳', '丙': '午', '丁': '巳',
+  // 口诀"甲龙乙蛇丙戊羊，丁己猴兮庚犬方，辛猪壬牛癸逢虎"（禄前二位）
+  '甲': '辰', '乙': '巳', '丙': '未', '丁': '申',
   '戊': '未', '己': '申', '庚': '戌', '辛': '亥',
-  '壬': '寅', '癸': '卯',
+  '壬': '丑', '癸': '寅',
 }
 
 // ============================================================
@@ -323,11 +325,11 @@ function getYuanChen(yearBranch: EarthlyBranch, yearStem: HeavenlyStem, gender: 
   const cIdx = EARTHLY_BRANCHES.indexOf(chongTarget)
 
   if (isYangMale || isYinFemale) {
-    // 冲前一位（顺时针前一位）
-    return EARTHLY_BRANCHES[(cIdx + 11) % 12]!
-  } else {
-    // 冲后一位（逆时针后一位）
+    // 阳男阴女：冲前一位（顺时针前一位）。如甲子生男，子午冲，午前一位=未
     return EARTHLY_BRANCHES[(cIdx + 1) % 12]!
+  } else {
+    // 阴男阳女：冲后一位（逆时针后一位）。如甲子生女，午后一位=巳
+    return EARTHLY_BRANCHES[(cIdx + 11) % 12]!
   }
 }
 
@@ -540,10 +542,15 @@ export function calculateShenSha(
   hourBranch: EarthlyBranch,
   dayGanZhi: string,
   context?: ShenShaContext,
+  /** 四柱天干（年、月、日、时）——用于天德/月德等需天干透出的神煞 */
+  fourStems?: HeavenlyStem[],
 ): ShenShaResult {
   const all: ShenShaDetail[] = []
   const pillars = { 年支: yearBranch, 月支: monthBranch, 日支: dayBranch, 时支: hourBranch }
   const gender = context?.gender || '男'
+  const allStems: HeavenlyStem[] = fourStems && fourStems.length === 4
+    ? fourStems
+    : [yearStem, dayStem, dayStem, dayStem] // 兜底：至少含日干
 
   function addIf(name: string, type: ShenShaType, basedOn: string, label: string): void {
     const desc = context ? buildShenShaDesc(name, label, context) : BASE_DESC[name] || ''
@@ -558,19 +565,21 @@ export function calculateShenSha(
     if (tianYiBranches.includes(branch)) addIf('天乙贵人', '吉', `日干${dayStem}`, label)
   }
 
-  // 2. 天德贵人（月支查天干，命局整体层面）
-  const tianDeStem = TIAN_DE[monthBranch]
-  if (tianDeStem) {
-    // 天德是命局整体神煞，基于月令查看天干是否出现
+  // 2. 天德贵人（月支查天干，且该天干必须透出四柱才成立）
+  const tianDeStem = TIAN_DE[monthBranch] as HeavenlyStem | undefined
+  if (tianDeStem && allStems.includes(tianDeStem)) {
     const desc = context ? buildShenShaDesc('天德贵人', '月支', context) : BASE_DESC['天德贵人'] || ''
-    all.push({ name: '天德贵人', type: '吉', basedOn: `月支${monthBranch}→天干${tianDeStem}`, pillar: '全局', description: desc })
+    all.push({ name: '天德贵人', type: '吉', basedOn: `月支${monthBranch}→天干${tianDeStem}透出`, pillar: '全局', description: desc })
   }
 
-  // 3. 月德贵人（月支查天干，命局整体层面）
+  // 3. 月德贵人（月支查天干，且该天干必须透出四柱才成立）
   const yueDeStems = YUE_DE[monthBranch] || []
   if (yueDeStems.length > 0) {
-    const desc = context ? buildShenShaDesc('月德贵人', '月支', context) : BASE_DESC['月德贵人'] || ''
-    all.push({ name: '月德贵人', type: '吉', basedOn: `月支${monthBranch}`, pillar: '全局', description: desc })
+    const yueDeHit = yueDeStems.find(s => allStems.includes(s))
+    if (yueDeHit) {
+      const desc = context ? buildShenShaDesc('月德贵人', '月支', context) : BASE_DESC['月德贵人'] || ''
+      all.push({ name: '月德贵人', type: '吉', basedOn: `月支${monthBranch}→天干${yueDeHit}透出`, pillar: '全局', description: desc })
+    }
   }
 
   // 4. 文昌贵人（日干查）

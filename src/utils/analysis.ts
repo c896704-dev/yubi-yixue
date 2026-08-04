@@ -68,6 +68,7 @@ export function analyzePerson(person: PersonInfo): AnalysisResult {
       favorableElements: [] as string[], // 先占位，后面填入
       unfavorableElements: [] as string[],
     },
+    [bazi.year.stem, bazi.month.stem, bazi.day.stem, bazi.hour.stem],
   )
 
   // 5. 刑冲合害
@@ -84,8 +85,8 @@ export function analyzePerson(person: PersonInfo): AnalysisResult {
   // 7. 寒暖燥湿
   const climateResult = judgeClimate(bazi, fiveElementDistribution)
 
-  // 当前大运
-  const currentAge = new Date().getFullYear() - person.birthYear
+  // 当前大运（大运段按虚岁计算，虚岁 = 周岁 + 1）
+  const currentAge = new Date().getFullYear() - person.birthYear + 1
   const currentFortune = bigFortunes.find(f => currentAge >= f.startAge && currentAge <= f.endAge)
 
   // 兼容旧接口

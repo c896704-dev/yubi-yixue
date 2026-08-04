@@ -75,8 +75,10 @@ export function randomCast(): LiuyaoResult {
   }
   changing.sort((a, b) => a - b)
 
-  const upper = lines.slice(3, 6) // bits 3-5 in trigram format
-  const lower = lines.slice(0, 3) // bits 0-2
+  // buildLiuyaoResult 期望"阳爻位置"列表（如 [1,3] = 初爻+三爻为阳），
+  // 因此把 0/1 位值转换为位置列表，否则 includes(1) 会把值 1 误判为"位置 1"
+  const upper = lines.slice(3, 6).map((v, i) => (v === 1 ? i + 1 : -1)).filter(i => i > 0)
+  const lower = lines.slice(0, 3).map((v, i) => (v === 1 ? i + 1 : -1)).filter(i => i > 0)
 
   return buildLiuyaoResult(upper, lower, changing, 'random')
 }

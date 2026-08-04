@@ -540,10 +540,14 @@ export function getMingGong(
   monthBranch: EarthlyBranch,
   hourBranch: EarthlyBranch,
 ): EarthlyBranch {
-  const mIdx = EARTHLY_BRANCHES.indexOf(monthBranch)
-  const hIdx = EARTHLY_BRANCHES.indexOf(hourBranch)
-  const mingGongIdx = ((14 - (mIdx + hIdx)) % 12 + 12) % 12
-  return EARTHLY_BRANCHES[mingGongIdx]!
+  // 《三命通会》公式：命宫 = 14 - (月支数 + 时支数)，子=1, 丑=2, ..., 亥=12
+  // 和 > 14 时用 26 - 和
+  const mNum = EARTHLY_BRANCHES.indexOf(monthBranch) + 1 // 1-based
+  const hNum = EARTHLY_BRANCHES.indexOf(hourBranch) + 1
+  const sum = mNum + hNum
+  const mingGongNum = sum > 14 ? 26 - sum : 14 - sum
+  // 转回 0-based 索引（1→0, ..., 12→11）
+  return EARTHLY_BRANCHES[((mingGongNum - 1) % 12 + 12) % 12]!
 }
 
 /** 命宫天干：年上起月法推命宫天干 */
