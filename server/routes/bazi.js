@@ -20,9 +20,16 @@ router.post('/records', (req, res) => {
 
     const deviceId = req.deviceId || '';
     const userId = req.userId || null;
-    const existing = db.prepare('SELECT id FROM bazi_records WHERE id = ?').get(id);
+    const existing = db.prepare('SELECT id, user_id, device_id FROM bazi_records WHERE id = ?').get(id);
 
     if (existing) {
+      // IDOR 防护：UPDATE 前校验归属——管理员、记录创建者或设备所有者方可更新
+      const isAdmin = canSeeAll(req);
+      const isOwner = req.userId && existing.user_id === req.userId;
+      const isDeviceOwner = !req.userId && existing.device_id === deviceId;
+      if (!isAdmin && !isOwner && !isDeviceOwner) {
+        return res.status(403).json({ error: '无权修改此记录' });
+      }
       // UPDATE 不改变 user_id（谁创建的永远归谁）
       db.prepare(`UPDATE bazi_records SET person_data=?, result_data=?, label=?, ai_insight=COALESCE(?, ai_insight), created_at=datetime('now') WHERE id=?`)
         .run(JSON.stringify(personData), resultData ? JSON.stringify(resultData) : null, label || '', aiInsight || null, id);

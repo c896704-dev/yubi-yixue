@@ -9,7 +9,6 @@ import { handleError } from './middleware/error-helper.js';
 import { deviceMiddleware } from './middleware/device.js';
 import { authMiddleware } from './middleware/auth.js';
 import { generalLimiter, authLimiter, aiChatLimiter, analysisLimiter } from './middleware/rate-limiter.js';
-import './middleware/error-helper.js';
 import helmet from 'helmet';
 import analyzeRouter from './routes/analyze.js';
 import recordsRouter from './routes/records.js';
@@ -28,6 +27,9 @@ const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+
+// 位于 nginx 反向代理之后：信任代理层 X-Forwarded-For，使 req.ip/限流按真实客户端 IP 生效
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
@@ -134,6 +136,19 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Initialize database
+initDatabase();
+
+// HTTPS 强制（必须在静态资源与路由之前注册，否则永远不生效）
+if (process.env.NODE_ENV === 'production' && process.env.FORCE_HTTPS === 'true') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+
 // Serve public files and production build
 const publicPath = path.join(__dirname, '..', 'public');
 const distPath = path.join(__dirname, '..', 'dist');
@@ -144,18 +159,6 @@ app.get('*', (_req, res, next) => {
   if (_req.path.startsWith('/api')) return next();
   res.sendFile(path.join(distPath, 'index.html'));
 });
-
-// Initialize database
-initDatabase();
-
-if (process.env.NODE_ENV === 'production' && process.env.FORCE_HTTPS === 'true') {
-  app.use((req, res, next) => {
-    if (req.headers['x-forwarded-proto'] !== 'https') {
-      return res.redirect(`https://${req.headers.host}${req.url}`);
-    }
-    next();
-  });
-}
 
 app.listen(PORT, () => {
   console.log(`御笔易学服务端运行在 http://localhost:${PORT}`);

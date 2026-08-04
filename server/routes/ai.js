@@ -62,7 +62,8 @@ router.post('/chat', async (req, res) => {
       content: data?.choices?.[0]?.message?.content || '',
     });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'AI 服务调用失败' });
+    console.error('[AI 聊天]', error);
+    res.status(500).json({ error: 'AI 服务调用失败，请稍后重试' });
   }
 });
 

@@ -5,7 +5,8 @@ const isProd = process.env.NODE_ENV === 'production';
 const standardConfig = {
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1',
+  // 仅开发模式跳过本机（生产环境经 nginx 反代，req.ip 为代理地址，必须限流）
+  skip: (req) => !isProd && (req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1'),
 };
 
 export const authLimiter = rateLimit({

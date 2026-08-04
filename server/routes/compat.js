@@ -15,8 +15,15 @@ router.post('/records', (req, res) => {
     if (!id || !maleData || !femaleData || !resultData || !label) return res.status(400).json({ error: '缺少必要字段' });
 
     const deviceId = req.deviceId || '';
-    const existing = db.prepare('SELECT id FROM compat_records WHERE id = ?').get(id);
+    const existing = db.prepare('SELECT id, user_id, device_id FROM compat_records WHERE id = ?').get(id);
     if (existing) {
+      // IDOR 防护：UPDATE 前校验归属——管理员、记录创建者或设备所有者方可更新
+      const isAdmin = canSeeAll(req);
+      const isOwner = req.userId && existing.user_id === req.userId;
+      const isDeviceOwner = !req.userId && existing.device_id === deviceId;
+      if (!isAdmin && !isOwner && !isDeviceOwner) {
+        return res.status(403).json({ error: '无权修改此记录' });
+      }
       // UPDATE 不改变 user_id（谁创建的归谁）
       db.prepare(`UPDATE compat_records SET male_data=?, female_data=?, result_data=?, ai_insight=?, label=? WHERE id=?`)
         .run(JSON.stringify(maleData), JSON.stringify(femaleData), JSON.stringify(resultData), aiInsight || null, label, id);

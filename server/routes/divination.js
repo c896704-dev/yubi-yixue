@@ -16,8 +16,15 @@ router.post('/records', (req, res) => {
     if (!['liuyao', 'meihua'].includes(type)) return res.status(400).json({ error: '无效的算卦类型' });
 
     const deviceId = req.deviceId || '';
-    const existing_rec = db.prepare('SELECT id FROM divination_records WHERE id = ?').get(id);
+    const existing_rec = db.prepare('SELECT id, user_id, device_id FROM divination_records WHERE id = ?').get(id);
     if (existing_rec) {
+      // IDOR 防护：UPDATE 前校验归属——管理员、记录创建者或设备所有者方可更新
+      const isAdmin = canSeeAll(req);
+      const isOwner = req.userId && existing_rec.user_id === req.userId;
+      const isDeviceOwner = !req.userId && existing_rec.device_id === deviceId;
+      if (!isAdmin && !isOwner && !isDeviceOwner) {
+        return res.status(403).json({ error: '无权修改此记录' });
+      }
       // UPDATE 不改变 user_id（谁创建的归谁）
       db.prepare(`UPDATE divination_records SET type=?, method=?, question=?, hexagram_data=?, ai_interpretation=?, label=?, created_at=? WHERE id=?`)
         .run(type, method, question || null, JSON.stringify(hexagramData), aiInterpretation || null, label || '',
@@ -62,7 +69,7 @@ router.get('/records', (req, res) => {
       }
     }
 
-    sql += ' ORDER BY created_at DESC LIMIT 50';
+    sql += ' ORDER BY created_at DESC LIMIT 100';
     const rows = db.prepare(sql).all(...params);
     res.json({ success: true, records: rows.map(r => ({
       id: r.id, type: r.type, method: r.method, question: r.question,

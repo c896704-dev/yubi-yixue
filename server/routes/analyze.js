@@ -60,12 +60,13 @@ router.post('/layout', async (req, res) => {
   try {
     const {
       image, orientation = 'south', buildingYear = new Date().getFullYear(),
-      mode = 'simple', apiKey,
+      mode = 'simple',
       withBazi = false, birthData = null,
     } = req.body;
 
     if (!image) return res.status(400).json({ success: false, error: '请上传户型图' });
-    const effectiveApiKey = apiKey || process.env.DASHSCOPE_API_KEY;
+    // 一律使用服务端密钥（不接受客户端传 key，防止密钥滥用/免费中继）
+    const effectiveApiKey = process.env.DASHSCOPE_API_KEY;
     if (!effectiveApiKey) return res.status(400).json({ success: false, error: '请配置 API Key' });
 
     // 校验属相输入
@@ -177,10 +178,11 @@ router.post('/location', async (req, res) => {
     const {
       images, description,
       orientation = 'south', buildingYear = new Date().getFullYear(),
-      mode = 'simple', apiKey,
+      mode = 'simple',
     } = req.body;
 
-    const effectiveApiKey = apiKey || process.env.DASHSCOPE_API_KEY;
+    // 一律使用服务端密钥（不接受客户端传 key）
+    const effectiveApiKey = process.env.DASHSCOPE_API_KEY;
     if (!effectiveApiKey) return res.status(400).json({ success: false, error: '请配置 API Key' });
 
     const analysisId = uuidv4();
@@ -227,8 +229,10 @@ router.post('/location', async (req, res) => {
  */
 router.post('/ai-report', async (req, res) => {
   try {
-    const { apiKey, data } = req.body;
-    if (!apiKey) return res.status(400).json({ success: false, error: '请提供 API Key' });
+    const { data } = req.body;
+    // 一律使用服务端密钥（不接受客户端传 key）
+    const apiKey = process.env.DASHSCOPE_API_KEY;
+    if (!apiKey) return res.status(400).json({ success: false, error: '服务端未配置 API Key' });
 
     const prompt = getFengshuiReportPrompt(data);
     const result = await callQwenText(prompt, apiKey);

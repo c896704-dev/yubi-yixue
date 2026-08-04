@@ -26,6 +26,15 @@ export function deviceMiddleware(req, res, next) {
     db.prepare(
       'INSERT INTO devices (id, first_seen_at, last_seen_at) VALUES (?, datetime(\'now\'), datetime(\'now\'))'
     ).run(deviceId);
+    // 防设备表无限膨胀：超过 5 万行时清理最久未活跃的 1 万行
+    try {
+      const { total } = db.prepare('SELECT COUNT(*) as total FROM devices').get();
+      if (total > 50000) {
+        db.prepare(
+          'DELETE FROM devices WHERE id NOT IN (SELECT id FROM devices ORDER BY last_seen_at DESC LIMIT 40000)'
+        ).run();
+      }
+    } catch { /* 清理失败不影响主流程 */ }
   } else {
     db.prepare(
       'UPDATE devices SET last_seen_at = datetime(\'now\') WHERE id = ?'

@@ -11,7 +11,10 @@ function canSeeAll(req) { return req.isAdmin; }
 // 获取历史记录列表
 router.get('/', (req, res) => {
   try {
-    const { type, limit = 20, offset = 0 } = req.query;
+    // limit/offset 钳制，防止 LIMIT -5 / NaN 造成全量返回或 500
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 20))
+    const offset = Math.max(0, Number(req.query.offset) || 0)
+    const type = req.query.type
 
     let query = `
       SELECT a.id, a.type, a.created_at, a.overall_score, a.summary, a.status,
@@ -38,24 +41,33 @@ router.get('/', (req, res) => {
     }
 
     query += ' ORDER BY a.created_at DESC LIMIT ? OFFSET ?';
-    params.push(Number(limit), Number(offset));
+    params.push(limit, offset);
 
     const records = db.prepare(query).all(...params);
-    const countResult = db.prepare(
-      'SELECT COUNT(*) as total FROM analyses WHERE 1 = 1' + (type ? ' AND type = ?' : ''),
-    ).get(...(type ? [type] : []));
+    // count 与列表同条件（防止匿名设备得知全库记录总数）
+    const countQuery = `
+      SELECT COUNT(*) as total FROM analyses a
+      WHERE 1 = 1
+      ${type ? ' AND a.type = ?' : ''}
+      ${!canSeeAll(req) ? (req.userId ? ' AND a.user_id = ?' : ' AND a.device_id = ?') : ''}
+    `;
+    const countParams = []
+    if (type) countParams.push(type)
+    if (!canSeeAll(req)) countParams.push(req.userId || req.deviceId || '')
+    const countResult = db.prepare(countQuery).get(...countParams);
 
     res.json({
       success: true,
       data: {
         records,
         total: countResult.total,
-        limit: Number(limit),
-        offset: Number(offset),
+        limit,
+        offset,
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('[获取风水记录]', error);
+    res.status(500).json({ success: false, error: '获取记录失败，请稍后重试' });
   }
 });
 
@@ -91,7 +103,8 @@ router.get('/:id', (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('[获取风水记录详情]', error);
+    res.status(500).json({ success: false, error: '获取记录详情失败，请稍后重试' });
   }
 });
 

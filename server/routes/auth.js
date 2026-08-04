@@ -60,7 +60,7 @@ router.post('/login', (req, res) => {
 
 router.get('/me', authMiddleware, (req, res) => {
   try {
-    const user = db.prepare('SELECT id, email, username, created_at FROM users WHERE id = ?').get(req.userId);
+    const user = db.prepare('SELECT id, email, username, role, created_at FROM users WHERE id = ?').get(req.userId);
     if (!user) return res.status(404).json({ error: '用户不存在' });
     res.json({ success: true, data: { user: { ...user, isAdmin: (user.role || 'user') === 'admin' } } });
   } catch (err) {
