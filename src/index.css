@@ -1318,6 +1318,21 @@ textarea.field { resize: vertical; min-height: 80px; }
   font-size: clamp(0.875rem, 2vw, 1rem);
   line-height: 1.6;
   color: hsl(var(--foreground));
+  overflow-wrap: break-word;
+  word-break: break-word;
+  /* AI 解读中若含超宽表格/代码块，允许卡片内横向滚动而非截断 */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.report table {
+  min-width: 100%;
+}
+
+.report pre {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .report h1 {

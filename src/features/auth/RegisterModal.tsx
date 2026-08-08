@@ -37,7 +37,7 @@ export function RegisterModal({ open, onClose, onSwitchToLogin }: RegisterModalP
         <Input label="用户名" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="请输入用户名" />
         <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少6位密码" />
         <Input label="确认密码" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="再次输入密码" />
-        {error && <span className="text-xs" style={{ color: 'var(--danger)' }}>{error}</span>}
+        {error && <span className="text-xs font-medium" style={{ color: 'hsl(var(--danger))' }}>{error}</span>}
         <Button type="submit" loading={loading} className="w-full !mt-2">注册</Button>
         <div className="text-center text-sm" style={{ color: 'var(--muted)' }}>
           已有账号？

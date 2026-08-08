@@ -25,7 +25,7 @@ router.post('/chat', async (req, res) => {
       return res.status(500).json({ error: 'DeepSeek API Key 未配置' });
     }
 
-    const { messages } = req.body;
+    const { messages, temperature } = req.body;
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: '缺少消息内容' });
     }
@@ -39,7 +39,8 @@ router.post('/chat', async (req, res) => {
       body: JSON.stringify({
         model,
         messages,
-        temperature: 0.7,
+        // 命理解读需稳定输出：默认 0.5，允许前端按场景覆盖
+        temperature: typeof temperature === 'number' ? temperature : 0.5,
         max_tokens: 8192,
       }),
     });

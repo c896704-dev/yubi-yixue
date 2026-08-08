@@ -31,7 +31,7 @@ export function LoginModal({ open, onClose, onSwitchToRegister }: LoginModalProp
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input label="邮箱" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="请输入邮箱" />
         <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
-        {error && <span className="text-xs" style={{ color: 'var(--danger)' }}>{error}</span>}
+        {error && <span className="text-xs font-medium" style={{ color: 'hsl(var(--danger))' }}>{error}</span>}
         <Button type="submit" loading={loading} className="w-full !mt-2">登录</Button>
         <div className="text-center text-sm" style={{ color: 'var(--muted)' }}>
           还没有账号？
