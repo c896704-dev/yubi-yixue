@@ -16,3 +16,4 @@ data/*.log
 *.db-*
 server/data/*.db
 server/data/*.db-*
+.playwright-mcp/
