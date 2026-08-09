@@ -328,6 +328,7 @@ ${codeAnalysis}
 
 ` : ''}
 **起卦过程：** ${result.calcProcess || result.method}
+**起卦时间：** ${result.timestamp ? new Date(result.timestamp).toLocaleString('zh-CN', { hour12: false }) : '未知'}
 
 **本卦：** ${result.originalHexagram.name}（上${result.upperTrigram.name}下${result.lowerTrigram.name}，属${result.originalHexagram.palaceElement}）
 **互卦：** ${result.huHexagram.name}（上${result.huHexagram.upperTrigram}下${result.huHexagram.lowerTrigram}，属${result.huHexagram.palaceElement}）${result.huFromChanged ? '【注意：本卦为纯乾/纯坤，依"乾坤无互，互其变卦"原则，此互卦取自变卦】' : ''}

@@ -8,16 +8,18 @@ import BaziPage from './features/bazi/BaziPage'
 import CompatPage from './features/compat/CompatPage'
 import FengshuiPage from './features/fengshui/FengshuiPage'
 import { DivinationPage } from './features/divination/DivinationPage'
+import WannianliPage from './features/almanac/WannianliPage'
 import { useAuth } from './hooks/useAuth'
 import { migrateAllRecords } from './services/migrateService'
 
-type Tab = 'bazi' | 'compat' | 'fengshui' | 'divination'
+type Tab = 'bazi' | 'compat' | 'fengshui' | 'divination' | 'almanac'
 
 const pageMeta: Record<Tab, { title: string; desc: string }> = {
   bazi: { title: '八字排盘', desc: '输入出生信息，解读命理格局' },
   compat: { title: '双人合盘', desc: '两命相合，缘分之深浅一窥便知' },
   fengshui: { title: '风水分析', desc: '户型图、楼盘位置 · 环境吉凶分析' },
   divination: { title: '算卦', desc: '六爻 · 梅花易数 · 诚心所至，卦象自明' },
+  almanac: { title: '万年历', desc: '农历 · 干支 · 节气 · 宜忌，通览时日吉凶' },
 }
 
 const tabs: { key: Tab; label: string; icon: string }[] = [
@@ -25,6 +27,7 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'compat', label: '双人合盘', icon: '☯' },
   { key: 'fengshui', label: '风水分析', icon: '⛰' },
   { key: 'divination', label: '算卦', icon: '䷀' },
+  { key: 'almanac', label: '万年历', icon: '📅' },
 ]
 
 function AppContent() {
@@ -145,6 +148,7 @@ function AppContent() {
               {tab === 'compat' && <CompatPage />}
               {tab === 'fengshui' && <FengshuiPage />}
               {tab === 'divination' && <DivinationPage />}
+              {tab === 'almanac' && <WannianliPage />}
             </div>
           </ErrorBoundary>
 
