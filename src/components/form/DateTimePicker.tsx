@@ -57,7 +57,7 @@ export function DateTimePicker({
   const months = Array.from({ length: 12 }, (_, i) => i + 1)
   const days = Array.from({ length: 31 }, (_, i) => i + 1)
   const hours = Array.from({ length: 24 }, (_, i) => i)
-  const minutes = [0, 10, 20, 30, 40, 50]
+  const minutes = Array.from({ length: 60 }, (_, i) => i) // 0-59 全量分钟
 
   return (
     <div className="field-wrap">

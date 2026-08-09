@@ -5,17 +5,12 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { DateTimePicker } from '../../components/form/DateTimePicker'
 import { CITY_LONGITUDES } from '../../utils/solarTime'
+import { PROVINCE_CITIES } from '../../utils/cityData'
 
 interface BaziInputProps {
   onSubmit: (person: PersonInfo) => void
   loading?: boolean
 }
-
-const popularCities = [
-  '北京', '上海', '广州', '深圳', '成都', '杭州', '南京',
-  '武汉', '重庆', '西安', '天津', '长沙', '郑州', '济南',
-  '青岛', '大连', '厦门', '福州', '昆明', '贵阳',
-]
 
 function PillBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
@@ -37,11 +32,24 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
   const [day, setDay] = useState<number | ''>('')
   const [hour, setHour] = useState<number | ''>('')
   const [minute, setMinute] = useState<number | ''>(0)
-  const [birthPlace, setBirthPlace] = useState('北京')
+  const [province, setProvince] = useState('北京市')
+  const [birthPlace, setBirthPlace] = useState('北京城区')
   const [customPlace, setCustomPlace] = useState('')
   const [customLng, setCustomLng] = useState('')
   const [useCustom, setUseCustom] = useState(false)
   const [error, setError] = useState('')
+
+  // 当前省份的城市列表
+  const currentProvince = PROVINCE_CITIES.find(p => p.name === province) || PROVINCE_CITIES[0]
+  const citiesOfProvince = currentProvince?.cities || []
+
+  const handleProvinceChange = (p: string) => {
+    setProvince(p)
+    const prov = PROVINCE_CITIES.find(x => x.name === p)
+    if (prov && prov.cities.length > 0) {
+      setBirthPlace(prov.cities[0].name)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,14 +64,16 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
       if (isNaN(lng) || lng < -180 || lng > 180) { setError('请输入有效的经度（-180 ~ 180）'); return }
       longitude = lng
     } else {
-      longitude = CITY_LONGITUDES[birthPlace] ?? 116.4
+      // 优先用市级经度，退化为省级经度，再退化为默认北京
+      const cityLng = citiesOfProvince.find(c => c.name === birthPlace)?.lng
+      longitude = cityLng ?? CITY_LONGITUDES[birthPlace] ?? currentProvince?.cities[0]?.lng ?? 116.4
     }
     onSubmit({
       name: name || '未命名', gender,
       birthYear: year as number, birthMonth: month as number,
       birthDay: day as number, birthHour: hour as number,
       birthMinute: minute === '' ? 0 : minute,
-      birthPlace: useCustom ? (customPlace || '自定义位置') : birthPlace,
+      birthPlace: useCustom ? (customPlace || '自定义位置') : `${province}·${birthPlace}`,
       longitude,
     })
   }
@@ -93,7 +103,7 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
         <div>
           <span className="field-label">出生地点</span>
           <div className="flex gap-2 mt-1 mb-2">
-            <PillBtn label="城市选择" active={!useCustom} onClick={() => setUseCustom(false)} />
+            <PillBtn label="省市选择" active={!useCustom} onClick={() => setUseCustom(false)} />
             <PillBtn label="自定义经度" active={useCustom} onClick={() => setUseCustom(true)} />
           </div>
           {useCustom ? (
@@ -102,13 +112,22 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
               <Input value={customLng} onChange={(e) => setCustomLng(e.target.value)} placeholder="经度，如 116.4" className="flex-1" />
             </div>
           ) : (
-            <select
-              className="select"
-              value={birthPlace}
-              onChange={(e) => setBirthPlace(e.target.value)}
-            >
-              {popularCities.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <div className="flex gap-2">
+              <select
+                className="select flex-1"
+                value={province}
+                onChange={(e) => handleProvinceChange(e.target.value)}
+              >
+                {PROVINCE_CITIES.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
+              </select>
+              <select
+                className="select flex-1"
+                value={birthPlace}
+                onChange={(e) => setBirthPlace(e.target.value)}
+              >
+                {citiesOfProvince.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
           )}
         </div>
 
