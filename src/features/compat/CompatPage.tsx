@@ -61,20 +61,9 @@ export default function CompatPage() {
     refreshCompatRecords()
   }, [refreshCompatRecords, authTokenCompat])
 
-  // Track the compat record that's waiting for AI insight
-  const pendingRecordRef = useRef<CompatRecord | null>(null)
-
-  useEffect(() => {
-    if (aiInsight && pendingRecordRef.current) {
-      const rec = pendingRecordRef.current
-      pendingRecordRef.current = null
-      // Patch the record with AI insight
-      saveCompatRecord({ ...rec, aiInsight }).then(refreshCompatRecords)
-      if (localStorage.getItem('auth_token')) {
-        saveServerCompatRecord({ id: rec.id, maleData: rec.malePerson, femaleData: rec.femalePerson, resultData: rec.result, aiInsight, label: rec.label }).catch(() => {})
-      }
-    }
-  }, [aiInsight, refreshCompatRecords])
+  // Track compat records waiting for AI insight（用 Map 按 id 配对，
+  // 避免单槽 ref 被第二次合盘覆盖导致第一条记录永远缺 AI 解读）
+  const pendingRecordsRef = useRef<Map<string, CompatRecord>>(new Map())
 
   const handleAnalyze1 = useCallback(async (person: PersonInfo) => { setPerson1(person); setAnalyzing1(true); setResult1(analyzePerson(person)); setAnalyzing1(false) }, [])
   const handleAnalyze2 = useCallback(async (person: PersonInfo) => { setPerson2(person); setAnalyzing2(true); setResult2(analyzePerson(person)); setAnalyzing2(false) }, [])
@@ -84,12 +73,22 @@ export default function CompatPage() {
     const compatResult = await runCompat(result1, result2)
     setReport(renderEnhancedCompatibilityReport(compatResult))
     setHasRunCompat(true)
-    fetchAiInsight(result1, result2)
     const label = `${person1!.name} & ${person2!.name} · 合盘`
     const record: CompatRecord = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), malePerson: person1!, femalePerson: person2!, result: compatResult, aiInsight: null, label, createdAt: Date.now() }
-    pendingRecordRef.current = record
+    pendingRecordsRef.current.set(record.id, record)
     saveCompatRecord(record).then(refreshCompatRecords)
     if (localStorage.getItem('auth_token')) { saveServerCompatRecord({ id: record.id, maleData: record.malePerson, femaleData: record.femalePerson, resultData: record.result, aiInsight: null, label: record.label }).catch(() => {}) }
+    // AI 解读返回后按本条记录 id 补写，互不覆盖
+    fetchAiInsight(result1, result2).then((insight) => {
+      if (!insight) return
+      const rec = pendingRecordsRef.current.get(record.id)
+      if (!rec) return
+      pendingRecordsRef.current.delete(record.id)
+      saveCompatRecord({ ...rec, aiInsight: insight }).then(refreshCompatRecords)
+      if (localStorage.getItem('auth_token')) {
+        saveServerCompatRecord({ id: rec.id, maleData: rec.malePerson, femaleData: rec.femalePerson, resultData: rec.result, aiInsight: insight, label: rec.label }).catch(() => {})
+      }
+    })
   }, [result1, result2, person1, person2, runCompat, fetchAiInsight, refreshCompatRecords])
 
   const handleLoadCompatRecord = useCallback(async (record: CompatRecord) => {

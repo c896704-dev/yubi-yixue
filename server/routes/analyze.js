@@ -22,13 +22,32 @@ function extractBase64(image) {
   return image.replace(/^data:image\/\w+;base64,/, '');
 }
 
-// 解析AI返回的JSON
+// 解析AI返回的JSON（容错：BOM / 代码围栏 / 前后多余文字 / 尾逗号）
 function parseAIJson(content) {
-  try {
-    return JSON.parse(content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
-  } catch {
-    return null;
+  if (!content) return null;
+  // 剥掉代码围栏与 BOM，兼容 AI 常见格式
+  let cleaned = content
+    .replace(/^\uFEFF/, '')
+    .replace(/```json\n?/gi, '')
+    .replace(/```\n?/g, '')
+    .trim();
+  // 优先整体解析；失败则提取第一个 JSON 对象/数组（容忍前后多余文字）
+  const candidates = [cleaned];
+  const m = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (m) candidates.push(m[0]);
+  for (const c of candidates) {
+    try {
+      return JSON.parse(c);
+    } catch {
+      // 容忍尾逗号（AI 常见）：去掉对象/数组末尾的逗号后重试
+      try {
+        return JSON.parse(c.replace(/,\s*([}\]])/g, '$1'));
+      } catch {
+        /* 继续下一候选 */
+      }
+    }
   }
+  return null;
 }
 
 // 保存分析结果到数据库

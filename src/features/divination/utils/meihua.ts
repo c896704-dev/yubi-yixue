@@ -2,6 +2,7 @@ import type { MeihuaResult, TiYongRelation, Hexagram, Trigram } from '../types'
 import { getTrigramByNumber, getTrigramByName } from './trigrams'
 import { getHexagramByTrigrams } from './hexagrams'
 import { getTotalStrokes } from './strokes'
+import { Solar } from 'lunar-typescript'
 
 /**
  * 梅花易数起卦逻辑
@@ -25,21 +26,38 @@ export function meihuaNumberCast(n1: number, n2: number, n3?: number): MeihuaRes
   return buildMeihuaResult(upperNum, lowerNum, changingYao, 'number', [n1, n2, changeNum])
 }
 
-export function meihuaTimeCast(year: number, month: number, day: number, hour: number): MeihuaResult {
-  const upperNum = (year + month + day) % 8
-  const lowerNum = (year + month + day + hour) % 8
-  const changeNum = (year + month + day + hour) % 6
+/** 时间起卦（《梅花易数》"年月日时起例"）
+ *  传统法：年取农历年支序数（子1…亥12），月取农历月，日取农历日，时取时支序数（子1…亥12）
+ *  上卦 = (年支序数 + 农历月 + 农历日) % 8
+ *  下卦 = (年支序数 + 农历月 + 农历日 + 时支序数) % 8
+ *  动爻 = (年支序数 + 农历月 + 农历日 + 时支序数) % 6（余0为6） */
+export function meihuaTimeCast(yearZhiNum: number, lunarMonth: number, lunarDay: number, hourZhiNum: number): MeihuaResult {
+  const total1 = yearZhiNum + lunarMonth + lunarDay
+  const total2 = total1 + hourZhiNum
+  const upperNum = total1 % 8
+  const lowerNum = total2 % 8
+  const changeNum = total2 % 6
   const changingYao = changeNum === 0 ? 6 : changeNum
-  return buildMeihuaResult(upperNum, lowerNum, changingYao, 'time', [year, month, day, hour])
+  return buildMeihuaResult(upperNum, lowerNum, changingYao, 'time', [yearZhiNum, lunarMonth, lunarDay, hourZhiNum])
+}
+
+const ZHI_NUM: Record<string, number> = {
+  '子': 1, '丑': 2, '寅': 3, '卯': 4, '辰': 5, '巳': 6,
+  '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12,
 }
 
 export function meihuaCurrentTimeCast(): MeihuaResult {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const day = now.getDate()
-  const hour = now.getHours()
+  const lunar = Solar.fromYmd(now.getFullYear(), now.getMonth() + 1, now.getDate()).getLunar()
 
+  // 年支序数：以立春为界的农历年支（子1…亥12）
+  const yearZhi = lunar.getYearInGanZhi().charAt(1)
+  const yearZhiNum = ZHI_NUM[yearZhi] ?? 1
+  // 农历月、农历日
+  const lunarMonth = lunar.getMonth()
+  const lunarDay = lunar.getDay()
+
+  const hour = now.getHours()
   const zhiHour = hour === 23 || hour === 0 ? 1
     : hour === 1 || hour === 2 ? 2
     : hour === 3 || hour === 4 ? 3
@@ -53,7 +71,7 @@ export function meihuaCurrentTimeCast(): MeihuaResult {
     : hour === 19 || hour === 20 ? 11
     : 12
 
-  return meihuaTimeCast(year, month, day, zhiHour)
+  return meihuaTimeCast(yearZhiNum, lunarMonth, lunarDay, zhiHour)
 }
 
 export function meihuaTextCast(text: string): MeihuaResult {
@@ -272,8 +290,10 @@ function computeCuoGua(hexagram: Hexagram): Hexagram {
 }
 
 // F-11: 综卦 — 卦象上下颠倒
+// 自综卦共8个：乾坤离坎 + 颐大过中孚小过（颠倒后仍是自身，不应显示"综卦·本卦"）
+const SELF_ZONG = ['乾为天','坤为地','离为火','坎为水','山雷颐','泽风大过','风泽中孚','雷山小过']
 function computeZongGua(hexagram: Hexagram): Hexagram | null {
-  if (['乾为天','坤为地','离为火','坎为水'].includes(hexagram.name)) return null
+  if (SELF_ZONG.includes(hexagram.name)) return null
   const sym = hexagram.symbol
   // 颠倒：初↔上(bit0↔bit5), 二↔五(bit1↔bit4), 三↔四(bit2↔bit3)
   const newSym =
@@ -301,35 +321,24 @@ interface SeasonalStrength {
   summary: string       // 综合判断
 }
 
-// 节气日期表（近似值，2020-2030年误差±1天）
-// 每月两个节气：节(月始) + 气(月中)
-const JIE_QI = [
-  { m:1, d:5,  zhi:'丑', wuxing:'土', name:'小寒→丑月' },
-  { m:2, d:4,  zhi:'寅', wuxing:'木', name:'立春→寅月' },
-  { m:3, d:6,  zhi:'卯', wuxing:'木', name:'惊蛰→卯月' },
-  { m:4, d:5,  zhi:'辰', wuxing:'土', name:'清明→辰月' },
-  { m:5, d:5,  zhi:'巳', wuxing:'火', name:'立夏→巳月' },
-  { m:6, d:5,  zhi:'午', wuxing:'火', name:'芒种→午月' },
-  { m:7, d:7,  zhi:'未', wuxing:'土', name:'小暑→未月' },
-  { m:8, d:7,  zhi:'申', wuxing:'金', name:'立秋→申月' },
-  { m:9, d:7,  zhi:'酉', wuxing:'金', name:'白露→酉月' },
-  { m:10,d:8,  zhi:'戌', wuxing:'土', name:'寒露→戌月' },
-  { m:11,d:7,  zhi:'亥', wuxing:'水', name:'立冬→亥月' },
-  { m:12,d:7,  zhi:'子', wuxing:'水', name:'大雪→子月' },
-]
+/** 月支五行表 */
+const ZHI_WUXING: Record<string, string> = {
+  '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+  '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水',
+}
 
+/** 节气月支 → 该月起始节气名（用于区间文案） */
+const TERM_NAME: Record<string, string> = {
+  '寅': '立春', '卯': '惊蛰', '辰': '清明', '巳': '立夏', '午': '芒种', '未': '小暑',
+  '申': '立秋', '酉': '白露', '戌': '寒露', '亥': '立冬', '子': '大雪', '丑': '小寒',
+}
+
+/** 当前月建（节气月，基于 lunar-typescript 精确节气，替代原近似表±1天误差） */
 export function getLunarMonth(date: Date): { zhi: string, wuxing: string, name: string } {
-  const m = date.getMonth() + 1 // 1-12
-  const d = date.getDate()
-  // 找到当前日期所属的节气区间
-  for (let i = JIE_QI.length - 1; i >= 0; i--) {
-    const jq = JIE_QI[i]
-    if (m > jq.m || (m === jq.m && d >= jq.d)) {
-      return { zhi: jq.zhi, wuxing: jq.wuxing, name: jq.name }
-    }
-  }
-  // 元旦到小寒之间 → 丑月
-  return { zhi: '丑', wuxing: '土', name: '小寒→丑月' }
+  const lunar = Solar.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate()).getLunar()
+  const monthGz = lunar.getMonthInGanZhi() // 以节为界的月干支（如"丙申"）
+  const zhi = monthGz.charAt(1)
+  return { zhi, wuxing: ZHI_WUXING[zhi] || '土', name: `${TERM_NAME[zhi] ?? ''}→${zhi}月` }
 }
 
 function computeSeasonalStrength(ti: Trigram, yong: Trigram): SeasonalStrength {

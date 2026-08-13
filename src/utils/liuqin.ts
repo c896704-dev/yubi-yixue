@@ -226,7 +226,8 @@ export function analyzeParentsPalace(bazi: BaziChart): ParentsPalaceAnalysis {
 
 export function analyzeSiblings(bazi: BaziChart): SiblingAnalysis {
   let biJieCount = 0
-  for (const p of [bazi.year, bazi.month, bazi.day, bazi.hour]) {
+  // 日柱十神恒为比肩，不计入，否则任何命局都比劫≥1
+  for (const p of [bazi.year, bazi.month, bazi.hour]) {
     if (p.tenGod === '比肩' || p.tenGod === '劫财') biJieCount++
   }
 

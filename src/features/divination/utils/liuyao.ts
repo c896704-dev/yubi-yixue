@@ -48,11 +48,12 @@ export function coinShake(): { lines: YaoLine[] } {
   return { lines }
 }
 
-/** 数字起卦：3数字 → 上卦/下卦/动爻 */
+/** 数字起卦：3数字 → 上卦/下卦/动爻（负数取绝对值，0 归入上爻） */
 export function numberCast(num1: number, num2: number, num3: number): LiuyaoResult {
-  const upperNum = num1 % 8
-  const lowerNum = num2 % 8
-  const changingYao = num3 % 6 === 0 ? 6 : num3 % 6
+  const upperNum = Math.abs(num1) % 8
+  const lowerNum = Math.abs(num2) % 8
+  const n3 = Math.abs(num3)
+  const changingYao = n3 % 6 === 0 ? 6 : n3 % 6
 
   const upperTrigram = getTrigramByNumber(upperNum)
   const lowerTrigram = getTrigramByNumber(lowerNum)
@@ -218,25 +219,32 @@ function getLiuqin(yaoWuxing: string, palaceWuxing: string): string {
   return '兄弟'
 }
 
-/** 日干支计算
- *  基准：2000/1/1=甲子(索引0)
- *  2026/1/1 偏移 = 365*26 + 7闰年 = 9497天 → 9497%60=17
- *  故 2026/1/1 干支索引 = 17（辛巳日）... 不对，经 5/16=庚寅 反推：
- *  5/16 偏移 = 135天, 庚寅=索引26, ∴ base = (26-135+360)%60 = 11
- *  即 2026/1/1 干支索引 = 11（乙亥日） */
+/** 日干支计算（复用 lunar-typescript 精确排盘，消除魔数基准与夏令时误差） */
 function getDayGanzhi(date: Date): { gan: string, zhi: string, wuxing: string } {
-  const base = new Date(2026, 0, 1) // 2026-01-01
-  const days = Math.floor((date.getTime() - base.getTime()) / 86400000)
-  const ganzhiIndex = ((11 + days) % 60 + 60) % 60
-  const ganArr = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸']
-  const zhiArr = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
-  const zhi = zhiArr[ganzhiIndex % 12]
-  return { gan: ganArr[ganzhiIndex % 10], zhi, wuxing: ZHI_WUXING[zhi] || '土' }
+  const sizhu = getSizhu(date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours())
+  const gan = sizhu.day.gan
+  const zhi = sizhu.day.zhi
+  return { gan, zhi, wuxing: ZHI_WUXING[zhi] || '土' }
 }
 
-/** 六冲卦检查 */
+/** 六冲卦检查（《增删卜易》六冲章：八纯卦 + 天雷无妄 + 雷天大壮，共十卦） */
 function isLiuChongGua(name: string): boolean {
-  return ['乾为天','坤为地','坎为水','离为火','震为雷','艮为山','巽为风','兑为泽'].includes(name)
+  return ['乾为天','坤为地','坎为水','离为火','震为雷','艮为山','巽为风','兑为泽','天雷无妄','雷天大壮'].includes(name)
+}
+
+/** 六神（六兽）——《增删卜易》六神章：甲乙日起青龙，丙丁日起朱雀，戊日起勾陈，己日起腾蛇，庚辛日起白虎，壬癸日起玄武。从初爻起顺排 */
+const LIU_SHEN_ORDER = ['青龙', '朱雀', '勾陈', '腾蛇', '白虎', '玄武'] as const
+
+function getLiuShenStartIndex(dayGan: string): number {
+  switch (dayGan) {
+    case '甲': case '乙': return 0 // 青龙
+    case '丙': case '丁': return 1 // 朱雀
+    case '戊': return 2            // 勾陈
+    case '己': return 3            // 腾蛇
+    case '庚': case '辛': return 4 // 白虎
+    case '壬': case '癸': return 5 // 玄武
+    default: return 0
+  }
 }
 
 /** 六合卦列表（《增删卜易》六合章） */
@@ -302,10 +310,17 @@ export function performNaja(result: LiuyaoResult): LiuyaoNaja {
   const sizhu = getSizhu(now.getFullYear(), now.getMonth()+1, now.getDate(), now.getHours())
   const jieqi = getJieQiInterval(now.getFullYear(), now.getMonth()+1, now.getDate())
 
+  // 六神安位（以日干起，初爻顺排至上爻）
+  const liuShenStart = getLiuShenStartIndex(sizhu.day.gan)
+  const linesWithShen = lines.map((line, i) => ({
+    ...line,
+    liushen: LIU_SHEN_ORDER[(liuShenStart + i) % 6]!,
+  }))
+
   // 持世 + 策轨
-  const shiLine = lines.find(l => l.shiying === '世')
+  const shiLine = linesWithShen.find(l => l.shiying === '世')
   // 降级：世爻未找到时，取应爻或第一爻
-  const fallbackLine = shiLine || lines.find(l => l.shiying === '应') || lines[0]
+  const fallbackLine = shiLine || linesWithShen.find(l => l.shiying === '应') || linesWithShen[0]
   const chiShiLiqin = fallbackLine?.liuqin || '父母'
   const chiShiText = CHI_SHI[chiShiLiqin]?.['*'] || `${chiShiLiqin}持世`
   const lineValues = result.lines.map(l => l.value)
@@ -313,7 +328,7 @@ export function performNaja(result: LiuyaoResult): LiuyaoNaja {
   const guiShu = getGuiShu(lineValues)
 
   return {
-    lines, palaceName: palace, palaceElement: hexagram.palaceElement,
+    lines: linesWithShen, palaceName: palace, palaceElement: hexagram.palaceElement,
     isLiuChong: isLiuChongGua(hexagram.name),
     isLiuHe: isLiuHeGua(hexagram.name),
     isStatic, isChunGua,

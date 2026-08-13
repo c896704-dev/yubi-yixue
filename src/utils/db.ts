@@ -428,7 +428,7 @@ export async function getRecordById(id: string): Promise<SavedRecord | null> {
   })
 }
 
-/** 删除一条记录 */
+/** 删除一条记录（本地 IndexedDB + 同步删除服务端，避免登录后"复活"） */
 export async function deleteRecord(id: string): Promise<void> {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, 'readwrite')
@@ -436,6 +436,15 @@ export async function deleteRecord(id: string): Promise<void> {
   store.delete(id)
   await waitTx(tx)
   db.close()
+  // 同步到服务器（await 确保完成；未登录时静默跳过）
+  try {
+    if (localStorage.getItem('auth_token')) {
+      const { deleteServerBaziRecord } = await import('../services/baziApi')
+      await deleteServerBaziRecord(id)
+    }
+  } catch {
+    // 网络失败不阻塞本地删除
+  }
 }
 
 /** 获取记录总数 */

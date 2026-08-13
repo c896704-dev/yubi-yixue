@@ -198,10 +198,12 @@ function stemHasRoot(stem: HeavenlyStem, pillars: Pillar[]): boolean {
 }
 
 /** 计算天干中比劫印星对日主的生助力量（无根虚浮者力量减半）
- *  注意：月干不计入本维度——月干的生扶已在三围生克维度全额计入，避免重复计分 */
+ *  注意：月干、时干均不计入本维度——月干、时干的生扶已在三围生克维度计入，避免重复计分。
+ *  仅年干在此计分（年干不属三围）。旧实现把时柱也计入，导致时干比劫印被双计
+ *  （help +2 + 三围 +1.5 = +3.5 vs 月干比劫仅 +2）。 */
 export function getHelpScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number {
   let score = 0
-  const otherPillars = [pillars[0]!, pillars[3]!] // 年、时（月干由三围维度负责）
+  const otherPillars = [pillars[0]!] // 年（月干、时干由三围维度负责）
 
   for (const p of otherPillars) {
     const god = p.tenGod
@@ -270,7 +272,7 @@ export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[]): nu
     else if (generates(dmElem, dayBranchElem)) score -= 1 // 日主生支，泄身
   }
 
-  // 时干：晚年倚靠（虚浮透干减半——比劫印部分的减半由生助维度统一处理，此处减半克泄耗贡献）
+  // 时干：晚年倚靠（虚浮透干减半；与月干一致，比劫印也在三围全额计分、无根时减半）
   const hourStemElem = pillars[3]!.stemElement
   const hourStem = pillars[3]!.stem
   let hourContribution = 0
@@ -287,8 +289,7 @@ export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[]): nu
   ) hourContribution = -1
 
   if (hourContribution !== 0) {
-    const isBiJieYin = ['比肩', '劫财', '正印', '偏印'].includes(pillars[3]!.tenGod)
-    if (!stemHasRoot(hourStem, pillars) && !isBiJieYin) hourContribution *= 0.5
+    if (!stemHasRoot(hourStem, pillars)) hourContribution *= 0.5
     score += hourContribution
   }
 

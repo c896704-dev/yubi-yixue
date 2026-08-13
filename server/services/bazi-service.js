@@ -101,9 +101,11 @@ export function getRoomElement(roomName) {
 
 /**
  * 获取方位的五行
+ * 注意：需按 key 长度降序匹配——"西南"须先命中"西南"（土），而非先命中"西"（金）或"南"（火）
  */
 export function getDirectionElement(position) {
-  for (const [key, element] of Object.entries(DIRECTION_ELEMENT)) {
+  const entries = Object.entries(DIRECTION_ELEMENT).sort((a, b) => b[0].length - a[0].length);
+  for (const [key, element] of entries) {
     if (position.includes(key)) return element;
   }
   return null;

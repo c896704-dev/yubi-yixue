@@ -23,7 +23,7 @@ import {
 import type { HeavenlyStem, EarthlyBranch, FiveElement, TenGod } from '../constants'
 import type { BaziChart, Pillar, BigFortune, PersonInfo, AnalysisResult } from '../types'
 import { calculateBazi, calculateBigFortunes, calculateElementDistribution, determineGeJu, isCongGe, isZhuanWangGe, isHuaQiGe } from './bazi'
-import { getTrueSolarHourBranch } from './solarTime'
+import { getTrueSolarHourBranch, getEquationOfTime } from './solarTime'
 import { judgeBodyStrength, judgeClimate } from './wangshuai'
 import { determineYongShen } from './yongshen'
 import { calculateShenSha } from './shensha'
@@ -126,16 +126,17 @@ function generateWarnings(bazi: BaziChart, strength: string): string[] {
   const dm = bazi.dayMaster
   const dmElem = STEM_ELEMENT[dm]
 
-  // 枭神夺食检测
-  const dayGod = bazi.day.tenGod
-  const monthGod = bazi.month.tenGod
-  if ((monthGod === '偏印' && dayGod === '食神') || (monthGod === '食神' && dayGod === '偏印')) {
-    warnings.push('枭神夺食：月令偏印夺食神，智慧被压制，心性易压抑抑郁，做事优柔寡断')
+  // 枭神夺食检测：四柱中偏印与食神并存（日柱十神恒为比肩，不能作为判定依据）
+  const allPillars = [bazi.year, bazi.month, bazi.day, bazi.hour]
+  const hasPianYin = allPillars.some(p => p.tenGod === '偏印')
+  const hasShiShen = allPillars.some(p => p.tenGod === '食神')
+  if (hasPianYin && hasShiShen) {
+    warnings.push('枭神夺食：偏印与食神同现，智慧被压制，心性易压抑抑郁，做事优柔寡断')
   }
 
   // 财多身弱
   let caiCount = 0
-  for (const p of [bazi.year, bazi.month, bazi.day, bazi.hour]) {
+  for (const p of [bazi.year, bazi.month, bazi.hour]) { // 日柱恒为比肩，不计入
     if (p.tenGod === '正财' || p.tenGod === '偏财') caiCount++
   }
   if (caiCount >= 3 && strength === '身弱') {
@@ -183,7 +184,7 @@ function renderPaipanDisclaimer(person: PersonInfo, bazi: BaziChart): string {
   const { birthYear, birthMonth, birthDay, birthHour, birthMinute, longitude } = person
   const originalTime = `${String(birthHour).padStart(2, '0')}:${String(birthMinute).padStart(2, '0')}`
 
-  const { actualHour, actualMinute } = getTrueSolarHourBranch(birthHour, birthMinute, longitude)
+  const { actualHour, actualMinute } = getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
   const solarTime = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`
 
   // 检查是否处于子时（23:00-01:00）
@@ -217,8 +218,11 @@ function renderPaipanDisclaimer(person: PersonInfo, bazi: BaziChart): string {
   // 真太阳时说明
   if (longitude !== 120) {
     const diff = Math.abs(longitude - 120).toFixed(1)
-    const dir = longitude > 120 ? '西' : '东'
-    lines.push(`> - **真太阳时校准：** 出生时间 ${originalTime}（北京时间），经度 ${longitude}°E（与120°E相差${diff}°→约${Math.round(parseFloat(diff) * 4)}分钟），校准后真太阳时为 **${solarTime}**。时柱为「${bazi.hour.stem}${bazi.hour.branch}」。`)
+    // 经度 > 120°E 在东侧（如130°E），当地正午早于北京时间；经度 < 120°E 在西侧
+    const dir = longitude > 120 ? '东' : '西'
+    // 均时差（全年 -14~+16 分钟）
+    const eot = Math.round(getEquationOfTime(birthYear, birthMonth, birthDay) * 10) / 10
+    lines.push(`> - **真太阳时校准：** 出生时间 ${originalTime}（北京时间），出生地经度 ${longitude}°E 位于120°E以${dir}，经度差${diff}°约${Math.round(parseFloat(diff) * 4)}分钟，叠加当日均时差${eot > 0 ? '+' : ''}${eot}分钟，校准后真太阳时为 **${solarTime}**。时柱为「${bazi.hour.stem}${bazi.hour.branch}」。`)
     lines.push(`> - **若不使用真太阳时：** 时柱将为「${altHourStem}${altHourBranch}」。命理学界对此尚无统一标准，两种方法均有大量实践者。`)
   } else {
     lines.push(`> - **真太阳时：** 出生地经度接近120°E，无需校准。`)
@@ -358,7 +362,7 @@ function getWangXiangDesc(dayMaster: HeavenlyStem, monthBranch: EarthlyBranch): 
   const map: Record<EarthlyBranch, Record<FiveElement, string>> = {
     '寅': { '木': '木旺', '火': '火相', '土': '土死', '金': '金囚', '水': '水休' },
     '卯': { '木': '木旺', '火': '火相', '土': '土死', '金': '金囚', '水': '水休' },
-    '辰': { '木': '木休', '火': '火休', '土': '土旺', '金': '金相', '水': '水死' },
+    '辰': { '木': '木囚', '火': '火休', '土': '土旺', '金': '金相', '水': '水死' },
     '巳': { '木': '木休', '火': '火旺', '土': '土相', '金': '金死', '水': '水囚' },
     '午': { '木': '木休', '火': '火旺', '土': '土相', '金': '金死', '水': '水囚' },
     '未': { '木': '木囚', '火': '火休', '土': '土旺', '金': '金相', '水': '水死' },
@@ -420,9 +424,9 @@ export function renderFamilyReport(result: AnalysisResult): string {
     md += `月柱**${monthStem}${monthBranch}**为${monthTenGod}，兄弟姐妹缘分中等，家庭关系需靠后天经营。\n\n`
   }
 
-  // 比劫分析
+  // 比劫分析（日柱十神恒为比肩，不计入，否则任何命局都比劫≥1）
   let biJieCount = 0
-  for (const p of [bazi.year, bazi.month, bazi.day, bazi.hour]) {
+  for (const p of [bazi.year, bazi.month, bazi.hour]) {
     if (p.tenGod === '比肩' || p.tenGod === '劫财') biJieCount++
   }
 
@@ -448,7 +452,7 @@ export function renderLifeStagesReport(result: AnalysisResult): string {
   const firstFortune = bigFortunes?.[0]
   if (firstFortune) {
     const startAge = firstFortune.startAge
-    md += `> **起运年龄：** ${startAge}岁起运（系统采用排盘引擎自动计算）。大运每十年一换，逢交运之年（如${startAge + 10 * 10}岁前后）人生有重大转换。\n\n`
+    md += `> **起运年龄：** ${startAge}岁起运（系统采用排盘引擎自动计算）。大运每十年一换，逢交运之年（如${startAge + 10}岁、${startAge + 20}岁前后）人生有重大转换。\n\n`
   }
 
   const stages: { name: string; ageStart: number; ageEnd: number; icon: string }[] = [
@@ -482,10 +486,10 @@ export function renderLifeStagesReport(result: AnalysisResult): string {
     md += '\n'
   }
 
-  // 当前大运
+  // 当前大运（大运段按虚岁计算，显示年龄须与查找逻辑一致：虚岁 = 周岁 + 1）
   if (currentFortune) {
-    const currentAge = new Date().getFullYear() - person.birthYear
-    md += `> **判官批语：** 命主当前${currentAge}岁，正行 **${currentFortune.stem}${currentFortune.branch}** 大运（${currentFortune.startAge}-${currentFortune.endAge}岁），为${currentFortune.tenGod}运，${describeFortune(currentFortune, bazi, result.favorableElements, result.unfavorableElements, currentFortune.startAge)}\n\n`
+    const currentAge = new Date().getFullYear() - person.birthYear + 1
+    md += `> **判官批语：** 命主当前${currentAge}岁（虚岁），正行 **${currentFortune.stem}${currentFortune.branch}** 大运（${currentFortune.startAge}-${currentFortune.endAge}岁），为${currentFortune.tenGod}运，${describeFortune(currentFortune, bazi, result.favorableElements, result.unfavorableElements, currentFortune.startAge)}\n\n`
   }
 
   // 关键提醒

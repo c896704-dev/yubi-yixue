@@ -38,6 +38,7 @@ export interface YaoLine {
   wuxing?: string        // Y6-1: 五行
   liuqin?: string        // Y6-1: 六亲
   shiying?: '世' | '应' | null  // Y6-2: 世应
+  liushen?: string       // Y6-3: 六神（青龙/朱雀/勾陈/腾蛇/白虎/玄武）
 }
 
 /** 六爻纳甲装卦结果 */

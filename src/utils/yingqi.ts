@@ -13,15 +13,19 @@ const SEASON_MAP: Record<string, string> = {
   '土':'四季末月（辰未戌丑月）',
 }
 
+type WuXing = '金' | '木' | '水' | '火' | '土'
+
 /** 五行旺衰状态 → 应期远近 */
-const SHENG_KE = { '金':'水','水':'木','木':'火','火':'土','土':'金' }
-const KE = { '金':'木','木':'土','土':'水','水':'火','火':'金' }
+const SHENG_KE: Record<WuXing, WuXing> = { '金':'水','水':'木','木':'火','火':'土','土':'金' }
+const KE: Record<WuXing, WuXing> = { '金':'木','木':'土','土':'水','水':'火','火':'金' }
 
 function relation(a: string, b: string): string {
+  const ax = a as WuXing
+  const bx = b as WuXing
   if (a === b) return '比'
-  if (SHENG_KE[b] === a) return '生'
-  if (SHENG_KE[a] === b) return '泄'
-  if (KE[a] === b) return '克'
+  if (SHENG_KE[bx] === a) return '生'
+  if (SHENG_KE[ax] === b) return '泄'
+  if (KE[ax] === b) return '克'
   return '耗'
 }
 

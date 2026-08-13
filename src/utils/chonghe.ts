@@ -568,6 +568,9 @@ export function getMingGongStem(
     '癸': ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸','甲','乙'],
   }
 
-  const bIdx = EARTHLY_BRANCHES.indexOf(mingGongBranch)
+  // 年上起月表以"寅月"为起点（index 0 = 寅月），而地支索引以"子"为 0，
+  // 故需将命宫地支索引偏移 -2（寅→0），否则命宫天干整体错位 2 位。
+  // 例：甲年寅月午时 → 命宫卯 → 甲年卯月为"丁卯"，命宫天干应为丁。
+  const bIdx = (EARTHLY_BRANCHES.indexOf(mingGongBranch) - 2 + 12) % 12
   return monthStemByYear[yearStem]![bIdx]!
 }

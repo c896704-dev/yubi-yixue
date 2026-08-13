@@ -12,6 +12,7 @@ import {
 } from '../constants'
 import type { BaziChart, Pillar, AnalysisResult, BigFortune } from '../types'
 import { calculateElementDistribution } from './bazi'
+import { getRootScore } from './wangshuai'
 import { analyzeSixRelatives } from './liuqin'
 import type { StarStatus } from './liuqin'
 
@@ -54,10 +55,10 @@ export function analyzePersonality(result: AnalysisResult): PersonalityProfile {
   // 判断日主得令、得地、得势
   const monthElem = bazi.month.branchElement
   const isDeLing = monthElem === dmElem
-  const rootCount = [bazi.year, bazi.month, bazi.day, bazi.hour].filter(
-    p => p.hiddenStems[0] === dm
-  ).length
-  const isDeDi = rootCount >= 1
+  // 得地：用旺衰引擎的通根算法（含禄刃根/长生根/墓库根/本中余气），
+  // 旧实现只查"藏干本气==日主"，漏掉禄刃根（如丙火午月、甲木寅月）
+  const rootResult = getRootScore(dm, [bazi.year, bazi.month, bazi.day, bazi.hour])
+  const isDeDi = rootResult.total > 0
   const helpCount = [bazi.year, bazi.month, bazi.hour].filter(
     p => p.tenGod === '比肩' || p.tenGod === '劫财' || p.tenGod === '正印' || p.tenGod === '偏印'
   ).length
@@ -190,7 +191,8 @@ export function analyzePersonality(result: AnalysisResult): PersonalityProfile {
   }
 
   // === 十神分布修正 ===
-  const biJieCount = [bazi.year, bazi.month, bazi.day, bazi.hour].filter(
+  // 日柱十神恒为比肩，不计入（否则任何命局都比劫≥1）
+  const biJieCount = [bazi.year, bazi.month, bazi.hour].filter(
     p => p.tenGod === '比肩' || p.tenGod === '劫财'
   ).length
   const caiCount = [bazi.year, bazi.month, bazi.day, bazi.hour].filter(
@@ -1069,8 +1071,8 @@ function buildFatherAnalysis(bazi: BaziChart, sr: ReturnType<typeof analyzeSixRe
     parts.push('父星伏藏，父亲在家庭中可能不是话语权最强的一方，但对命主的深层价值观有潜移默化的塑造')
   }
 
-  // 比劫影响（比劫克财）
-  const biJieCount = [bazi.year, bazi.month, bazi.day, bazi.hour].filter(
+  // 比劫影响（比劫克财）——日柱恒为比肩，不计入
+  const biJieCount = [bazi.year, bazi.month, bazi.hour].filter(
     p => p.tenGod === '比肩' || p.tenGod === '劫财'
   ).length
   if (biJieCount >= 2 && (f.starTenGod === '偏财' || f.starTenGod === '正财')) {
@@ -1154,7 +1156,8 @@ function buildParentsPalaceAnalysis(bazi: BaziChart, sr: ReturnType<typeof analy
 
 /** 构建兄弟姐妹分析段落 */
 function buildSiblingAnalysis(bazi: BaziChart, sr: ReturnType<typeof analyzeSixRelatives>): string {
-  const biJiePillars = [bazi.year, bazi.month, bazi.day, bazi.hour].filter(
+  // 日柱十神恒为比肩，不计入（否则任何命局都比劫≥1）
+  const biJiePillars = [bazi.year, bazi.month, bazi.hour].filter(
     p => p.tenGod === '比肩' || p.tenGod === '劫财'
   )
   const biJieCount = biJiePillars.length
@@ -1170,8 +1173,8 @@ function buildSiblingAnalysis(bazi: BaziChart, sr: ReturnType<typeof analyzeSixR
     }
   } else if (biJieCount >= 1) {
     const pillarNames = biJiePillars.map((p, i) => {
-      const labels = ['年柱', '月柱', '日柱', '时柱']
-      const idx = [bazi.year, bazi.month, bazi.day, bazi.hour].indexOf(p)
+      const labels = ['年柱', '月柱', '时柱']
+      const idx = [bazi.year, bazi.month, bazi.hour].indexOf(p)
       return labels[idx] || '某柱'
     })
     parts.push(`命局${biJieCount}柱透比劫（${pillarNames.join('、')}），有${biJieCount === 1 ? '一位' : '一两位'}兄弟姐妹缘分`)

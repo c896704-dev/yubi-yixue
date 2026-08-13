@@ -95,8 +95,10 @@ export function useCompat() {
       const femaleData = `${female.person.name} ${female.person.gender} ${female.summary}`
       const insight = await generateCompatibilityInsight(maleData, femaleData, '')
       setAiInsight(insight)
+      return insight
     } catch (e: any) {
       setAiError(e.message || 'AI 分析失败')
+      return null
     } finally {
       setAiLoading(false)
     }

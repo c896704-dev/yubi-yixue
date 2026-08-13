@@ -30,9 +30,9 @@ export function analyzeSiShen(lines: YaoLine[], yongIndex: number): {
   const jiWx   = whoKe(yWx)
   const chouWx = yuanWx ? whoKe(yuanWx) : null
 
-  const yuanL = yuanWx ? lines.find(l => l.wuxing === yuanWx) : null
-  const jiL   = jiWx   ? lines.find(l => l.wuxing === jiWx)   : null
-  const chouL = chouWx ? lines.find(l => l.wuxing === chouWx) : null
+  const yuanL = yuanWx ? lines.find(l => l.wuxing === yuanWx) ?? null : null
+  const jiL   = jiWx   ? lines.find(l => l.wuxing === jiWx)   ?? null : null
+  const chouL = chouWx ? lines.find(l => l.wuxing === chouWx) ?? null : null
 
   const pos = (l: YaoLine) => ['','初','二','三','四','五','上'][l.index]
 

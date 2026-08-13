@@ -55,9 +55,9 @@ function makePillarFromGanZhi(
 export function calculateBazi(person: PersonInfo): BaziChart {
   const { birthYear, birthMonth, birthDay, birthHour, birthMinute, longitude } = person
 
-  // 真太阳时修正
+  // 真太阳时修正（经度差 + 均时差）
   const { branch: hourBranchIdx, actualHour, actualMinute } =
-    getTrueSolarHourBranch(birthHour, birthMinute, longitude)
+    getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
 
   // 使用 lunar-typescript 进行精确排盘
   const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, actualHour, actualMinute, 0)
@@ -114,7 +114,7 @@ export function calculateBigFortunes(bazi: BaziChart, person: PersonInfo): BigFo
   const { birthYear, birthMonth, birthDay, birthHour, birthMinute, longitude } = person
 
   const { actualHour, actualMinute } =
-    getTrueSolarHourBranch(birthHour, birthMinute, longitude)
+    getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
 
   const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, actualHour, actualMinute, 0)
   const lunar = solar.getLunar()
@@ -300,7 +300,10 @@ export function isZhuanWangGe(bazi: BaziChart, dist: Record<FiveElement, number>
   return names[maxElem] || null
 }
 
-/** 化气格判定（天干五合化气） */
+/** 化气格判定（天干五合化气）
+ *  传统成化条件（《子平真诠》系）：化神当令（月令即化神五行）且有力，
+ *  或化神旺极（全局最旺且能量显著领先）。日主需弱、无破化之神。
+ *  旧实现 dist[elem] > 6 即可成化，门槛过低，易把普通五合误判为化气格。 */
 export function isHuaQiGe(bazi: BaziChart, dist: Record<FiveElement, number>): string | null {
   const dayStem = bazi.dayMaster
   const monthStem = bazi.month.stem
@@ -315,9 +318,14 @@ export function isHuaQiGe(bazi: BaziChart, dist: Record<FiveElement, number>): s
 
   for (const [a, b, elem, name] of huaMap) {
     if ((dayStem === a && monthStem === b) || (dayStem === b && monthStem === a)) {
-      // 需要月令生助化神
       const monthElem = bazi.month.branchElement
-      if (monthElem === elem || dist[elem] > 6) {
+      // 化神当令（月令即化神五行），且四柱无强旺的克化五行（如化金见火旺破化）
+      const killerElem: Record<FiveElement, FiveElement> = { '木': '金', '火': '水', '土': '木', '金': '火', '水': '土' }
+      const killerDist = dist[killerElem[elem]] ?? 0
+      const monthDangLing = monthElem === elem
+      const isMax = Object.entries(dist).every(([k, v]) => k === elem || v <= dist[elem])
+      const wangJi = dist[elem] >= 12 && isMax // 化神旺极（全局最高且能量≥12）
+      if ((monthDangLing && dist[elem] >= 7 && killerDist < 5) || (wangJi && killerDist < 5)) {
         return name
       }
     }
@@ -341,13 +349,11 @@ export function calculateElementDistribution(bazi: BaziChart): Record<FiveElemen
   return dist
 }
 
-/** 日柱干支索引（用于流年计算） */
+/** 日柱干支索引（60甲子序数 0-59，用于流年计算）
+ *  旧实现 sIdx + bIdx*10 可超出 59 且不满足"甲子=0,乙丑=1…"的序数语义，已改为按六十甲子表序查找 */
 export function getDayGanzhiIndex(year: number, month: number, day: number): number {
   const solar = Solar.fromYmd(year, month, day)
   const ganzhi = solar.getLunar().getDayInGanZhi()
-  const stem = toStem(ganzhi.charAt(0))
-  const branch = toBranch(ganzhi.charAt(1))
-  const sIdx = HEAVENLY_STEMS.indexOf(stem)
-  const bIdx = EARTHLY_BRANCHES.indexOf(branch)
-  return (sIdx % 10) + (bIdx % 12) * 10 // not quite right; just for approximate
+  const idx = Object.keys(SIXTY_JIAZI_NAYIN).indexOf(ganzhi)
+  return idx >= 0 ? idx : 0
 }

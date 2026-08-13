@@ -38,24 +38,19 @@ export function calculateComprehensiveScore({
       },
     };
   } else {
-    // 无八字版本：户型40 + 环境35 + 流年时运25
-    const timelyScore = 60; // 默认中值
+    // 无八字版本：户型55 + 环境45（引擎已移除流年飞星，"流年时运"恒60分的虚维度不再计入）
     overallScore = Math.round(
-      layoutScore * 0.40 + environmentScore * 0.35 + timelyScore * 0.25
+      layoutScore * 0.55 + environmentScore * 0.45
     );
 
     dimensions = {
       layout: {
-        score: layoutScore, weight: 40, label: '户型格局',
+        score: layoutScore, weight: 55, label: '户型格局',
         strength: getLayoutStrength(sw), weakness: getLayoutWeakness(sw),
       },
       environment: {
-        score: environmentScore, weight: 35, label: '环境格局',
+        score: environmentScore, weight: 45, label: '环境格局',
         strength: getEnvStrength(sw), weakness: getEnvWeakness(sw),
-      },
-      timely: {
-        score: timelyScore, weight: 25, label: '流年时运',
-        strength: '流年时运平稳', weakness: '无特殊流年问题',
       },
     };
   }

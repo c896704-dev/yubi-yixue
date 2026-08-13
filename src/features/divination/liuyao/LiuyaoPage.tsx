@@ -50,6 +50,8 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
   // 摇卦模式
   const [shakeLines, setShakeLines] = useState<YaoLine[]>([])
   const [shakeCount, setShakeCount] = useState(0)
+  // 摇卦锁：防止快速连点导致同一次回调重复追加爻（闭包竞态）
+  const shakingRef = useRef(false)
 
   // 数字模式
   const [num1, setNum1] = useState('')
@@ -137,16 +139,24 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
   const handleShake = useCallback(() => {
     if (!question.trim()) return
     if (shakeCount >= 6) return
-    const { lines } = coinShake()
-    const newLines = [...shakeLines, lines[shakeCount]]
-    setShakeLines(newLines)
-    const next = shakeCount + 1
-    setShakeCount(next)
-    if (next >= 6) {
-      const coinResult = buildCoinResult(newLines)
-      setResult(coinResult)
-      setPhase('result')
-      autoInterpret(coinResult, question)
+    // 防止同一闭包内重复追加（连点竞态）
+    if (shakingRef.current) return
+    shakingRef.current = true
+    try {
+      const { lines } = coinShake()
+      const newLines = [...shakeLines, lines[shakeCount]]
+      setShakeLines(newLines)
+      const next = shakeCount + 1
+      setShakeCount(next)
+      if (next >= 6) {
+        const coinResult = buildCoinResult(newLines)
+        setResult(coinResult)
+        setPhase('result')
+        autoInterpret(coinResult, question)
+      }
+    } finally {
+      // 下一帧释放锁，确保连点只追加一次
+      setTimeout(() => { shakingRef.current = false }, 0)
     }
   }, [shakeCount, shakeLines, question, autoInterpret])
 
@@ -190,6 +200,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
     setInterpretError(null)
     setShakeLines([])
     setShakeCount(0)
+    shakingRef.current = false
     setNum1('')
     setNum2('')
     setNum3('')
@@ -254,9 +265,9 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
             )}
 
             {/* 纳甲表头 */}
-            <div className="grid grid-cols-6 gap-1 text-[10px] text-center font-semibold mb-1 px-1"
+            <div className="grid grid-cols-7 gap-1 text-[10px] text-center font-semibold mb-1 px-1"
               style={{ color: 'var(--muted)' }}>
-              <span>爻位</span><span>干支</span><span>五行</span><span>六亲</span><span>世应</span><span>阴阳</span>
+              <span>爻位</span><span>六神</span><span>干支</span><span>五行</span><span>六亲</span><span>世应</span><span>阴阳</span>
             </div>
 
             {/* 纳甲表体 — 从上往下显示 */}
@@ -267,12 +278,13 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                 const isShi = line.shiying === '世'
                 const isYing = line.shiying === '应'
                 return (
-                  <div key={i} className="grid grid-cols-6 gap-1 text-xs text-center py-2 px-1 items-center"
+                  <div key={i} className="grid grid-cols-7 gap-1 text-xs text-center py-2 px-1 items-center"
                     style={{
                       borderBottom: i < 5 ? '1px solid var(--border)' : 'none',
                       backgroundColor: line.changing ? 'var(--negative-bg)' : isShi ? 'var(--primary-light)' : undefined,
                     }}>
                     <span style={{ color: 'var(--muted)' }}>{posNames[pos]}爻</span>
+                    <span style={{ color: 'var(--hu-po-jin, #d4af37)' }}>{line.liushen || ''}</span>
                     <span className="font-semibold tracking-wide" style={{ color: 'var(--fg)' }}>{line.gan || ''}{line.zhi || ''}</span>
                     <span>{line.wuxing || ''}</span>
                     <span>{line.liuqin || ''}</span>

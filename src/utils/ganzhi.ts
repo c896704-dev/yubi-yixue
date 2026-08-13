@@ -1,11 +1,13 @@
 /**
  * 完整四柱计算（年·月·日·时）
- * 年柱：立春分界 + 五虎遁
- * 月柱：节气定月支 + 年干定月干
- * 日柱：复用 getDayGanzhi
- * 时柱：五鼠遁（日干定子时天干）
+ * 基于 lunar-typescript（与八字排盘引擎同源），节气、立春、晚子时均精确。
+ * 修复历史问题：
+ * - 年柱：旧实现基准年错误（2000≠甲子，甲子基准为1984），全年柱错位
+ * - 月柱：旧实现五虎遁表整体错位2位 + 节气近似表（±1天误差）
+ * - 日柱：旧实现用 Date 差天数，1986-1991 夏令时期间差1天
+ * - 时柱：旧实现 23:00-23:59 与 lunar 库"晚子时换日"约定不一致
  */
-import { getLunarMonth } from '../features/divination/utils/meihua'
+import { Solar } from 'lunar-typescript'
 
 export interface Sizhu {
   year:  { gan: string; zhi: string; full: string }
@@ -14,90 +16,35 @@ export interface Sizhu {
   hour:  { gan: string; zhi: string; full: string }
 }
 
-const GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸']
-const ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
-
-/** 年柱：2000年是庚辰年 */
-function yearGanzhi(y: number): { gan: string; zhi: string } {
-  const idx = ((y - 2000) % 60 + 60) % 60
-  return { gan: GAN[idx % 10], zhi: ZHI[idx % 12] }
-}
-
-/** 节气定月支表（每个节气的起点日期 → 该节气开始的月支）
- *  按自然年循环顺序排列：1月小寒 → 12月大雪（倒序遍历找最近已过节气） */
-const SOLAR_TERM_MONTH: { m: number; d: number; zhi: string }[] = [
-  { m: 1, d: 6,  zhi: '丑' }, // 小寒
-  { m: 2, d: 4,  zhi: '寅' }, // 立春
-  { m: 3, d: 6,  zhi: '卯' }, // 惊蛰
-  { m: 4, d: 5,  zhi: '辰' }, // 清明
-  { m: 5, d: 5,  zhi: '巳' }, // 立夏
-  { m: 6, d: 5,  zhi: '午' }, // 芒种
-  { m: 7, d: 7,  zhi: '未' }, // 小暑
-  { m: 8, d: 7,  zhi: '申' }, // 立秋
-  { m: 9, d: 7,  zhi: '酉' }, // 白露
-  { m: 10, d: 8, zhi: '戌' }, // 寒露
-  { m: 11, d: 7, zhi: '亥' }, // 立冬
-  { m: 12, d: 7, zhi: '子' }, // 大雪
-]
-
-/** 月柱：节气定月支 + 五虎遁定月干 */
-function monthGanzhi(yearGan: string, m: number, d: number): { gan: string; zhi: string } {
-  let zhiIdx = 0 // 子=0（默认兜底，正常情况下必被覆盖）
-  // 倒序遍历节气表，找最后一个已过的节气 → 该节气对应的月支
-  for (let i = SOLAR_TERM_MONTH.length - 1; i >= 0; i--) {
-    const st = SOLAR_TERM_MONTH[i]!
-    if (m > st.m || (m === st.m && d >= st.d)) {
-      zhiIdx = ZHI.indexOf(st.zhi)
-      break
-    }
-  }
-  // 五虎遁—年干→正月月干映射
-  const huMap: Record<string,number> = {'甲':2,'己':2,'乙':4,'庚':4,'丙':6,'辛':6,'丁':8,'壬':8,'戊':0,'癸':0}
-  const ganIdx = (huMap[yearGan] + zhiIdx) % 10
-  return { gan: GAN[ganIdx], zhi: ZHI[zhiIdx] }
-}
-
-/** 五鼠遁 — 日干→子时天干 → 时辰天干 */
-function hourGanzhi(dayGan: string, h: number): { gan: string; zhi: string } {
-  const zhiIdx = h === 23 || h === 0 ? 0 : Math.floor((h + 1) / 2) % 12
-  const shuMap: Record<string,number> = {'甲':0,'己':0,'乙':2,'庚':2,'丙':4,'辛':4,'丁':6,'壬':6,'戊':8,'癸':8}
-  const ganIdx = (shuMap[dayGan] + zhiIdx) % 10
-  return { gan: GAN[ganIdx], zhi: ZHI[zhiIdx] }
-}
-
-/** 获取完整四柱 */
+/** 获取完整四柱（lunar-typescript 精确排盘） */
 export function getSizhu(y: number, mo: number, d: number, h: number): Sizhu {
-  const yr = yearGanzhi(y)
-  const mon = monthGanzhi(yr.gan, mo, d)
-  const day = getDayGanzhiSimple(y, mo, d)
-  const hr = hourGanzhi(day.gan, h)
+  const solar = Solar.fromYmdHms(y, mo, d, h, 0, 0)
+  const lunar = solar.getLunar()
+  const ec = lunar.getEightChar()
+
+  const year = ec.getYear()
+  const month = ec.getMonth()
+  const day = ec.getDay()
+  const hour = ec.getTime()
+
   return {
-    year: { ...yr, full: yr.gan+yr.zhi },
-    month: { ...mon, full: mon.gan+mon.zhi },
-    day: { ...day, full: day.gan+day.zhi },
-    hour: { ...hr, full: hr.gan+hr.zhi },
+    year:  { gan: year.charAt(0), zhi: year.charAt(1), full: year },
+    month: { gan: month.charAt(0), zhi: month.charAt(1), full: month },
+    day:   { gan: day.charAt(0), zhi: day.charAt(1), full: day },
+    hour:  { gan: hour.charAt(0), zhi: hour.charAt(1), full: hour },
   }
 }
 
-/** 日柱简化版 — 从 getDayGanzhi in liuyao.ts 独立出来 */
-function getDayGanzhiSimple(y: number, mo: number, d: number): { gan: string; zhi: string } {
-  const base = new Date(2026, 0, 1)
-  const target = new Date(y, mo - 1, d)
-  const days = Math.floor((target.getTime() - base.getTime()) / 86400000)
-  const idx = ((11 + days) % 60 + 60) % 60
-  return { gan: GAN[idx % 10], zhi: ZHI[idx % 12] }
+/** 节气月支 → 该月起始节气名（用于区间文案） */
+const TERM_BY_ZHI: Record<string, string> = {
+  '寅': '立春', '卯': '惊蛰', '辰': '清明', '巳': '立夏', '午': '芒种', '未': '小暑',
+  '申': '立秋', '酉': '白露', '戌': '寒露', '亥': '立冬', '子': '大雪', '丑': '小寒',
 }
 
-/** 获取当前节气区间名称 */
+/** 获取当前节气区间名称（如"立秋→申月"），基于 lunar-typescript 精确节气 */
 export function getJieQiInterval(y: number, mo: number, d: number): string {
-  const terms = [
-    { m:1,d:5,name:'小寒→丑月' },{ m:2,d:4,name:'立春→寅月' },{ m:3,d:6,name:'惊蛰→卯月' },
-    { m:4,d:5,name:'清明→辰月' },{ m:5,d:5,name:'立夏→巳月' },{ m:6,d:5,name:'芒种→午月' },
-    { m:7,d:7,name:'小暑→未月' },{ m:8,d:7,name:'立秋→申月' },{ m:9,d:7,name:'白露→酉月' },
-    { m:10,d:8,name:'寒露→戌月' },{ m:11,d:7,name:'立冬→亥月' },{ m:12,d:7,name:'大雪→子月' },
-  ]
-  for (let i = terms.length - 1; i >= 0; i--) {
-    if (mo > terms[i].m || (mo === terms[i].m && d >= terms[i].d)) return terms[i].name
-  }
-  return '小寒→丑月'
+  const lunar = Solar.fromYmd(y, mo, d).getLunar()
+  const monthGz = lunar.getMonthInGanZhi() // 节气月干支（以节为界）
+  const zhi = monthGz.charAt(1)
+  return `${TERM_BY_ZHI[zhi] ?? ''}→${zhi}月`
 }
