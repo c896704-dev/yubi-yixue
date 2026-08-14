@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { PersonInfo } from '../../types'
 import { useBazi } from '../../hooks/useBazi'
 import { getAllRecordsMerged, deleteRecord, getRecordById, type SavedRecord } from '../../utils/db'
 import {
-  renderFundamentalReport, renderLifeStagesReport, renderRiskReport, renderCompatibilityPreview,
-  renderPersonalityReport, renderHealthReport, renderAppearanceReport, renderIntelligenceReport,
-  renderFamilyDeepReport, renderCareerReport,
+  renderFundamentalReport, renderLifeStagesReport,
+  buildReportSections,
 } from '../../utils/analysis'
 import { BaziInput } from './BaziInput'
 import { BaziResult } from './BaziResult'
-import { BaziReport, AiInsightCard } from './BaziReport'
+import { BaziReport, AiInsightCard, ElementBars, FortuneTimeline } from './BaziReport'
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
@@ -73,28 +74,12 @@ export default function BaziPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, aiInsight, authToken])
 
-  const fullReport = useMemo(() => {
-    if (!result) return null
-    const p = result.person
-    const header = `# 命理全卷\n\n> **受判人：** ${p.name} | ${p.gender} | ${p.birthYear}年${String(p.birthMonth).padStart(2, '0')}月${String(p.birthDay).padStart(2, '0')}日 ${String(p.birthHour).padStart(2, '0')}:${String(p.birthMinute).padStart(2, '0')} | ${p.birthPlace}\n\n---\n\n`
-    return (
-      header +
-      renderFundamentalReport(result) + '\n\n---\n\n' +
-      renderPersonalityReport(result) + '\n\n---\n\n' +
-      renderHealthReport(result) + '\n\n---\n\n' +
-      renderAppearanceReport(result) + '\n\n---\n\n' +
-      renderIntelligenceReport(result) + '\n\n---\n\n' +
-      renderFamilyDeepReport(result) + '\n\n---\n\n' +
-      renderCareerReport(result) + '\n\n---\n\n' +
-      renderLifeStagesReport(result) + '\n\n---\n\n' +
-      renderRiskReport(result) + '\n\n---\n\n' +
-      renderCompatibilityPreview(result)
-    )
-  }, [result])
+  const reportSections = useMemo(() => buildReportSections(), [])
 
   const handleAnalyze = useCallback(async (person: PersonInfo) => {
     const res = await analyze(person)
-    const reportText = renderFundamentalReport(res)
+    // AI 输入精简为"定盘 + 运程"两章，避免 AI 复述与正文重复
+    const reportText = renderFundamentalReport(res) + '\n\n---\n\n' + renderLifeStagesReport(res)
     fetchAiInsight(reportText, person)
   }, [analyze, fetchAiInsight])
 
@@ -136,9 +121,42 @@ export default function BaziPage() {
 
       {result && !loading && (
         <>
-          <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} />
           <BaziResult result={result} />
-          {fullReport && <BaziReport markdown={fullReport} />}
+          {/* 一、乾坤定盘（含排盘表 + 五行能量条形图） */}
+          {reportSections[0] && (
+            <div className="report-section" id="section-fundamental">
+              <div className="report-section-header">
+                <span className="report-section-num">一</span>
+                <span className="report-section-icon">☯️</span>
+                <span className="report-section-title">乾坤定盘</span>
+              </div>
+              <div className="report-section-body">
+                <div className="report">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {reportSections[0].render(result)}
+                  </ReactMarkdown>
+                </div>
+                <ElementBars result={result} />
+              </div>
+            </div>
+          )}
+          {/* AI 总评（紧随定盘之后） */}
+          <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} />
+          {/* 二~八 + 附录A 折叠章节 */}
+          <BaziReport sections={reportSections.slice(1)} result={result} />
+          {/* 七、运程时间轴（可视化补充） */}
+          {result.bigFortunes.length > 0 && (
+            <div className="report-section" id="section-fortunes-visual">
+              <div className="report-section-header">
+                <span className="report-section-num">⏳</span>
+                <span className="report-section-icon">📈</span>
+                <span className="report-section-title">大运时间轴</span>
+              </div>
+              <div className="report-section-body">
+                <FortuneTimeline result={result} />
+              </div>
+            </div>
+          )}
           <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新排盘</Button>
             <Button variant="ghost" onClick={() => window.print()}>打印报告</Button>

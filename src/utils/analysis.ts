@@ -12,7 +12,14 @@ export {
   renderCareerReport,
   renderAllPersonaReports,
 } from './persona'
-import { analyzePersonality } from './persona'
+import {
+  renderPersonalityReport,
+  renderHealthReport,
+  renderAppearanceReport,
+  renderIntelligenceReport,
+  renderFamilyDeepReport,
+  renderCareerReport,
+} from './persona'
 
 import {
   HEAVENLY_STEMS, EARTHLY_BRANCHES,
@@ -24,9 +31,9 @@ import type { HeavenlyStem, EarthlyBranch, FiveElement, TenGod } from '../consta
 import type { BaziChart, Pillar, BigFortune, PersonInfo, AnalysisResult } from '../types'
 import { calculateBazi, calculateBigFortunes, calculateElementDistribution, determineGeJu, isCongGe, isZhuanWangGe, isHuaQiGe } from './bazi'
 import { getTrueSolarHourBranch, getEquationOfTime } from './solarTime'
-import { judgeBodyStrength, judgeClimate } from './wangshuai'
+import { judgeBodyStrength, judgeClimate, SHI_ER_CHANG_SHENG } from './wangshuai'
 import { determineYongShen } from './yongshen'
-import { calculateShenSha } from './shensha'
+import { calculateShenSha, getKongWang } from './shensha'
 import { getChongHeAnalysis, getTaiYuan, getMingGong, getMingGongStem } from './chonghe'
 
 const ELEM_SYMBOL: Record<FiveElement, string> = { '木': '🌳', '火': '🔥', '土': '⛰️', '金': '⚜️', '水': '💧' }
@@ -255,10 +262,10 @@ export function renderFundamentalReport(result: AnalysisResult): string {
     md += '\n'
   }
 
-  // 八字排盘表格
+  // 八字排盘表格（10列：主星/天干/地支/藏干/副星/星运/自坐/空亡/纳音/神煞）
   md += '### 📅 八字排盘\n\n'
-  md += '| 柱位 | 天干 | 地支 | 藏干 | 十神 | 纳音 | 五行 |\n'
-  md += '|:---|:---|:---|:---|:---|:---|:---|\n'
+  md += '| 柱位 | 主星 | 天干 | 地支 | 藏干 | 副星 | 星运 | 自坐 | 空亡 | 纳音 | 神煞 |\n'
+  md += '|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|\n'
 
   const pillars: [string, Pillar][] = [
     ['**年柱**', bazi.year],
@@ -267,9 +274,36 @@ export function renderFundamentalReport(result: AnalysisResult): string {
     ['**时柱**', bazi.hour],
   ]
 
+  // 空亡（以日柱干支查）
+  const kongWangBranches = getKongWang(bazi.day.stem, bazi.day.branch)
+  // 神煞按柱位分组（天德/月德等"全局"类归入日柱列显示）
+  const shenShaByPillar: Record<string, string[]> = { 年支: [], 月支: [], 日支: [], 时支: [], 全局: [] }
+  for (const s of result.shenSha.all) {
+    const key = s.pillar in shenShaByPillar ? s.pillar : '全局'
+    shenShaByPillar[key]!.push(s.name)
+  }
+
   for (const [label, p] of pillars) {
     const hs = p.hiddenStems.join('、')
-    md += `| ${label} | **${p.stem}** | **${p.branch}** | ${hs} | ${p.tenGod} | ${p.naYin} | ${ELEM_SYMBOL[p.stemElement]}${p.stemElement}/${ELEM_SYMBOL[p.branchElement]}${p.branchElement} |\n`
+    // 副星：藏干各天干对日主的十神
+    const fuXing = p.hiddenStems.map(hsStem => {
+      const god = getTenGod(bazi.dayMaster, hsStem as HeavenlyStem)
+      return `${hsStem}${god}`
+    }).join(' ')
+    // 星运：十二长生（日主在该地支的状态）
+    const xingYun = SHI_ER_CHANG_SHENG[bazi.dayMaster]?.[p.branch] || '—'
+    // 自坐：仅日柱显示（日支本气藏干对日主的十神）
+    const ziZuo = label === '**日柱**'
+      ? `自坐${getTenGod(bazi.dayMaster, (p.hiddenStems[0] || p.stem) as HeavenlyStem)}`
+      : '—'
+    // 空亡
+    const kongWang = kongWangBranches.includes(p.branch) ? '空' : '—'
+    // 神煞
+    const pillarKey = label.replace(/\*\*/g, '') as '年支' | '月支' | '日支' | '时支'
+    const shenShaNames = [...(shenShaByPillar[pillarKey] || []), ...(pillarKey === '日支' ? (shenShaByPillar['全局'] || []) : [])]
+    const shenShaText = shenShaNames.length > 0 ? shenShaNames.join('、') : '—'
+
+    md += `| ${label} | ${p.tenGod} | **${p.stem}** | **${p.branch}** | ${hs} | ${fuXing} | ${xingYun} | ${ziZuo} | ${kongWang} | ${p.naYin} | ${shenShaText} |\n`
   }
 
   md += `\n> **判官批语：** 日主 **${bazi.dayMaster}**（${ELEM_SYMBOL[STEM_ELEMENT[bazi.dayMaster]]}${STEM_ELEMENT[bazi.dayMaster]}），生于${bazi.month.branch}月，为 **${geJu}**。\n\n`
@@ -287,17 +321,17 @@ export function renderFundamentalReport(result: AnalysisResult): string {
 
   md += '\n'
 
-  // 五行能量文本柱状图
+  // 五行能量分布（数值表；可视化条形图由 BaziReport 组件渲染）
   md += '### 🔢 五行能量分布\n\n'
-  md += '```\n'
+  md += '| 五行 | 能量值 | 强弱 |\n|:---|:---|:---|\n'
   const maxVal = Math.max(...Object.values(fiveElementDistribution), 1)
   for (const elem of FIVE_ELEMENTS) {
     const val = fiveElementDistribution[elem]
-    const barLen = Math.round((val / maxVal) * 30)
-    const bar = '█'.repeat(barLen)
-    md += `${ELEM_SYMBOL[elem]} ${elem}  ${bar} ${val.toFixed(1)}\n`
+    const ratio = val / maxVal
+    const level = ratio >= 0.85 ? '旺' : ratio >= 0.6 ? '中' : '弱'
+    md += `| ${ELEM_SYMBOL[elem]} ${elem} | ${val.toFixed(1)} | ${level} |\n`
   }
-  md += '```\n\n'
+  md += '\n'
 
   // 旺衰详细
   md += '### 📊 旺衰判定（多维度综合加权法）\n\n'
@@ -377,76 +411,13 @@ function getWangXiangDesc(dayMaster: HeavenlyStem, monthBranch: EarthlyBranch): 
 }
 
 // ============================================================
-// 2. 六亲缘分 报告
-// ============================================================
-
-export function renderFamilyReport(result: AnalysisResult): string {
-  const { bazi, person } = result
-
-  let md = '## 二、六亲缘分 (Family & Ancestry)\n\n'
-
-  // 年柱 = 祖辈
-  md += '### 🏛️ 祖荫分析\n\n'
-  const yearStem = bazi.year.stem
-  const yearBranch = bazi.year.branch
-  const yearElem = STEM_ELEMENT[yearStem]
-
-  const yearTenGod = bazi.year.tenGod
-  if (yearTenGod === '正印' || yearTenGod === '偏印') {
-    md += `年柱**${yearStem}${yearBranch}**为印星坐守，主祖辈有一定文化底蕴或田产传承，原生家庭对命主的精神滋养较为充足。\n\n`
-  } else if (yearTenGod === '正财' || yearTenGod === '偏财') {
-    md += `年柱**${yearStem}${yearBranch}**财星高透，祖上经济条件不差，但若日主身弱，反主早年孤贫，得祖荫有限。\n\n`
-  } else if (yearTenGod === '正官' || yearTenGod === '偏官') {
-    md += `年柱**${yearStem}${yearBranch}**官星当头，祖辈中或有从政、执法之人，家风较为严格，幼年受管教颇多。\n\n`
-  } else if (yearTenGod === '食神' || yearTenGod === '伤官') {
-    md += `年柱**${yearStem}${yearBranch}**食伤泄秀，祖辈或为手艺、艺术之人，家学渊源自由开放，但也易产生代际隔阂。\n\n`
-  } else {
-    md += `年柱**${yearStem}${yearBranch}**比劫当头，祖辈根基尚可但家业多变，兄弟姐妹之间互动密切但竞争亦重。\n\n`
-  }
-
-  // 月柱 = 父母兄弟
-  md += '### 👨‍👩‍👧‍👦 父母兄弟\n\n'
-  const monthStem = bazi.month.stem
-  const monthBranch = bazi.month.branch
-  const monthTenGod = bazi.month.tenGod
-
-  if (monthTenGod === '正印' || monthTenGod === '偏印') {
-    md += `月柱**${monthStem}${monthBranch}**为印星，主母亲对命主人生产生深远影响，幼年多得母亲悉心照料。`
-    if (bazi.year.tenGod === '偏财') {
-      md += '但年柱见偏财，父母之间或存在矛盾，少年家庭氛围有紧张时期。'
-    }
-    md += '\n\n'
-  } else if (monthTenGod === '正财' || monthTenGod === '偏财') {
-    md += `月柱**${monthStem}${monthBranch}**财星当令，父亲在家庭中地位显著，物质条件尚可但精神关怀可能欠缺。\n\n`
-  } else if (monthTenGod === '正官' || monthTenGod === '偏官') {
-    md += `月柱**${monthStem}${monthBranch}**官杀重，原生家庭管教严格甚至苛刻，成长过程中心理压力较大，可能影响自信心的建立。\n\n`
-  } else {
-    md += `月柱**${monthStem}${monthBranch}**为${monthTenGod}，兄弟姐妹缘分中等，家庭关系需靠后天经营。\n\n`
-  }
-
-  // 比劫分析（日柱十神恒为比肩，不计入，否则任何命局都比劫≥1）
-  let biJieCount = 0
-  for (const p of [bazi.year, bazi.month, bazi.hour]) {
-    if (p.tenGod === '比肩' || p.tenGod === '劫财') biJieCount++
-  }
-
-  if (biJieCount >= 3) {
-    md += '> **判官批语：** 局中比劫重重，手足缘分虽深但竞争激烈，家产易起纷争，且配偶易与家人有嫌隙。\n\n'
-  } else if (biJieCount === 0) {
-    md += '> **判官批语：** 局中全无比劫，命主性格独立，但易感孤独，兄弟姐妹缘分较浅或较少。\n\n'
-  }
-
-  return md
-}
-
-// ============================================================
 // 3. 运程长卷 报告
 // ============================================================
 
 export function renderLifeStagesReport(result: AnalysisResult): string {
   const { bazi, bigFortunes, person, currentFortune } = result
 
-  let md = '## 三、运程长卷 (Life Stages)\n\n'
+  let md = '## 七、运程长卷 (Life Stages)\n\n'
 
   // 起运年龄说明
   const firstFortune = bigFortunes?.[0]
@@ -545,69 +516,22 @@ function describeFortune(fortune: BigFortune, bazi: BaziChart, favorable: FiveEl
 // ============================================================
 
 export function renderRiskReport(result: AnalysisResult): string {
-  const { bazi, fiveElementDistribution, bodyStrength, person } = result
+  const { bazi, fiveElementDistribution, bodyStrength } = result
 
-  let md = '## 四、判官直言 (Risk Warning)\n\n'
+  let md = '## 八、判官直言 (Risk Warning)\n\n'
 
-  // 性格硬伤：引用 PersonalityProfile 的数据，不独立分析
-  md += '### 🎭 性格需注意之处\n\n'
-  const personality = analyzePersonality(result)
-
-  if (personality.weaknesses.length > 0) {
-    for (const w of personality.weaknesses) {
-      md += `- ${w}\n`
-    }
-    // 额外提醒
-    const spread = Math.max(...Object.values(fiveElementDistribution)) - Math.min(...Object.values(fiveElementDistribution))
-    if (spread > 4) {
-      md += `- 五行严重偏枯（差值${spread.toFixed(1)}），性格中可能有极端化倾向，需自我觉察与平衡\n`
-    }
-  } else {
-    md += '此局性格整体中和，无明显偏激之处。但各人所处环境不同，还需自我觉察与修心。\n'
-  }
-  md += '\n'
-
-  // 健康隐患
-  md += '### 💊 健康隐患\n\n'
-
-  const healthWarnings: string[] = []
-  const allVals = Object.values(fiveElementDistribution)
-  const maxVal = Math.max(...allVals)
-  const minVal = Math.min(...allVals)
-  const spread = maxVal - minVal
-  const maxElem = (Object.entries(fiveElementDistribution).find(([, v]) => v === maxVal)?.[0] || '') as FiveElement
-  const minElem = (Object.entries(fiveElementDistribution).find(([, v]) => v === minVal)?.[0] || '') as FiveElement
-
-  const elemHealth: Record<FiveElement, string> = {
-    '木': '肝胆、筋骨、神经系统',
-    '火': '心脏、小肠、血液循环',
-    '土': '脾胃、肌肉、消化系统',
-    '金': '肺部、大肠、呼吸系统',
-    '水': '肾脏、膀胱、泌尿生殖系统',
-  }
-
-  if (maxVal > 10) {
-    healthWarnings.push(`⚠️ 五行**${maxElem}**极度过旺（${maxVal.toFixed(1)}分），${elemHealth[maxElem]}系统有"过亢为病"的严重风险，需重点监测和调理`)
-  } else if (maxVal > 7) {
-    healthWarnings.push(`五行**${maxElem}**偏旺（${maxVal.toFixed(1)}分），${elemHealth[maxElem]}需防过亢`)
-  }
-
-  if (minVal < 1) {
-    healthWarnings.push(`🚨 五行**${minElem}**极度虚弱（仅${minVal.toFixed(1)}分），${elemHealth[minElem]}系统先天严重不足，是命局最大健康风险点，需终身养护！`)
-  } else if (minVal < 2) {
-    healthWarnings.push(`⚠️ 五行**${minElem}**很弱（${minVal.toFixed(1)}分），${elemHealth[minElem]}功能偏弱，日常需加强调理`)
-  } else if (minVal < 3) {
-    healthWarnings.push(`五行**${minElem}**偏弱（${minVal.toFixed(1)}分），${elemHealth[minElem]}需适当关注`)
-  }
-
+  // 判官批语：综合命局风险（性格/健康细节见对应章节，此处只给总纲）
+  md += '> **判官总批：** 此局日主' + bodyStrength + '，'
+  const maxElem = (Object.entries(fiveElementDistribution).sort((a, b) => b[1] - a[1])[0]?.[0] || '') as FiveElement
+  const minElem = (Object.entries(fiveElementDistribution).sort((a, b) => a[1] - b[1])[0]?.[0] || '') as FiveElement
+  const spread = Math.max(...Object.values(fiveElementDistribution)) - Math.min(...Object.values(fiveElementDistribution))
   if (spread > 5) {
-    healthWarnings.push(`⚠️ 五行严重偏枯（${maxElem}${maxVal.toFixed(1)} vs ${minElem}${minVal.toFixed(1)}），体质失衡严重，务必重视综合调理`)
+    md += `五行严重偏枯（${ELEM_SYMBOL[maxElem]}${maxElem}旺 vs ${ELEM_SYMBOL[minElem]}${minElem}弱，差值${spread.toFixed(1)}），运势起伏大，须以喜用神${result.favorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')}为行事依归。\n\n`
+  } else if (spread > 2.5) {
+    md += `五行略有偏颇（差值${spread.toFixed(1)}），大运流年引动时仍须留意${minElem}相关领域。\n\n`
+  } else {
+    md += `五行相对均衡（差值${spread.toFixed(1)}），命局平稳，忌大起大落之举。\n\n`
   }
-
-  for (const hw of healthWarnings) {
-    md += `- ${hw}\n`
-  }
-  md += '\n'
 
   // 避坑指南
   md += '### 🛡️ 【避坑指南】\n\n'
@@ -640,7 +564,7 @@ function getComplementaryPeople(result: AnalysisResult): string {
 // ============================================================
 
 export function renderCompatibilityPreview(result: AnalysisResult): string {
-  let md = '## ⚖️ 龙凤合鸣 - 合盘潜力分析\n\n'
+  let md = '### 💑 婚恋潜力（合盘预览）\n\n'
   md += '> 此为命主自身婚恋潜力的初步判词。如需深度合盘，请提供对方八字信息。\n\n'
 
   const god = result.bazi.day.tenGod
@@ -658,4 +582,35 @@ export function renderCompatibilityPreview(result: AnalysisResult): string {
   }
 
   return md
+}
+
+// ============================================================
+// 报告章节编排器 — 统一章节顺序/编号/折叠策略
+// ============================================================
+
+export interface ReportSection {
+  id: string
+  num: string          // 章节编号（一~八 / 附录A）
+  title: string
+  icon: string
+  render: (result: AnalysisResult) => string
+  defaultOpen: boolean
+}
+
+/**
+ * 八字报告章节编排（逻辑顺序：定盘→性格→事业→智识→家庭婚恋→健康→运程→判官→面相附录）
+ * AI 总评（AiInsightCard）由页面在"一、乾坤定盘"之后插入，不在此列表内。
+ */
+export function buildReportSections(): ReportSection[] {
+  return [
+    { id: 'fundamental', num: '一', title: '乾坤定盘', icon: '☯️', render: renderFundamentalReport, defaultOpen: true },
+    { id: 'personality', num: '二', title: '性格全息图谱', icon: '🎭', render: renderPersonalityReport, defaultOpen: true },
+    { id: 'career', num: '三', title: '事业前程', icon: '💼', render: renderCareerReport, defaultOpen: true },
+    { id: 'intelligence', num: '四', title: '智识天赋', icon: '🧠', render: renderIntelligenceReport, defaultOpen: true },
+    { id: 'family', num: '五', title: '家庭与婚恋', icon: '🏠', render: (r) => renderFamilyDeepReport(r) + '\n' + renderCompatibilityPreview(r), defaultOpen: true },
+    { id: 'health', num: '六', title: '健康养生', icon: '🫀', render: renderHealthReport, defaultOpen: true },
+    { id: 'lifestages', num: '七', title: '运程长卷', icon: '📈', render: renderLifeStagesReport, defaultOpen: true },
+    { id: 'risk', num: '八', title: '判官直言', icon: '🛡️', render: renderRiskReport, defaultOpen: true },
+    { id: 'appearance', num: '附录A', title: '面相身形', icon: '🧍', render: renderAppearanceReport, defaultOpen: false },
+  ]
 }

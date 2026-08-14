@@ -664,7 +664,7 @@ function buildDietAdvice(
 export function renderHealthReport(result: AnalysisResult): string {
   const h = analyzeHealth(result)
 
-  let md = '## 三、健康五行论 (Health Analysis)\n\n'
+  let md = '## 六、健康养生 (Health Analysis)\n\n'
 
   // 体质
   md += `> **体质判定：** ${h.constitution}\n\n`
@@ -824,7 +824,7 @@ export function renderAppearanceReport(result: AnalysisResult): string {
   const topElem = (Object.entries(dist).sort((a, b) => b[1] - a[1])[0]?.[0] || dmElem) as FiveElement
   const bt = generateAppearance(dmElem, dist, monthElem, shenSha, bodyStrength)
 
-  let md = '## 四、面相身形 (Physical Appearance)\n\n'
+  let md = '## 附录A、面相身形 (Physical Appearance)\n\n'
 
   // 总览
   md += `> ${bt.fusionNote}。实际长相还受后天环境、地域、饮食、年龄等因素影响，八字仅提供先天形貌的倾向性参考。\n\n`
@@ -919,7 +919,7 @@ export function renderIntelligenceReport(result: AnalysisResult): string {
     iqNote = '> **注意：** 命主虽智力评级朴实，但水行能量充足（记忆力突出），属于"记忆力强但非传统学术型智慧"的类型，动手实践和记忆类领域反有优势。\n'
   }
 
-  let md = '## 五、智识天赋 (Intellectual Profile)\n\n'
+  let md = '## 四、智识天赋 (Intellectual Profile)\n\n'
 
   md += `> **智力评级：** ${iqLevel}\n`
   if (iqNote) md += iqNote
@@ -997,7 +997,7 @@ export function renderFamilyDeepReport(result: AnalysisResult): string {
   const { bazi, person } = result
   const sr = analyzeSixRelatives(bazi, person.gender)
 
-  let md = '## 六、家庭关系图谱 (Family Dynamics)\n\n'
+  let md = '## 五、家庭与婚恋 (Family Dynamics)\n\n'
 
   // === 父星 ===
   md += '### 👨 父亲\n\n'
@@ -1423,7 +1423,7 @@ export function renderCareerReport(result: AnalysisResult): string {
   const c = analyzeCareer(result)
   const { favorableElements, unfavorableElements } = result
 
-  let md = '## 七、事业前程 (Career & Wealth)\n\n'
+  let md = '## 三、事业前程 (Career & Wealth)\n\n'
 
   // 行业推荐
   md += '### 💼 适配行业\n\n'

@@ -247,31 +247,20 @@ const ZAI_SHA: Record<EarthlyBranch, EarthlyBranch> = {
 
 // ============================================================
 // 22. 空亡（以日柱干支查地支对）
+// 算法：以日柱干支所在"旬"的旬首（甲X）为基准，旬首地支逆数两位即空亡二支。
+// 旬首地支索引 = (地支索引 − 天干索引) mod 12（如乙未：7−1=6→午，甲午旬→辰巳空）。
+// 旧实现用"十干全列+十支窗口"匹配，任何日柱都命中第一行（甲子旬→戌亥），全盘错误。
 // ============================================================
 
-const KONG_WANG_XUN: [HeavenlyStem[], EarthlyBranch[]][] = [
-  [['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'], ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉']], // 甲子旬 → 戌亥空
-  [['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'], ['戌', '亥', '子', '丑', '寅', '卯', '辰', '巳', '午', '未']], // 甲戌旬 → 申酉空
-  [['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'], ['申', '酉', '戌', '亥', '子', '丑', '寅', '卯', '辰', '巳']], // 甲申旬 → 午未空
-  [['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'], ['午', '未', '申', '酉', '戌', '亥', '子', '丑', '寅', '卯']], // 甲午旬 → 辰巳空
-  [['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'], ['辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑']], // 甲辰旬 → 寅卯空
-  [['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'], ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']], // 甲寅旬 → 子丑空
-]
-
-const KONG_WANG_RESULT: EarthlyBranch[][] = [
-  ['戌', '亥'], ['申', '酉'], ['午', '未'], ['辰', '巳'], ['寅', '卯'], ['子', '丑'],
-]
-
-function getKongWang(dayStem: HeavenlyStem, dayBranch: EarthlyBranch): EarthlyBranch[] {
+export function getKongWang(dayStem: HeavenlyStem, dayBranch: EarthlyBranch): EarthlyBranch[] {
   const sIdx = HEAVENLY_STEMS.indexOf(dayStem)
   const bIdx = EARTHLY_BRANCHES.indexOf(dayBranch)
-  for (let i = 0; i < KONG_WANG_XUN.length; i++) {
-    const [stems, branches] = KONG_WANG_XUN[i]!
-    const stemMatch = stems.indexOf(dayStem) >= 0
-    const branchMatch = branches.indexOf(dayBranch) >= 0
-    if (stemMatch && branchMatch) return KONG_WANG_RESULT[i]!
-  }
-  return []
+  // 旬首地支（甲子0、甲戌10、甲申8、甲午6、甲辰4、甲寅2）
+  const xunShouZhi = (((bIdx - sIdx) % 12) + 12) % 12
+  // 逆数两位：空亡 = 旬首地支的前两支（甲子旬→戌亥）
+  const kong1 = (xunShouZhi + 10) % 12
+  const kong2 = (xunShouZhi + 11) % 12
+  return [EARTHLY_BRANCHES[kong1]!, EARTHLY_BRANCHES[kong2]!]
 }
 
 // ============================================================
