@@ -5,6 +5,7 @@ import { renderEnhancedCompatibilityReport } from '../../utils/compatibility'
 import { useCompat } from '../../hooks/useBazi'
 import { getAllRecordsMerged, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
 import { buildCompatQASystemPrompt } from '../../utils/ai'
+import { ToolHeader } from '../../components/layout/ToolHeader'
 import { deleteServerCompatRecord, getServerCompatRecords, saveServerCompatRecord } from '../../services/compatApi'
 import { ChatPanel } from '../../components/ui/ChatPanel'
 import { DualInput } from './DualInput'
@@ -113,6 +114,11 @@ export default function CompatPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      <ToolHeader
+        eyebrow="COMPATIBILITY"
+        title="双人合盘"
+        desc="两命相合，五行生克、十神呼应，缘分深浅一窥便知。"
+      />
       {!hasRunCompat && (
         <>
           {/* Dual input with inline profile picker */}
@@ -138,10 +144,10 @@ export default function CompatPage() {
 
           {result1 && result2 && (
             <div className="section">
-              <h3 className="section-title">双方八字详情</h3>
+              <h3 className="font-serif text-lg font-bold" style={{ color: 'var(--dai-qing)' }}>双方八字详情</h3>
               <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 24 }}>
-                <div className="card"><BaziChart bazi={result1.bazi} person={result1.person} /></div>
-                <div className="card"><BaziChart bazi={result2.bazi} person={result2.person} /></div>
+                <div className="ds-card"><BaziChart bazi={result1.bazi} person={result1.person} /></div>
+                <div className="ds-card"><BaziChart bazi={result2.bazi} person={result2.person} /></div>
               </div>
             </div>
           )}
@@ -163,7 +169,7 @@ export default function CompatPage() {
       {/* History — always visible */}
       <div className="section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <h3 className="section-title" style={{ marginBottom: 0 }}>合盘历史</h3>
+          <h3 className="font-serif text-lg font-bold" style={{ color: 'var(--dai-qing)', marginBottom: 0 }}>合盘历史</h3>
           {compatRecords.length > 0 && (
             <button className="fold-trigger" onClick={() => setShowCompatHistory(!showCompatHistory)}>
               {showCompatHistory ? '收起' : `展开 (${compatRecords.length})`}
@@ -171,7 +177,7 @@ export default function CompatPage() {
           )}
         </div>
         {showCompatHistory && compatRecords.length > 0 && (
-          <div className="card" style={{ padding: '4px 0', maxHeight: 280, overflowY: 'auto' }}>
+          <div className="ds-card" style={{ padding: '4px 0', maxHeight: 280, overflowY: 'auto' }}>
             {compatRecords.map((cr) => (
               <div key={cr.id} className="history-row">
                 <div style={{ flex: 1, minWidth: 0 }}>

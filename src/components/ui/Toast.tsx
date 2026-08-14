@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react'
+import { Check, X, Info } from './Icon'
 
 type ToastType = 'success' | 'error' | 'info'
 
@@ -25,7 +26,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div className="toast-container">
+      <div className="ds-toast-wrap">
         {toasts.map((t) => (
           <ToastMessage key={t.id} item={t} onDone={() => removeToast(t.id)} />
         ))}
@@ -35,13 +36,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 const typeClass: Record<ToastType, string> = {
-  success: 'toast-success',
-  error: 'toast-error',
-  info: 'toast-info',
+  success: 'ds-toast-success',
+  error: 'ds-toast-error',
+  info: 'ds-toast-info',
 }
 
-const typeIcons: Record<ToastType, string> = {
-  success: '✓', error: '✕', info: 'i',
+const typeIcons: Record<ToastType, ReactNode> = {
+  success: <Check size={13} />,
+  error: <X size={13} />,
+  info: <Info size={13} />,
 }
 
 function ToastMessage({ item, onDone }: { item: ToastItem; onDone: () => void }) {
@@ -51,7 +54,7 @@ function ToastMessage({ item, onDone }: { item: ToastItem; onDone: () => void })
   }, [onDone])
 
   return (
-    <div className={`toast ${typeClass[item.type]}`}>
+    <div className={`ds-toast ${typeClass[item.type]}`}>
       <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{typeIcons[item.type]}</span>
       {item.message}
     </div>

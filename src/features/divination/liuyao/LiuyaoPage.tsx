@@ -218,7 +218,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
         {/* 基础信息 */}
         {result.naja?.sizhu && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center text-[11px] rounded-lg p-3"
-            style={{ color: 'var(--muted)', backgroundColor: 'var(--bg)' }}>
+            style={{ color: 'rgba(0,77,77,0.55)', backgroundColor: 'var(--bg)' }}>
             <span>公历：{result.naja.castTime}</span>
             <span>|</span>
             <span>四柱：{result.naja.sizhu.year.full} {result.naja.sizhu.month.full} {result.naja.sizhu.day.full} {result.naja.sizhu.hour.full}</span>
@@ -239,7 +239,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
             />
             {result.changedHexagram && (
               <div className="flex items-center self-center text-2xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-                style={{ color: 'var(--muted)' }}>
+                style={{ color: 'rgba(0,77,77,0.55)' }}>
                 →
               </div>
             )}
@@ -255,7 +255,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
           <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
             {/* 月建日辰信息栏 */}
             {result.naja && (
-              <div className="flex flex-wrap gap-4 justify-center mb-4 text-xs" style={{ color: 'var(--muted)' }}>
+              <div className="flex flex-wrap gap-4 justify-center mb-4 text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>
                 <span>宫：<b style={{ color: 'var(--fg)' }}>{result.naja.palaceName}</b>（{result.naja.palaceElement}）</span>
                 <span>月建：<b style={{ color: 'var(--fg)' }}>{result.naja.monthZhi}月{result.naja.monthWuxing}</b></span>
                 <span>日辰：<b style={{ color: 'var(--fg)' }}>{result.naja.dayZhi}日{result.naja.dayWuxing}</b></span>
@@ -266,7 +266,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
 
             {/* 纳甲表头 */}
             <div className="grid grid-cols-7 gap-1 text-[10px] text-center font-semibold mb-1 px-1"
-              style={{ color: 'var(--muted)' }}>
+              style={{ color: 'rgba(0,77,77,0.55)' }}>
               <span>爻位</span><span>六神</span><span>干支</span><span>五行</span><span>六亲</span><span>世应</span><span>阴阳</span>
             </div>
 
@@ -283,7 +283,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                       borderBottom: i < 5 ? '1px solid var(--border)' : 'none',
                       backgroundColor: line.changing ? 'var(--negative-bg)' : isShi ? 'var(--primary-light)' : undefined,
                     }}>
-                    <span style={{ color: 'var(--muted)' }}>{posNames[pos]}爻</span>
+                    <span style={{ color: 'rgba(0,77,77,0.55)' }}>{posNames[pos]}爻</span>
                     <span style={{ color: 'var(--hu-po-jin, #d4af37)' }}>{line.liushen || ''}</span>
                     <span className="font-semibold tracking-wide" style={{ color: 'var(--fg)' }}>{line.gan || ''}{line.zhi || ''}</span>
                     <span>{line.wuxing || ''}</span>
@@ -294,7 +294,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                       {isYing && <span className="inline-block px-1.5 py-px rounded text-[10px] font-semibold"
                         style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-hover)' }}>应</span>}
                     </span>
-                    <span style={line.value ? {} : { color: 'var(--muted)' }}>
+                    <span style={line.value ? {} : { color: 'rgba(0,77,77,0.55)' }}>
                       {line.value ? '⚊' : '⚋'}
                       {line.changing && <span className="ml-0.5" style={{ color: 'var(--danger)' }}>{line.value ? '○' : '×'}</span>}
                     </span>
@@ -309,18 +309,18 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-2.5 rounded" style={{ backgroundColor: 'var(--bg)' }}>
-                  <span style={{ color: 'var(--muted)' }}>卦局：</span>
+                  <span style={{ color: 'rgba(0,77,77,0.55)' }}>卦局：</span>
                   <span className="font-semibold" style={{ color: 'var(--fg)' }}>
                     {result.naja.isLiuChong?'六冲卦':result.naja.isLiuHe?'六合卦':'非冲非合'}
                   </span>
-                  {result.naja.isLiuChong && <p className="text-[10px] mt-0.5" style={{ color: 'var(--muted)' }}>六冲主快散变动</p>}
-                  {result.naja.isLiuHe && <p className="text-[10px] mt-0.5" style={{ color: 'var(--muted)' }}>六合主和聚长久</p>}
+                  {result.naja.isLiuChong && <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>六冲主快散变动</p>}
+                  {result.naja.isLiuHe && <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>六合主和聚长久</p>}
                 </div>
                 {result.naja.chiShiLiqin && (
                   <div className="p-2.5 rounded" style={{ backgroundColor: 'var(--bg)' }}>
-                    <span style={{ color: 'var(--muted)' }}>持世：</span>
+                    <span style={{ color: 'rgba(0,77,77,0.55)' }}>持世：</span>
                     <span className="font-semibold" style={{ color: 'var(--fg)' }}>{result.naja.chiShiLiqin}持世</span>
-                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--muted)' }}>{result.naja.chiShiText}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.naja.chiShiText}</p>
                   </div>
                 )}
               </div>
@@ -354,12 +354,12 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
               </div>
             )
           })()}
-          {!analysisText && !result.naja && <p className="text-sm text-center py-4" style={{ color: 'var(--muted)' }}>等待 AI 解读完成...</p>}
+          {!analysisText && !result.naja && <p className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</p>}
         </Card>
 
         {/* AI 解读 */}
         <Card title="AI 解读">
-          <div className="text-sm italic mb-3" style={{ color: 'var(--muted)' }}>
+          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
             所问之事：{question || '（未填写）'}
           </div>
 
@@ -381,13 +381,13 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
           )}
 
           {!interpreting && !interpretError && !interpretation && (
-            <div className="text-sm text-center py-4" style={{ color: 'var(--muted)' }}>等待 AI 解读完成...</div>
+            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
           )}
         </Card>
 
         {/* 卦辞释义 */}
         <Card title="卦辞释义">
-          <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--muted)' }}>{result.originalHexagram.judgment}</p>
+          <p className="text-sm leading-relaxed mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.originalHexagram.judgment}</p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.originalHexagram.meaning}</p>
           {result.changedHexagram && (
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
@@ -417,7 +417,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                 {hexOpts.map(opt => (
                   <button key={opt.key} onClick={() => setActiveLiuyaoHex(opt.key)}
                     className="px-3 py-1.5 text-xs rounded-t transition-colors"
-                    style={activeLiuyaoHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'var(--muted)' }}>
+                    style={activeLiuyaoHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'rgba(0,77,77,0.55)' }}>
                     {opt.label} · {opt.name}
                   </button>
                 ))}
@@ -431,7 +431,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-xs" style={{ color: 'var(--muted)' }}>暂无</p>}
+              ) : <p className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>暂无</p>}
               {/* 打印时显示所有卦断语 */}
               <div className="hidden print:block mt-4">
                 {hexOpts.map(opt => {
@@ -491,7 +491,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
       <Card title="六爻起卦">
         {/* 所问之事 - 必须先填写 */}
         <div className="mb-4">
-          <span className="field-label">所占之事 <span style={{ color: 'var(--danger)' }}>*</span></span>
+          <span className="ds-label">所占之事 <span style={{ color: 'var(--danger)' }}>*</span></span>
           <input
             className="field"
             value={question}
@@ -510,7 +510,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
               type="button"
               onClick={() => setMethod(m)}
               className="flex-1 py-2 px-4 rounded-lg text-sm cursor-pointer transition-all"
-              style={method === m ? { backgroundColor: 'var(--primary)', color: '#fbfaf5' } : { backgroundColor: 'var(--bg)', color: 'var(--muted)' }}
+              style={method === m ? { backgroundColor: 'var(--primary)', color: '#fbfaf5' } : { backgroundColor: 'var(--bg)', color: 'rgba(0,77,77,0.55)' }}
             >
               {m === 'coin' ? '摇卦' : m === 'number' ? '数字' : '随机'}
             </button>
@@ -520,7 +520,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
         {/* 摇卦模式 */}
         {method === 'coin' && (
           <div className="flex flex-col items-center gap-4">
-            <div className="text-sm mb-2" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm mb-2" style={{ color: 'rgba(0,77,77,0.55)' }}>
               诚心默念所问之事，点击摇卦，共需六次（从初爻至上爻）
             </div>
 
@@ -529,7 +529,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
               <div className="w-full max-w-[200px] space-y-1 mb-2">
                 {shakeLines.map((line, i) => (
                   <div key={i} className="flex items-center justify-between text-sm py-1">
-                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                    <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>
                       {i === 0 ? '初爻' : i === 1 ? '二爻' : i === 2 ? '三爻' : i === 3 ? '四爻' : i === 4 ? '五爻' : '上爻'}
                     </span>
                     <span className="flex items-center gap-2">
@@ -542,7 +542,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                         </div>
                       )}
                       <span className={`text-xs ${line.changing ? 'font-semibold' : ''}`}
-                        style={line.changing ? { color: 'var(--danger)' } : { color: 'var(--muted)' }}>
+                        style={line.changing ? { color: 'var(--danger)' } : { color: 'rgba(0,77,77,0.55)' }}>
                         {line.label}
                       </span>
                     </span>
@@ -569,20 +569,20 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
         {/* 数字模式 */}
         {method === 'number' && (
           <div className="flex flex-col gap-4">
-            <div className="text-sm" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
               输入三个数字（0-999），分别对应上卦、下卦、动爻
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <span className="field-label">上卦数</span>
+                <span className="ds-label">上卦数</span>
                 <input className="field" type="number" value={num1} onChange={(e) => setNum1(e.target.value)} placeholder="如 3" />
               </div>
               <div>
-                <span className="field-label">下卦数</span>
+                <span className="ds-label">下卦数</span>
                 <input className="field" type="number" value={num2} onChange={(e) => setNum2(e.target.value)} placeholder="如 6" />
               </div>
               <div>
-                <span className="field-label">动爻数</span>
+                <span className="ds-label">动爻数</span>
                 <input className="field" type="number" value={num3} onChange={(e) => setNum3(e.target.value)} placeholder="如 9" />
               </div>
             </div>
@@ -593,7 +593,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
         {/* 随机模式 */}
         {method === 'random' && (
           <div className="flex flex-col items-center gap-4">
-            <div className="text-sm text-center" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm text-center" style={{ color: 'rgba(0,77,77,0.55)' }}>
               一键随机起卦，系统自动生成完整六爻卦象
             </div>
             <div className="text-5xl">🎲</div>

@@ -117,11 +117,11 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', padding: 'var(--space-md)' }}>
         <Input label="姓名" value={name} onChange={(e) => setName(e.target.value)} placeholder="输入姓名" />
         <div>
-          <span className="field-label">性别</span>
-          <div className="segmented" style={{ marginTop: 4 }}>
+          <span className="ds-label">性别</span>
+          <div className="ds-segmented" style={{ marginTop: 4 }}>
             {(['男', '女'] as const).map((g) => (
               <button key={g} type="button" onClick={() => setGender(g)}
-                className={`segmented-item ${g === gender ? 'active' : ''}`}>{g}</button>
+                className={`ds-seg-item ${g === gender ? 'active' : ''}`}>{g}</button>
             ))}
           </div>
         </div>
@@ -129,12 +129,12 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
           onYearChange={setYear} onMonthChange={setMonth} onDayChange={setDay}
           onHourChange={setHour} onMinuteChange={setMinute} />
         <div>
-          <span className="field-label">出生地</span>
-          <select className="select" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} style={{ marginTop: 4 }}>
+          <span className="ds-label">出生地</span>
+          <select className="ds-select" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} style={{ marginTop: 4 }}>
             {['北京', '上海', '广州', '深圳', '成都', '杭州', '南京', '武汉', '重庆'].map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        {error && <span className="field-error">{error}</span>}
+        {error && <span className="ds-field-error">{error}</span>}
         <Button type="submit" loading={loading} size="sm">开始分析</Button>
       </form>
     </div>

@@ -1,45 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './components/ui/Toast'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { NavProvider, type AppTab } from './context/NavContext'
 import { LoginModal } from './features/auth/LoginModal'
 import { RegisterModal } from './features/auth/RegisterModal'
+import { TopNav } from './components/layout/TopNav'
+import { BottomDock } from './components/layout/BottomDock'
+import { SiteFooter } from './components/layout/SiteFooter'
+import { HomeLanding } from './components/layout/HomeLanding'
 import BaziPage from './features/bazi/BaziPage'
 import CompatPage from './features/compat/CompatPage'
 import FengshuiPage from './features/fengshui/FengshuiPage'
 import { DivinationPage } from './features/divination/DivinationPage'
 import WannianliPage from './features/almanac/WannianliPage'
+import { ShenShaPage } from './features/shensha/ShenShaPage'
+import { MePage } from './features/me/MePage'
 import { useAuth } from './hooks/useAuth'
 import { migrateAllRecords } from './services/migrateService'
 
-type Tab = 'bazi' | 'compat' | 'fengshui' | 'divination' | 'almanac'
-
-const pageMeta: Record<Tab, { title: string; desc: string }> = {
-  bazi: { title: '八字排盘', desc: '输入出生信息，解读命理格局' },
-  compat: { title: '双人合盘', desc: '两命相合，缘分之深浅一窥便知' },
-  fengshui: { title: '风水分析', desc: '户型图、楼盘位置 · 环境吉凶分析' },
-  divination: { title: '算卦', desc: '六爻 · 梅花易数 · 诚心所至，卦象自明' },
-  almanac: { title: '万年历', desc: '农历 · 干支 · 节气 · 宜忌，通览时日吉凶' },
-}
-
-const tabs: { key: Tab; label: string; icon: string }[] = [
-  { key: 'bazi', label: '八字排盘', icon: '☰' },
-  { key: 'compat', label: '双人合盘', icon: '☯' },
-  { key: 'fengshui', label: '风水分析', icon: '⛰' },
-  { key: 'divination', label: '算卦', icon: '䷀' },
-  { key: 'almanac', label: '万年历', icon: '📅' },
-]
-
 function AppContent() {
-  const [tab, setTab] = useState<Tab>('bazi')
+  const [tab, setTab] = useState<AppTab>('home')
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [migrating, setMigrating] = useState(false)
-  const [migrateResult, setMigrateResult] = useState<string | null>(null)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const { user, logout } = useAuth()
 
+  // 主题（含本地持久化）
+  useEffect(() => {
+    const saved = localStorage.getItem('yubi_theme')
+    if (saved === 'dark' || saved === 'light') setTheme(saved)
+  }, [])
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('yubi_theme', theme)
+  }, [theme])
+
   // 管理员登录后，自动触发一次数据迁移
+  const [migrateResult, setMigrateResult] = useState<string | null>(null)
   useEffect(() => {
     if (user?.isAdmin) {
       migrateAllRecords()
@@ -51,29 +49,10 @@ function AppContent() {
     }
   }, [user?.isAdmin])
 
-  const handleMigrate = async () => {
-    setMigrating(true); setMigrateResult(null)
-    try {
-      const r = await migrateAllRecords()
-      setMigrateResult(`迁移完成：八字 ${r.bazi} 条、算卦 ${r.divination} 条、合盘 ${r.compat} 条（跳过 ${r.skipped} 条重复）`)
-    } catch (e: any) {
-      setMigrateResult(`迁移失败：${e.message}`)
-    } finally {
-      setMigrating(false)
-    }
-  }
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
-
-  // 追光效果：为卡片类元素设置鼠标位置 CSS 变量（--mouse-x / --mouse-y）
+  // 追光效果：为卡片类元素设置鼠标位置 CSS 变量
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const targets = document.querySelectorAll<HTMLElement>('.spotlight-card, .hub-card, .ai-insight')
+      const targets = document.querySelectorAll<HTMLElement>('.spotlight-card, .hub-card, .feat-card, .ai-insight')
       for (const el of targets) {
         const r = el.getBoundingClientRect()
         el.style.setProperty('--mouse-x', `${e.clientX - r.left}px`)
@@ -84,136 +63,77 @@ function AppContent() {
     return () => window.removeEventListener('mousemove', handler)
   }, [])
 
-  const meta = pageMeta[tab]
+  const go = useCallback((t: AppTab) => {
+    setTab(t)
+    window.scrollTo({ top: 0 })
+  }, [])
+
+  const toggleTheme = useCallback(() => setTheme(t => (t === 'dark' ? 'light' : 'dark')), [])
+
+  const handleLogout = useCallback(() => {
+    logout()
+    setMigrateResult(null)
+  }, [logout])
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-window)' }}>
-      {/* Sidebar — desktop */}
-      {!isMobile && (
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <div className="sidebar-header-brand">
-              <span className="yb-seal" style={{ width: 38, height: 38, fontSize: 20 }}>御</span>
-              <span>御笔易学</span>
-            </div>
-            <div className="sidebar-header-sub">命理 · 风水 · 占卜</div>
-          </div>
+    <NavProvider value={go}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <TopNav
+          activeTab={tab}
+          onTabChange={go}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          user={user}
+          onLoginClick={() => setLoginOpen(true)}
+          onLogout={handleLogout}
+        />
 
-          <div className="sidebar-title">功能</div>
-          <nav className="sidebar-nav">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                className={`sidebar-item ${t.key === tab ? 'active' : ''}`}
-                onClick={() => setTab(t.key)}
-              >
-                <span className="sidebar-item-icon">{t.icon}</span>
-                {t.label}
-              </button>
-            ))}
-          </nav>
-
-          <div className="sidebar-footer">
-            {migrateResult && (
-              <div style={{ fontSize: 11, color: 'var(--tertiary)', padding: '4px 12px', lineHeight: 1.4 }}>{migrateResult}</div>
-            )}
-            {user ? (
-              <>
-                {user.isAdmin && (
-                  <button
-                    className="sidebar-user"
-                    onClick={handleMigrate}
-                    disabled={migrating}
-                    style={{ borderTop: '1px solid var(--border)', justifyContent: 'center', gap: 6, opacity: migrating ? 0.6 : 1 }}
-                  >
-                    <span style={{ fontSize: 14}}>⬆</span>
-                    <span style={{ fontSize: 12, color: 'var(--tertiary)' }}>
-                      {migrating ? '迁移中...' : '迁移浏览器数据'}
-                    </span>
-                  </button>
-                )}
-                <div className="sidebar-user" onClick={logout}>
-                  <span style={{ fontSize: 13, color: 'var(--secondary)' }}>
-                    {user.username} {user.isAdmin && '(管理员)'}
-                  </span>
-                  <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--tertiary)' }}>
-                    退出
-                  </span>
-                </div>
-              </>
-            ) : (
-              <button className="sidebar-user" onClick={() => setLoginOpen(true)}>
-                登录 / 注册
-              </button>
-            )}
-          </div>
-        </aside>
-      )}
-
-      {/* Main Content */}
-      <main className="main-content" style={{ flex: 1 }}>
-        <div className="page-wrap">
-          <div className="page-header">
-            <h1 className="page-header-title">{meta.title}</h1>
-            {meta.desc && <p className="page-header-desc">{meta.desc}</p>}
-          </div>
-
-          <ErrorBoundary>
-            <div className="fade-in" key={tab}>
-              {tab === 'bazi' && <BaziPage />}
-              {tab === 'compat' && <CompatPage />}
-              {tab === 'fengshui' && <FengshuiPage />}
-              {tab === 'divination' && <DivinationPage />}
-              {tab === 'almanac' && <WannianliPage />}
-            </div>
-          </ErrorBoundary>
-
-          <div className="page-footer">
-            <span className="ink-dot" style={{ marginRight: 8 }} />
-            御笔易学 · 命理参详
-            <span className="ink-dot" style={{ marginLeft: 8 }} />
-          </div>
-        </div>
-      </main>
-
-      {/* Bottom Tab Bar — mobile */}
-      {isMobile && (
-        <nav className="bottom-bar">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              className={`bottom-bar-item ${t.key === tab ? 'active' : ''}`}
-              onClick={() => setTab(t.key)}
-            >
-              <span className="icon">{t.icon}</span>
-              <span>{t.label.slice(0, 2)}</span>
-            </button>
-          ))}
-          {user ? (
-            <button className="bottom-bar-item" onClick={logout}>
-              <span className="icon">👤</span>
-              <span>退出</span>
-            </button>
-          ) : (
-            <button className="bottom-bar-item" onClick={() => setLoginOpen(true)}>
-              <span className="icon">👤</span>
-              <span>我的</span>
-            </button>
+        <main style={{ flex: 1 }}>
+          {tab === 'home' && (
+            <ErrorBoundary>
+              <HomeLanding onNavigate={go} />
+            </ErrorBoundary>
           )}
-        </nav>
-      )}
+          {tab !== 'home' && (
+            <div className="site-container" style={{ paddingBottom: 96 }}>
+              {migrateResult && tab === 'me' && (
+                <div className="ds-chip ds-chip-ink" style={{ marginBottom: 12 }}>{migrateResult}</div>
+              )}
+              <ErrorBoundary>
+                <div className="fade-in" key={tab}>
+                  {tab === 'bazi' && <BaziPage />}
+                  {tab === 'compat' && <CompatPage />}
+                  {tab === 'fengshui' && <FengshuiPage />}
+                  {tab === 'divination' && <DivinationPage />}
+                  {tab === 'almanac' && <WannianliPage />}
+                  {tab === 'shensha' && <ShenShaPage />}
+                  {tab === 'me' && <MePage onOpenLogin={() => setLoginOpen(true)} />}
+                </div>
+              </ErrorBoundary>
+            </div>
+          )}
+        </main>
 
-      <LoginModal
-        open={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        onSwitchToRegister={() => { setLoginOpen(false); setRegisterOpen(true) }}
-      />
-      <RegisterModal
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        onSwitchToLogin={() => { setRegisterOpen(false); setLoginOpen(true) }}
-      />
-    </div>
+        <SiteFooter onNavigate={go} />
+        <BottomDock
+          activeTab={tab}
+          onTabChange={go}
+          user={user}
+          onLoginClick={() => setLoginOpen(true)}
+        />
+
+        <LoginModal
+          open={loginOpen}
+          onClose={() => setLoginOpen(false)}
+          onSwitchToRegister={() => { setLoginOpen(false); setRegisterOpen(true) }}
+        />
+        <RegisterModal
+          open={registerOpen}
+          onClose={() => setRegisterOpen(false)}
+          onSwitchToLogin={() => { setRegisterOpen(false); setLoginOpen(true) }}
+        />
+      </div>
+    </NavProvider>
   )
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Solar } from 'lunar-typescript'
+import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Card } from '../../components/ui/Card'
 
 /**
@@ -72,29 +73,34 @@ export function WannianliPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <ToolHeader
+        eyebrow="ALMANAC"
+        title="万年历"
+        desc="农历 · 干支 · 节气 · 宜忌，通览时日吉凶。"
+      />
       {/* 紧凑今日条 */}
       <div className="rounded-xl p-3 sm:p-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"
         style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
         <span className="font-[family-name:var(--font-title)] font-bold text-base" style={{ color: 'var(--fg)' }}>
           今日 · {today.getFullYear()}-{String(today.getMonth() + 1).padStart(2, '0')}-{String(today.getDate()).padStart(2, '0')}
-          <span className="ml-1 text-sm font-normal" style={{ color: 'var(--muted)' }}>周{WEEKDAYS[today.getDay()]}</span>
+          <span className="ml-1 text-sm font-normal" style={{ color: 'rgba(0,77,77,0.55)' }}>周{WEEKDAYS[today.getDay()]}</span>
         </span>
-        <span style={{ color: 'var(--muted)' }}>
+        <span style={{ color: 'rgba(0,77,77,0.55)' }}>
           农历 <b style={{ color: 'var(--fg)' }}>{todayInfo.lunarDate}</b>
         </span>
-        <span style={{ color: 'var(--muted)' }}>
+        <span style={{ color: 'rgba(0,77,77,0.55)' }}>
           干支 <b style={{ color: 'var(--fg)' }}>{todayInfo.yearGanZhi}年 {todayInfo.monthGanZhi}月 {todayInfo.dayGanZhi}日</b>
         </span>
-        <span style={{ color: 'var(--muted)' }}>
+        <span style={{ color: 'rgba(0,77,77,0.55)' }}>
           生肖 <b style={{ color: 'var(--fg)' }}>{todayInfo.shengXiao}</b>
           {todayInfo.jieQi && <> · 节气 <b style={{ color: 'var(--fg)' }}>{todayInfo.jieQi}</b></>}
         </span>
         <span className="ml-auto flex items-center gap-2">
-          <span className="text-xs" style={{ color: 'var(--muted)' }}>宜</span>
+          <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>宜</span>
           <b className="text-xs font-normal" style={{ color: 'var(--success)' }}>
             {todayInfo.yi.length > 0 ? todayInfo.yi.slice(0, 4).join('、') : '诸事不宜'}
           </b>
-          <span className="text-xs ml-2" style={{ color: 'var(--muted)' }}>忌</span>
+          <span className="text-xs ml-2" style={{ color: 'rgba(0,77,77,0.55)' }}>忌</span>
           <b className="text-xs font-normal" style={{ color: 'var(--danger)' }}>
             {todayInfo.ji.length > 0 ? todayInfo.ji.slice(0, 4).join('、') : '诸事皆宜'}
           </b>
@@ -113,14 +119,14 @@ export function WannianliPage() {
               onClick={() => changeMonth(-1)}
             >‹ 上月</button>
             <select
-              className="select"
+              className="ds-select"
               value={year}
               onChange={(e) => { setYear(Number(e.target.value)); setSelected(null) }}
             >
               {yearOptions.map((y) => <option key={y} value={y}>{y}年</option>)}
             </select>
             <select
-              className="select"
+              className="ds-select"
               value={month}
               onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}
             >
@@ -188,7 +194,7 @@ export function WannianliPage() {
             })}
           </div>
 
-          <div className="mt-3 pt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ borderTop: '1px solid var(--border)', color: 'var(--muted)' }}>
+          <div className="mt-3 pt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ borderTop: '1px solid var(--border)', color: 'rgba(0,77,77,0.55)' }}>
             <span>点击日期查看详情</span>
             <span style={{ color: 'var(--hu-po-jin, #d4af37)' }}>金色字 = 节气</span>
             <span>初一显示农历月名</span>
@@ -199,25 +205,25 @@ export function WannianliPage() {
         <Card title={`${detail.y}年${detail.m}月${detail.d}日 详解`}>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--bg)' }}>
-              <span style={{ color: 'var(--muted)' }}>公历</span>
+              <span style={{ color: 'rgba(0,77,77,0.55)' }}>公历</span>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>
                 {detail.y}-{String(detail.m).padStart(2, '0')}-{String(detail.d).padStart(2, '0')} 周{WEEKDAYS[detail.info.weekIndex]}
               </span>
             </div>
             <div className="flex justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--bg)' }}>
-              <span style={{ color: 'var(--muted)' }}>农历</span>
+              <span style={{ color: 'rgba(0,77,77,0.55)' }}>农历</span>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>{detail.info.lunarDate}</span>
             </div>
             <div className="flex justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--bg)' }}>
-              <span style={{ color: 'var(--muted)' }}>年柱</span>
+              <span style={{ color: 'rgba(0,77,77,0.55)' }}>年柱</span>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>{detail.info.yearGanZhi}（{detail.info.shengXiao}年）</span>
             </div>
             <div className="flex justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--bg)' }}>
-              <span style={{ color: 'var(--muted)' }}>月柱</span>
+              <span style={{ color: 'rgba(0,77,77,0.55)' }}>月柱</span>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>{detail.info.monthGanZhi}</span>
             </div>
             <div className="flex justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--bg)' }}>
-              <span style={{ color: 'var(--muted)' }}>日柱</span>
+              <span style={{ color: 'rgba(0,77,77,0.55)' }}>日柱</span>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>
                 {detail.info.dayGanZhi}
                 <span className="ml-2 text-xs" style={{ color: ELEMENT_COLOR[STEM_ELEMENT[detail.info.dayGan]] }}>
@@ -226,7 +232,7 @@ export function WannianliPage() {
               </span>
             </div>
             <div className="flex justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--bg)' }}>
-              <span style={{ color: 'var(--muted)' }}>节气</span>
+              <span style={{ color: 'rgba(0,77,77,0.55)' }}>节气</span>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>{detail.info.jieQi || '无'}</span>
             </div>
 
@@ -238,7 +244,7 @@ export function WannianliPage() {
                   ? detail.info.yi.map((y: string) => (
                     <span key={y} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface)', color: 'var(--fg)' }}>{y}</span>
                   ))
-                  : <span className="text-xs" style={{ color: 'var(--muted)' }}>诸事不宜</span>}
+                  : <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>诸事不宜</span>}
               </div>
             </div>
             <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--negative-bg)' }}>
@@ -248,7 +254,7 @@ export function WannianliPage() {
                   ? detail.info.ji.map((j: string) => (
                     <span key={j} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface)', color: 'var(--fg)' }}>{j}</span>
                   ))
-                  : <span className="text-xs" style={{ color: 'var(--muted)' }}>诸事皆宜</span>}
+                  : <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>诸事皆宜</span>}
               </div>
             </div>
           </div>

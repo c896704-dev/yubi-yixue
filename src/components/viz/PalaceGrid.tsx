@@ -55,8 +55,8 @@ export function PalaceGrid({ cells, centerLabel, className = '' }: PalaceGridPro
             <div className="font-[family-name:var(--font-title)] font-bold text-[15px]" style={{ color: elColor }}>
               {cell.number || '—'}
             </div>
-            <div className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>{cell.label}</div>
-            {cell.subLabel && <div className="text-[10px] mt-px" style={{ color: 'var(--muted)' }}>{cell.subLabel}</div>}
+            <div className="text-[11px] font-semibold" style={{ color: 'rgba(0,77,77,0.55)' }}>{cell.label}</div>
+            {cell.subLabel && <div className="text-[10px] mt-px" style={{ color: 'rgba(0,77,77,0.55)' }}>{cell.subLabel}</div>}
             {cell.score !== undefined && <div className="text-[10px] mt-px" style={{ color: scoreTextColor(cell.score) }}>{cell.score}分</div>}
           </div>
         )

@@ -33,7 +33,7 @@ export function LoginModal({ open, onClose, onSwitchToRegister }: LoginModalProp
         <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
         {error && <span className="text-xs font-medium" style={{ color: 'hsl(var(--danger))' }}>{error}</span>}
         <Button type="submit" loading={loading} className="w-full !mt-2">登录</Button>
-        <div className="text-center text-sm" style={{ color: 'var(--muted)' }}>
+        <div className="text-center text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
           还没有账号？
           <button type="button" onClick={onSwitchToRegister} className="bg-transparent border-none cursor-pointer font-semibold ml-1" style={{ color: 'var(--primary)' }}>
             立即注册

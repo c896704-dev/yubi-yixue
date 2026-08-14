@@ -50,7 +50,7 @@ export function BaziChart({ bazi, person, className = '' }: BaziChartProps) {
             </tr>
             <tr>
               {pillars.map((p, i) => (
-                <td key={i} className="px-2 py-2 text-center text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+                <td key={i} className="px-2 py-2 text-center text-[11px] leading-relaxed" style={{ color: 'rgba(0,77,77,0.55)' }}>
                   {p.hiddenStems.length > 0 ? (
                     p.hiddenStems.map((hs, j) => (
                       <span key={j}>

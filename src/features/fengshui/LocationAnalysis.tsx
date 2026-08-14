@@ -46,7 +46,7 @@ export function LocationAnalysis() {
         )}
         {d.environment && (
           <Card title="环境分析">
-            <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(0,77,77,0.55)' }}>
               {typeof d.environment === 'string' ? d.environment : JSON.stringify(d.environment, null, 2)}
             </div>
           </Card>
@@ -81,16 +81,16 @@ export function LocationAnalysis() {
     <div className="flex flex-col gap-5">
       <Card title="楼盘位置分析">
         <div className="flex flex-col gap-4">
-          <div className="segmented mb-2">
+          <div className="ds-segmented mb-2">
             <button type="button" onClick={() => setMode('text')}
-              className={`segmented-item ${mode === 'text' ? 'active' : ''}`}>文字描述</button>
+              className={`ds-seg-item ${mode === 'text' ? 'active' : ''}`}>文字描述</button>
             <button type="button" onClick={() => setMode('image')}
-              className={`segmented-item ${mode === 'image' ? 'active' : ''}`}>上传图片</button>
+              className={`ds-seg-item ${mode === 'image' ? 'active' : ''}`}>上传图片</button>
           </div>
 
           {mode === 'text' ? (
             <div>
-              <span className="field-label">描述楼盘周边环境</span>
+              <span className="ds-label">描述楼盘周边环境</span>
               <textarea className="field resize-y" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述楼盘位置、周边道路、建筑分布、自然环境等..." rows={5} />
             </div>
           ) : (
@@ -105,12 +105,12 @@ export function LocationAnalysis() {
               <option value="west">坐东朝西</option>
             </Select>
             <div>
-              <span className="field-label">建造年份（选填）</span>
+              <span className="ds-label">建造年份（选填）</span>
               <input className="field" type="number" value={buildingYear} onChange={(e) => setBuildingYear(e.target.value)} placeholder="如 2020" />
             </div>
           </div>
 
-          {error && <span className="field-error">{error}</span>}
+          {error && <span className="ds-field-error">{error}</span>}
 
           <Button onClick={handleAnalyze} loading={loading} disabled={(mode === 'text' && !description) || (mode === 'image' && !image)} size="lg">开始分析</Button>
         </div>

@@ -39,7 +39,7 @@ export function RegisterModal({ open, onClose, onSwitchToLogin }: RegisterModalP
         <Input label="确认密码" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="再次输入密码" />
         {error && <span className="text-xs font-medium" style={{ color: 'hsl(var(--danger))' }}>{error}</span>}
         <Button type="submit" loading={loading} className="w-full !mt-2">注册</Button>
-        <div className="text-center text-sm" style={{ color: 'var(--muted)' }}>
+        <div className="text-center text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
           已有账号？
           <button type="button" onClick={onSwitchToLogin} className="bg-transparent border-none cursor-pointer font-semibold ml-1" style={{ color: 'var(--primary)' }}>
             立即登录

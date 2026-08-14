@@ -42,7 +42,7 @@ export function ScoreGauge({ score, label, size = 180, className = '' }: ScoreGa
         </text>
         <text x={cx} y={cy + strokeWidth * 1.6} textAnchor="middle" style={{ fontSize: labelFontSize, fill: secondaryText }}>分</text>
       </svg>
-      {label && <span className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>{label}</span>}
+      {label && <span className="mt-1 text-sm font-semibold" style={{ color: 'rgba(0,77,77,0.55)' }}>{label}</span>}
     </div>
   )
 }

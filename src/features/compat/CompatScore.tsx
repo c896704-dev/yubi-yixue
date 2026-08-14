@@ -29,9 +29,9 @@ export function CompatScore({ result }: CompatScoreProps) {
       <div className="text-center mb-6">
         <div className="font-[family-name:var(--font-title)] text-5xl font-bold mb-1" style={{ color: scoreBarColor(scores.total) }}>
           {Math.round(scores.total)}
-          <span className="text-lg font-normal ml-1" style={{ color: 'var(--muted)' }}>分</span>
+          <span className="text-lg font-normal ml-1" style={{ color: 'rgba(0,77,77,0.55)' }}>分</span>
         </div>
-        <div className="text-sm" style={{ color: 'var(--muted)' }}>{scoreLabel(scores.total)}</div>
+        <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>{scoreLabel(scores.total)}</div>
         {verdict && <div className="mt-1 font-[family-name:var(--font-title)] text-base" style={{ color: 'var(--fg)' }}>{verdict}</div>}
       </div>
 
@@ -44,7 +44,7 @@ export function CompatScore({ result }: CompatScoreProps) {
           <div key={s.label}>
             <div className="flex justify-between items-center mb-1">
               <span className="font-[family-name:var(--font-title)] text-sm" style={{ color: 'var(--fg)' }}>{s.label}</span>
-              <span className="text-xs" style={{ color: 'var(--muted)' }}>{s.desc}</span>
+              <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>{s.desc}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>

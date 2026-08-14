@@ -182,7 +182,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
           const mNames: Record<string,string> = { number:'数字起卦', time:'时间起卦', text:'文字起卦' }
           return (
             <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center text-[11px] rounded-lg p-3 mb-0"
-              style={{ color: 'var(--muted)', backgroundColor: 'var(--bg)' }}>
+              style={{ color: 'rgba(0,77,77,0.55)', backgroundColor: 'var(--bg)' }}>
               <span>公历：{now.getFullYear()}-{String(now.getMonth()+1).padStart(2,'0')}-{String(now.getDate()).padStart(2,'0')} {String(now.getHours()).padStart(2,'0')}:{String(now.getMinutes()).padStart(2,'0')}</span>
               <span>|</span>
               <span>四柱：{sizhu.year.gan}{sizhu.year.zhi} {sizhu.month.gan}{sizhu.month.zhi} {sizhu.day.gan}{sizhu.day.zhi} {sizhu.hour.gan}{sizhu.hour.zhi}</span>
@@ -203,7 +203,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
               changingPositions={[result.changingYao]}
             />
             <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-              style={{ color: 'var(--muted)' }}>
+              style={{ color: 'rgba(0,77,77,0.55)' }}>
               →
             </div>
             <HexagramDisplay
@@ -211,7 +211,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
               label="互卦"
             />
             <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-              style={{ color: 'var(--muted)' }}>
+              style={{ color: 'rgba(0,77,77,0.55)' }}>
               →
             </div>
             <HexagramDisplay
@@ -221,7 +221,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
             {result.cuoHexagram && (
               <>
                 <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-                  style={{ color: 'var(--muted)' }}>
+                  style={{ color: 'rgba(0,77,77,0.55)' }}>
                   ·
                 </div>
                 <HexagramDisplay
@@ -233,7 +233,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
             {result.zongHexagram && (
               <>
                 <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-                  style={{ color: 'var(--muted)' }}>
+                  style={{ color: 'rgba(0,77,77,0.55)' }}>
                   ·
                 </div>
                 <HexagramDisplay
@@ -243,7 +243,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
               </>
             )}
           </div>
-          <div className="text-xs text-center mt-3" style={{ color: 'var(--muted)' }}>
+          <div className="text-xs text-center mt-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
             本卦为始 → 互卦为过程 → 变卦为终；错卦观对立面 · 综卦换位思考
           </div>
         </Card>
@@ -252,16 +252,16 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
         <Card title="体用生克分析">
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className={`p-4 rounded-lg text-center ${tyColor.bg} ${tyColor.border} border`}>
-              <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>体卦（我）</div>
+              <div className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>体卦（我）</div>
               <div className="text-2xl font-[family-name:var(--font-title)] mb-1">{result.tiYong.ti.symbol}</div>
               <div className={`font-semibold ${tyColor.text}`}>{result.tiYong.ti.name} · {result.tiYong.tiElement}</div>
-              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{result.tiYong.ti.image} · {result.tiYong.ti.direction}</div>
+              <div className="text-xs mt-1" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.tiYong.ti.image} · {result.tiYong.ti.direction}</div>
             </div>
             <div className={`p-4 rounded-lg text-center ${yyColor.bg} ${yyColor.border} border`}>
-              <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>用卦（事）</div>
+              <div className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>用卦（事）</div>
               <div className="text-2xl font-[family-name:var(--font-title)] mb-1">{result.tiYong.yong.symbol}</div>
               <div className={`font-semibold ${yyColor.text}`}>{result.tiYong.yong.name} · {result.tiYong.yongElement}</div>
-              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{result.tiYong.yong.image} · {result.tiYong.yong.direction}</div>
+              <div className="text-xs mt-1" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.tiYong.yong.image} · {result.tiYong.yong.direction}</div>
             </div>
           </div>
           <div className="p-3 rounded-lg border text-center" style={relStyle}>
@@ -288,19 +288,19 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
               </div>
             </div>
           )}
-          {!meihuaAnalysis && !result.yingQi && <p className="text-sm text-center py-4" style={{ color: 'var(--muted)' }}>等待 AI 解读完成...</p>}
+          {!meihuaAnalysis && !result.yingQi && <p className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</p>}
         </Card>
 
         {/* AI 解读 */}
         <Card title="AI 解读">
-          <div className="text-sm italic mb-3" style={{ color: 'var(--muted)' }}>
+          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
             所问之事：{question || '（未填写）'}
           </div>
 
           {/* F-3: 起卦过程 */}
           {result.calcProcess && (
             <div className="text-xs leading-relaxed p-3 rounded-lg mb-3 whitespace-pre-line"
-              style={{ color: 'var(--muted)', backgroundColor: 'var(--bg)' }}>
+              style={{ color: 'rgba(0,77,77,0.55)', backgroundColor: 'var(--bg)' }}>
               <span className="font-semibold" style={{ color: 'var(--fg)' }}>起卦过程：</span>
               {result.calcProcess}
             </div>
@@ -322,28 +322,28 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
           )}
 
           {!interpreting && !interpretError && !interpretation && (
-            <div className="text-sm text-center py-4" style={{ color: 'var(--muted)' }}>等待 AI 解读完成...</div>
+            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
           )}
         </Card>
 
         {/* 卦辞释义 */}
         <Card title="卦辞释义">
-          <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--muted)' }}>{result.originalHexagram.judgment}</p>
+          <p className="text-sm leading-relaxed mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.originalHexagram.judgment}</p>
           <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--fg)' }}>{result.originalHexagram.meaning}</p>
           <div style={{ borderTop: '1px solid var(--border)' }} className="pt-3">
-            <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>互卦 · {result.huHexagram.name}</p>
+            <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>互卦 · {result.huHexagram.name}</p>
             <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--fg)' }}>{result.huHexagram.meaning}</p>
-            <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>变卦 · {result.changedHexagram.name}</p>
+            <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>变卦 · {result.changedHexagram.name}</p>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.changedHexagram.meaning}</p>
             {result.cuoHexagram && (
               <>
-                <p className="text-xs mb-1 mt-3" style={{ color: 'var(--muted)' }}>错卦 · {result.cuoHexagram.name}</p>
+                <p className="text-xs mb-1 mt-3" style={{ color: 'rgba(0,77,77,0.55)' }}>错卦 · {result.cuoHexagram.name}</p>
                 <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--fg)' }}>{result.cuoHexagram.meaning}</p>
               </>
             )}
             {result.zongHexagram && (
               <>
-                <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>综卦 · {result.zongHexagram.name}</p>
+                <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>综卦 · {result.zongHexagram.name}</p>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.zongHexagram.meaning}</p>
               </>
             )}
@@ -367,7 +367,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
                 {hexOpts.map(opt => (
                   <button key={opt.key} onClick={() => setActiveDuanHex(opt.key)}
                     className="px-3 py-1.5 text-xs rounded-t transition-colors"
-                    style={activeDuanHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'var(--muted)' }}>
+                    style={activeDuanHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'rgba(0,77,77,0.55)' }}>
                     {opt.label} · {opt.h.name}
                   </button>
                 ))}
@@ -381,7 +381,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-xs" style={{ color: 'var(--muted)' }}>暂无故辞可考</p>}
+              ) : <p className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>暂无故辞可考</p>}
               {/* 打印时显示所有卦断语 */}
               <div className="hidden print:block mt-4">
                 {hexOpts.map(opt => {
@@ -460,7 +460,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
       <Card title="梅花易数起卦">
         {/* 所占之事 - 必须先填写 */}
         <div className="mb-4">
-          <span className="field-label">所占之事 <span style={{ color: 'var(--danger)' }}>*</span></span>
+          <span className="ds-label">所占之事 <span style={{ color: 'var(--danger)' }}>*</span></span>
           <input
             className="field"
             value={question}
@@ -474,7 +474,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
 
         {/* F-12: 外应记录（选填） */}
         <div className="mb-4">
-          <span className="field-label">外应（选填）</span>
+          <span className="ds-label">外应（选填）</span>
           <input
             className="field"
             value={omen}
@@ -491,7 +491,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
               type="button"
               onClick={() => setMethod(m)}
               className="flex-1 py-2 px-4 rounded-lg text-sm cursor-pointer transition-all"
-              style={method === m ? { backgroundColor: 'var(--primary)', color: '#fbfaf5' } : { backgroundColor: 'var(--bg)', color: 'var(--muted)' }}
+              style={method === m ? { backgroundColor: 'var(--primary)', color: '#fbfaf5' } : { backgroundColor: 'var(--bg)', color: 'rgba(0,77,77,0.55)' }}
             >
               {m === 'number' ? '数字' : m === 'time' ? '时间' : '文字'}
             </button>
@@ -501,20 +501,20 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
         {/* 数字模式 */}
         {method === 'number' && (
           <div className="flex flex-col gap-4">
-            <div className="text-sm" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
               输入三个数字，对应上卦、下卦、动爻（第三数可选）
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <span className="field-label">上卦数</span>
+                <span className="ds-label">上卦数</span>
                 <input className="field" type="number" value={num1} onChange={(e) => setNum1(e.target.value)} placeholder="第一个数" />
               </div>
               <div>
-                <span className="field-label">下卦数</span>
+                <span className="ds-label">下卦数</span>
                 <input className="field" type="number" value={num2} onChange={(e) => setNum2(e.target.value)} placeholder="第二个数" />
               </div>
               <div>
-                <span className="field-label">动爻数（选填）</span>
+                <span className="ds-label">动爻数（选填）</span>
                 <input className="field" type="number" value={num3} onChange={(e) => setNum3(e.target.value)} placeholder="第三个数" />
               </div>
             </div>
@@ -525,11 +525,11 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
         {/* 时间模式 */}
         {method === 'time' && (
           <div className="flex flex-col items-center gap-4">
-            <div className="text-sm text-center" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm text-center" style={{ color: 'rgba(0,77,77,0.55)' }}>
               以当前时间起卦，取年月日时之数推算卦象
             </div>
             <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'var(--bg)' }}>
-              <div className="text-sm" style={{ color: 'var(--muted)' }}>当前时间</div>
+              <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>当前时间</div>
               <div className="font-[family-name:var(--font-title)] text-lg" style={{ color: 'var(--fg)' }}>{timeLabel}</div>
             </div>
             <Button onClick={handleTimeCast} size="lg">以此时起卦</Button>
@@ -539,11 +539,11 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
         {/* 文字模式 */}
         {method === 'text' && (
           <div className="flex flex-col gap-4">
-            <div className="text-sm" style={{ color: 'var(--muted)' }}>
+            <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
               输入2-4个汉字（如人名、地名、物品名），按笔画数推算卦象
             </div>
             <div>
-              <span className="field-label">起卦文字</span>
+              <span className="ds-label">起卦文字</span>
               <input
                 className="field"
                 value={textInput}

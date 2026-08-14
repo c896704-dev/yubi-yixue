@@ -11,11 +11,11 @@ interface BadgeProps {
 }
 
 const variantClass: Record<BadgeVariant, string> = {
-  primary: 'badge-primary',
-  muted: 'badge-muted',
-  success: 'badge-success',
-  danger: 'badge-danger',
-  warning: 'badge-warning',
+  primary: 'ds-chip-zhong',
+  muted: 'ds-chip-ink',
+  success: 'ds-chip-ji',
+  danger: 'ds-chip-xiong',
+  warning: 'ds-chip-gold',
 }
 
 const legacyMap: Record<string, BadgeVariant> = {
@@ -32,7 +32,7 @@ function resolveVariant(v: AnyVariant): BadgeVariant {
 
 export function Badge({ variant = 'muted', children, className = '' }: BadgeProps) {
   return (
-    <span className={`badge ${variantClass[resolveVariant(variant)]} ${className}`}>
+    <span className={`ds-chip ${variantClass[resolveVariant(variant)]} ${className}`}>
       {children}
     </span>
   )

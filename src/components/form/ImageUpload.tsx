@@ -27,7 +27,7 @@ export function ImageUpload({
 
   return (
     <div className={className}>
-      {label && <span className="field-label">{label}</span>}
+      {label && <span className="ds-label">{label}</span>}
       <input
         ref={inputRef}
         type="file"
@@ -90,14 +90,14 @@ export function ImageUpload({
             stroke="currentColor"
             strokeWidth="1.5"
             className="mx-auto mb-3"
-            style={{ color: 'var(--muted)' }}
+            style={{ color: 'rgba(0,77,77,0.55)' }}
           >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          <div className="text-sm" style={{ color: 'var(--muted)' }}>拖拽图片到此处，或点击上传</div>
-          <div className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>支持 JPG、PNG，大小不超过 10MB</div>
+          <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>拖拽图片到此处，或点击上传</div>
+          <div className="text-[11px] mt-1" style={{ color: 'rgba(0,77,77,0.55)' }}>支持 JPG、PNG，大小不超过 10MB</div>
         </div>
       )}
     </div>

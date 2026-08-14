@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Card } from '../../components/ui/Card'
+import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
 import type { ReportSection, PillarTableData, LiuNianItem } from '../../utils/analysis'
@@ -26,6 +27,19 @@ const ELEM_COLORS: Record<FiveElement, string> = {
   '水': '#006666',
 }
 
+/** 章节图标（按 id 映射 lucide 图标，替换旧 emoji） */
+const SECTION_ICONS: Record<string, React.ReactNode> = {
+  fundamental: <Orbit size={15} />,
+  personality: <Sparkles size={15} />,
+  career: <Compass size={15} />,
+  intelligence: <Star size={15} />,
+  family: <Users size={15} />,
+  health: <Heart size={15} />,
+  lifestages: <TrendingUp size={15} />,
+  risk: <Shield size={15} />,
+  appearance: <User size={15} />,
+}
+
 /** 折叠章节卡片：桌面默认按 defaultOpen，打印时强制展开 */
 function ReportSectionCard({ section, result, index, children }: {
   section: ReportSection
@@ -44,9 +58,9 @@ function ReportSectionCard({ section, result, index, children }: {
         aria-expanded={open}
       >
         <span className="report-section-num">{section.num}</span>
-        <span className="report-section-icon">{section.icon}</span>
+        <span className="report-section-icon">{SECTION_ICONS[section.id] || section.icon}</span>
         <span className="report-section-title">{section.title}</span>
-        <span className={`report-section-toggle ${open ? 'open' : ''}`}>▾</span>
+        <span className={`report-section-toggle ${open ? 'open' : ''}`}><ChevronDown size={14} /></span>
       </button>
       {open && (
         <div className="report-section-body">

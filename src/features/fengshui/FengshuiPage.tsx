@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Tabs } from '../../components/ui/Tabs'
+import { ToolHeader } from '../../components/layout/ToolHeader'
 import { LayoutAnalysis } from './LayoutAnalysis'
 import { LocationAnalysis } from './LocationAnalysis'
 import { FengshuiHistory } from './FengshuiHistory'
@@ -18,6 +19,11 @@ export default function FengshuiPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <ToolHeader
+        eyebrow="FENG SHUI"
+        title="风水分析"
+        desc="户型图、楼盘位置 · 环境吉凶分析。"
+      />
       <Tabs
         tabs={[
           { key: 'layout', label: '户型图分析' },

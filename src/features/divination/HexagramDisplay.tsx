@@ -25,7 +25,7 @@ export function HexagramDisplay({
   return (
     <div className={`text-center ${className}`}>
       {label && (
-        <div className="text-xs mb-2" style={{ color: 'var(--muted)' }}>{label}</div>
+        <div className="text-xs mb-2" style={{ color: 'rgba(0,77,77,0.55)' }}>{label}</div>
       )}
       {/* 卦画：从下往上显示则需要 reverse，从上往下渲染 */}
       <div className="inline-flex flex-col items-center my-2">
@@ -57,7 +57,7 @@ export function HexagramDisplay({
         {hexagram.name}
       </div>
       {/* 上下卦 */}
-      <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+      <div className="text-xs mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>
         上{hexagram.upperTrigram}下{hexagram.lowerTrigram}
       </div>
       {/* 五行 */}

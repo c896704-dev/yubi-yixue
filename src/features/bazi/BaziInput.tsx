@@ -17,7 +17,7 @@ function PillBtn({ label, active, onClick }: { label: string; active: boolean; o
     <button
       type="button"
       onClick={onClick}
-      className={`segmented-item ${active ? 'active' : ''}`}
+      className={`ds-seg-item ${active ? 'active' : ''}`}
     >
       {label}
     </button>
@@ -84,11 +84,11 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
         <Input label="姓名（选填）" value={name} onChange={(e) => setName(e.target.value)} placeholder="输入姓名，留空则为「未命名」" />
 
         <div>
-          <span className="field-label">性别</span>
-          <div className="segmented mt-1">
+          <span className="ds-label">性别</span>
+          <div className="ds-segmented mt-1">
             {(['男', '女'] as const).map((g) => (
               <button key={g} type="button" onClick={() => setGender(g)}
-                className={`segmented-item ${g === gender ? 'active' : ''}`}>{g}</button>
+                className={`ds-seg-item ${g === gender ? 'active' : ''}`}>{g}</button>
             ))}
           </div>
         </div>
@@ -101,7 +101,7 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
         />
 
         <div>
-          <span className="field-label">出生地点</span>
+          <span className="ds-label">出生地点</span>
           <div className="flex gap-2 mt-1 mb-2">
             <PillBtn label="省市选择" active={!useCustom} onClick={() => setUseCustom(false)} />
             <PillBtn label="自定义经度" active={useCustom} onClick={() => setUseCustom(true)} />
@@ -113,25 +113,31 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
             </div>
           ) : (
             <div className="flex gap-2">
+              <div className="ds-select-wrap flex-1">
               <select
-                className="select flex-1"
+                className="ds-select"
                 value={province}
                 onChange={(e) => handleProvinceChange(e.target.value)}
               >
                 {PROVINCE_CITIES.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
               </select>
+              <span className="ds-select-arrow" aria-hidden="true" />
+              </div>
+              <div className="ds-select-wrap flex-1">
               <select
-                className="select flex-1"
+                className="ds-select"
                 value={birthPlace}
                 onChange={(e) => setBirthPlace(e.target.value)}
               >
                 {citiesOfProvince.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
+              <span className="ds-select-arrow" aria-hidden="true" />
+              </div>
             </div>
           )}
         </div>
 
-        {error && <span className="field-error">{error}</span>}
+        {error && <span className="ds-field-error">{error}</span>}
         <Button type="submit" loading={loading} size="lg" className="mt-2">开始排盘</Button>
       </form>
     </Card>

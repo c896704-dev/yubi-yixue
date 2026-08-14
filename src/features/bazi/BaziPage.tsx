@@ -17,6 +17,8 @@ import {
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { ToolHeader } from '../../components/layout/ToolHeader'
+import { Orbit } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 
 function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
@@ -29,13 +31,13 @@ function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
   return (
     <div className="section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 className="section-title" style={{ marginBottom: 0 }}>历史记录</h3>
+        <h3 className="font-serif text-lg font-bold" style={{ color: 'var(--dai-qing)' }}>历史记录</h3>
         <button className="fold-trigger" onClick={onToggle}>
           {showRecords ? '收起' : `展开 (${records.length})`}
         </button>
       </div>
       {showRecords && (
-        <div className="card" style={{ padding: '4px 0' }}>
+        <div className="ds-card" style={{ padding: '4px 0' }}>
           {records.map((r) => (
             <div key={r.id} className="history-row">
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -104,6 +106,11 @@ export default function BaziPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <ToolHeader
+        eyebrow="BAZI CHART"
+        title="八字排盘"
+        desc="输入出生信息，四柱排盘、十神分析、大运流年、神煞与古籍溯源解读一应俱全。"
+      />
       {!result && !loading && (
         <>
           <BaziInput onSubmit={handleAnalyze} loading={loading} />
@@ -149,7 +156,7 @@ export default function BaziPage() {
             <div className="report-section" id="section-fundamental">
               <div className="report-section-header">
                 <span className="report-section-num">一</span>
-                <span className="report-section-icon">☯️</span>
+                <span className="report-section-icon"><Orbit size={15} /></span>
                 <span className="report-section-title">乾坤定盘</span>
               </div>
               <div className="report-section-body">
@@ -159,9 +166,9 @@ export default function BaziPage() {
                   </ReactMarkdown>
                 </div>
                 <ElementBars result={result} />
-                <h4 className="comp-subtitle">🎯 用神体系</h4>
+                <h4 className="comp-subtitle">用神体系</h4>
                 <YongShenBadges result={result} />
-                <h4 className="comp-subtitle">🔮 神煞一览</h4>
+                <h4 className="comp-subtitle">神煞一览</h4>
                 <ShenShaGrid result={result} />
               </div>
             </div>

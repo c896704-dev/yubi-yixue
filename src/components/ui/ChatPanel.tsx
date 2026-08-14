@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ChatMessage } from '../../utils/ai'
 import { sendQAMessage } from '../../utils/ai'
 import { Button } from './Button'
+import { MessageSquare, X } from './Icon'
 
 interface ChatPanelProps {
   mode: string
@@ -42,46 +43,51 @@ export function ChatPanel({ mode, systemPrompt, suggestions = [] }: ChatPanelPro
     return (
       <button
         onClick={() => setOpen(true)}
-        className="chat-toggle"
+        className="ds-fab"
         title={`AI ${mode}`}
       >
-        <span style={{ fontFamily: '-apple-system, "Noto Serif SC", serif', fontSize: 13, fontWeight: 700, userSelect: 'none', lineHeight: 1, letterSpacing: '0.02em' }}>解惑</span>
+        <MessageSquare size={20} />
       </button>
     )
   }
 
   return (
-    <div className="chat-panel">
-      <div className="chat-head">
-        <div className="chat-head-left">
-          <span className="chat-icon">解</span>
-          <span className="chat-title">AI {mode}</span>
+    <div className="ds-chat-panel">
+      <div className="ds-chat-head">
+        <div className="ds-chat-head-left">
+          <span className="ds-chat-avatar"><MessageSquare size={14} /></span>
+          <div>
+            <div className="ds-chat-title">AI {mode}</div>
+            <div className="ds-chat-sub">古籍为证 · 可溯源</div>
+          </div>
         </div>
-        <button onClick={() => setOpen(false)} className="modal-close">✕</button>
+        <button onClick={() => setOpen(false)} className="ds-modal-close" aria-label="关闭">
+          <X size={15} />
+        </button>
       </div>
 
-      <div className="chat-body">
+      <div className="ds-chat-body">
         {messages.length === 0 && suggestions.length > 0 && (
-          <div className="chat-suggestions">
+          <div className="ds-chat-suggestions">
             {suggestions.map((s) => (
-              <button key={s} onClick={() => handleSend(s)} className="chat-suggestion">{s}</button>
+              <button key={s} onClick={() => handleSend(s)} className="ds-chat-suggestion">{s}</button>
             ))}
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`chat-msg ${m.role === 'user' ? 'chat-msg-user' : 'chat-msg-ai'}`}>
-            <div className={`chat-bubble ${m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
+          <div key={i} className={`ds-chat-msg ${m.role === 'user' ? 'user' : 'ai'}`}>
+            <div className={`ds-chat-bubble ${m.role === 'user' ? 'user' : 'ai'}`}>
               {m.content}
             </div>
           </div>
         ))}
-        {loading && <div className="chat-loading">AI 正在思考...</div>}
+        {loading && <div className="ds-chat-loading">AI 正在思考...</div>}
         <div ref={endRef} />
       </div>
 
-      <div className="chat-foot">
+      <div className="ds-chat-foot">
         <input
-          className="chat-input"
+          className="ds-chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}

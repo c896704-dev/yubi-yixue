@@ -1,10 +1,14 @@
-interface LoadingProps { className?: string; text?: string }
+interface LoadingProps { className?: string; text?: string; dots?: boolean }
 
-export function Loading({ className = '', text }: LoadingProps) {
+export function Loading({ className = '', text, dots }: LoadingProps) {
   return (
-    <div className={`loading ${className}`}>
-      <div className="loading-spinner" />
-      {text && <span className="loading-text">{text}</span>}
+    <div className={`ds-loading ${className}`}>
+      {dots ? (
+        <span className="ds-dots"><span /><span /><span /></span>
+      ) : (
+        <div className="ds-spinner" />
+      )}
+      {text && <span className="ds-loading-text">{text}</span>}
     </div>
   )
 }

@@ -58,11 +58,11 @@ export function FiveElements({ elements, className = '' }: FiveElementsProps) {
               }} />
             </div>
             {/* Value + percentage */}
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--label)', marginTop: 6 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--dai-qing-dark)', marginTop: 6 }}>
               {el.value}
             </div>
             {el.status && (
-              <span style={{ fontSize: 10, color: 'var(--tertiary)', marginTop: 2 }}>{el.status}</span>
+              <span style={{ fontSize: 10, color: 'rgba(0,77,77,0.45)', marginTop: 2 }}>{el.status}</span>
             )}
           </div>
         )

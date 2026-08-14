@@ -15,11 +15,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary: 'btn-primary',
-  accent: 'btn-accent',
-  secondary: 'btn-secondary',
-  ghost: 'btn-ghost',
-  'danger-ghost': 'btn-danger-ghost',
+  primary: 'ds-btn-primary',
+  accent: 'ds-btn-gold',
+  secondary: 'ds-btn-secondary',
+  ghost: 'ds-btn-ghost',
+  'danger-ghost': 'ds-btn-danger',
 }
 
 const legacyMap: Record<string, ButtonVariant> = {
@@ -35,9 +35,9 @@ function resolveVariant(v: AnyVariant): ButtonVariant {
 }
 
 const sizeClass: Record<ButtonSize, string> = {
-  sm: 'btn-sm',
-  md: 'btn-md',
-  lg: 'btn-lg',
+  sm: 'ds-btn-sm',
+  md: 'ds-btn-md',
+  lg: 'ds-btn-lg',
 }
 
 function Spinner() {
@@ -59,14 +59,16 @@ export function Button({
   ...props
 }: ButtonProps) {
   const resolved = resolveVariant(variant)
+  const sheen = resolved === 'primary'
   return (
     <button
-      className={`btn ${variantClass[resolved]} ${sizeClass[size]} ${className}`}
+      className={`ds-btn ${variantClass[resolved]} ${sizeClass[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >
       {loading && <Spinner />}
       {children}
+      {sheen && <span className="btn-sheen-layer" aria-hidden="true"><span /></span>}
     </button>
   )
 }

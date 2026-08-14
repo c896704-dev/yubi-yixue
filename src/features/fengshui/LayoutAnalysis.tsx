@@ -103,19 +103,19 @@ export function LayoutAnalysis() {
               <option value="west">↑ 西 (图片上=西)</option>
             </Select>
             <div>
-              <span className="field-label">建造年份（选填）</span>
+              <span className="ds-label">建造年份（选填）</span>
               <input className="field" type="number" value={buildingYear} onChange={(e) => setBuildingYear(e.target.value)} placeholder="如 2020" />
             </div>
           </div>
           <div className="flex gap-2 items-center mt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--muted)' }}>
+            <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
               <input type="checkbox" checked={withBazi} onChange={(e) => setWithBazi(e.target.checked)}
                 style={{ accentColor: 'var(--primary)' }} />
               结合生肖匹配
             </label>
             {withBazi && <input className="field !w-[120px]" type="number" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} placeholder="出生年份" />}
           </div>
-          {error && <span className="field-error">{error}</span>}
+          {error && <span className="ds-field-error">{error}</span>}
           <Button onClick={handleAnalyze} loading={loading} disabled={!image} size="lg">开始分析</Button>
         </div>
       </Card>

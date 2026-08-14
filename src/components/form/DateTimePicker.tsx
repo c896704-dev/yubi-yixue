@@ -60,21 +60,24 @@ function NumSelect({
   format?: (n: number) => string
 }) {
   return (
-    <select
-      className="select"
-      value={value}
-      onChange={(e) => {
-        const v = e.target.value
-        onChange(v === '' ? '' : Number(v))
-      }}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((n) => (
-        <option key={String(n)} value={String(n)}>
-          {format ? format(n) : String(n).padStart(2, '0')}
-        </option>
-      ))}
-    </select>
+    <div className="ds-select-wrap">
+      <select
+        className="ds-select"
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value
+          onChange(v === '' ? '' : Number(v))
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((n) => (
+          <option key={String(n)} value={String(n)}>
+            {format ? format(n) : String(n).padStart(2, '0')}
+          </option>
+        ))}
+      </select>
+      <span className="ds-select-arrow" aria-hidden="true" />
+    </div>
   )
 }
 
@@ -162,21 +165,21 @@ export function DateTimePicker({
   const lunarMonthFormat = (n: number) => (n < 0 ? `闰${-n}月` : `${n}月`)
 
   return (
-    <div className="field-wrap">
-      {label && <span className="field-label">{label}</span>}
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && <span className="ds-label">{label}</span>}
       {/* 公历/农历切换 */}
-      <div className="segmented mb-2 mt-1">
+      <div className="ds-segmented mb-2 mt-1">
         <button
           type="button"
           onClick={switchToSolar}
-          className={`segmented-item ${calendarType === 'solar' ? 'active' : ''}`}
+          className={`ds-seg-item ${calendarType === 'solar' ? 'active' : ''}`}
         >
           公历
         </button>
         <button
           type="button"
           onClick={switchToLunar}
-          className={`segmented-item ${calendarType === 'lunar' ? 'active' : ''}`}
+          className={`ds-seg-item ${calendarType === 'lunar' ? 'active' : ''}`}
         >
           农历
         </button>
@@ -198,14 +201,14 @@ export function DateTimePicker({
             <NumSelect value={hour} onChange={onHourChange} options={hours} placeholder="时" />
             <NumSelect value={minute} onChange={onMinuteChange} options={minutes} placeholder="分" />
           </div>
-          <div className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>
+          <div className="text-[11px] mt-1" style={{ color: 'rgba(0,77,77,0.55)' }}>
             {lunar.y !== '' && lunar.m !== '' && lunar.d !== '' && year !== '' && month !== '' && day !== ''
               ? `对应公历 ${year}年${month}月${day}日`
               : '农历选择后自动换算公历排盘'}
           </div>
         </>
       )}
-      {error && <span className="field-error">{error}</span>}
+      {error && <span className="ds-field-error">{error}</span>}
     </div>
   )
 }

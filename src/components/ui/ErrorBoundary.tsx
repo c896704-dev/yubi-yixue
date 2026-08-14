@@ -11,11 +11,11 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div className="error-box">
-          <h2 className="error-title">页面渲染出错</h2>
-          <pre className="error-detail">{this.state.error?.message || '未知错误'}</pre>
+        <div className="ds-error-box">
+          <h2 className="ds-error-title">页面渲染出错</h2>
+          <pre className="ds-error-detail">{this.state.error?.message || '未知错误'}</pre>
           <button
-            className="btn btn-primary btn-md"
+            className="ds-btn ds-btn-primary ds-btn-md"
             onClick={() => this.setState({ hasError: false, error: null })}
           >
             重试

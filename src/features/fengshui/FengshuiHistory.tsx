@@ -52,8 +52,8 @@ export function FengshuiHistory({ onViewDetail }: FengshuiHistoryProps) {
                   </div>
                   <div>
                     <Badge variant="mist">{typeLabels[r.type] || r.type}</Badge>
-                    <div className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{r.summary?.slice(0, 60) || '—'}</div>
-                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>{new Date(r.created_at).toLocaleString('zh-CN')}</div>
+                    <div className="text-sm mt-1" style={{ color: 'rgba(0,77,77,0.55)' }}>{r.summary?.slice(0, 60) || '—'}</div>
+                    <div className="text-[11px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>{new Date(r.created_at).toLocaleString('zh-CN')}</div>
                   </div>
                 </div>
                 <Button variant="clear" size="sm" onClick={(e) => { e.stopPropagation(); removeRecord(r.id) }}>删除</Button>
@@ -65,7 +65,7 @@ export function FengshuiHistory({ onViewDetail }: FengshuiHistoryProps) {
         {total > limit && (
           <div className="flex justify-center gap-2 mt-4">
             <Button variant="clear" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>上一页</Button>
-            <span className="text-sm py-1.5" style={{ color: 'var(--muted)' }}>{page + 1} / {Math.ceil(total / limit)}</span>
+            <span className="text-sm py-1.5" style={{ color: 'rgba(0,77,77,0.55)' }}>{page + 1} / {Math.ceil(total / limit)}</span>
             <Button variant="clear" size="sm" disabled={(page + 1) * limit >= total} onClick={() => setPage((p) => p + 1)}>下一页</Button>
           </div>
         )}

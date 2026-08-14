@@ -33,7 +33,7 @@ function WeaknessItem({ item }: { item: FengshuiItem }) {
   return (
     <div className="p-3 mb-2 rounded-lg border" style={{ backgroundColor: 'rgba(156, 61, 84, 0.05)', borderColor: 'rgba(156, 61, 84, 0.22)', borderLeft: `4px solid ${impact}` }}>
       <div className="flex items-start gap-2">
-        <span className="text-base shrink-0 mt-0.5" style={{ color: 'var(--muted)' }}>◌</span>
+        <span className="text-base shrink-0 mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>◌</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm" style={{ color: 'var(--fg)' }}>{item.item || item.title}</span>
@@ -86,7 +86,7 @@ function ProsItem({ item }: { item: FengshuiItem }) {
   return (
     <div className="p-3 mb-2 rounded-lg border" style={{ backgroundColor: 'rgba(45, 106, 79, 0.07)', borderColor: 'rgba(45, 106, 79, 0.25)', borderLeft: '4px solid #2d6a4f' }}>
       <div className="flex items-start gap-2">
-        <span className="text-base shrink-0 mt-0.5" style={{ color: 'var(--muted)' }}>◉</span>
+        <span className="text-base shrink-0 mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>◉</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm" style={{ color: 'var(--fg)' }}>{item.item || item.title}</span>

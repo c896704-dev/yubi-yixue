@@ -24,7 +24,7 @@ export function FengshuiSettings() {
     <div className="flex flex-col gap-5">
       <Card title="API Key 配置">
         <div className="flex flex-col gap-3">
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+          <p className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
             API Key 已通过服务端环境变量 <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--bg)', color: 'var(--primary-hover)' }}>DASHSCOPE_API_KEY</code> 配置，无需在浏览器中输入。
           </p>
         </div>
@@ -34,8 +34,8 @@ export function FengshuiSettings() {
         <Card title="设备信息">
           <div className="flex flex-col gap-4">
             <div>
-              <span className="field-label">设备 ID</span>
-              <code className="block mt-1 py-2 px-3 rounded-lg text-[11px] break-all" style={{ backgroundColor: 'var(--bg)', color: 'var(--muted)' }}>{deviceId}</code>
+              <span className="ds-label">设备 ID</span>
+              <code className="block mt-1 py-2 px-3 rounded-lg text-[11px] break-all" style={{ backgroundColor: 'var(--bg)', color: 'rgba(0,77,77,0.55)' }}>{deviceId}</code>
             </div>
             <Input label="设备昵称" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="给设备起个名字" />
             <Button onClick={handleSaveNickname} size="sm" variant="mist">保存昵称</Button>

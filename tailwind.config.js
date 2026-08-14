@@ -4,6 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        // 古籍五色（对齐 design-showcase）
+        'xuan-zhi': '#fbfaf5',
+        'xuan-zhi-dark': '#f4f1e8',
+        'dai-qing': '#004d4d',
+        'dai-qing-light': '#006666',
+        'dai-qing-dark': '#003333',
+        'hu-po-jin': '#d4af37',
+        'hu-po-jin-light': '#e8c84a',
+        'hu-po-jin-dark': '#b8960f',
+        'zhu-sha': '#9c3d54',
+        'cang-cui': '#2d6a4f',
+        // 旧令牌保留（兼容渐进清理；新组件一律使用命名色）
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         muted: 'hsl(var(--muted))',
@@ -14,24 +26,13 @@ export default {
         ring: 'hsl(var(--ring))',
       },
       fontFamily: {
-        system: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', '"Helvetica Neue"', 'Inter', 'sans-serif'],
-        mono: ['"SF Mono"', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        system: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        serif: ['"Noto Serif SC"', '"Songti SC"', '"SimSun"', 'serif'],
+        mono: ['ui-monospace', '"SF Mono"', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
-      spacing: {
-        xs: '4px',
-        sm: '8px',
-        md: '16px',
-        lg: '24px',
-        xl: '32px',
-        '2xl': '48px',
-        '3xl': '64px',
-      },
-      borderRadius: {
-        sm: '6px',
-        DEFAULT: '8px',
-        lg: '12px',
-        xl: '18px',
-        '2xl': '24px',
+      boxShadow: {
+        card: '0 1px 3px rgba(0, 51, 51, 0.06)',
+        'card-hover': '0 12px 32px rgba(0, 51, 51, 0.12), 0 2px 8px rgba(0, 51, 51, 0.06)',
       },
     },
   },

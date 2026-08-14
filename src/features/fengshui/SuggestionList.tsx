@@ -34,13 +34,13 @@ function SuggestionItem({ s }: { s: Suggestion }) {
           {p.label}优先级
         </span>
         <span className="font-medium text-sm flex-1" style={{ color: 'var(--fg)' }}>{s.title}</span>
-        <span className="text-[10px] shrink-0 px-1.5 py-px rounded" style={{ color: 'var(--muted)', backgroundColor: 'var(--bg)' }}>
+        <span className="text-[10px] shrink-0 px-1.5 py-px rounded" style={{ color: 'rgba(0,77,77,0.55)', backgroundColor: 'var(--bg)' }}>
           {categoryLabel[s.category] || s.category}
         </span>
         <svg
           width="12" height="12" viewBox="0 0 12 12" fill="none"
           className={`transition-transform shrink-0 ${open ? 'rotate-90' : ''}`}
-          style={{ color: 'var(--muted)' }}
+          style={{ color: 'rgba(0,77,77,0.55)' }}
         >
           <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
@@ -49,13 +49,13 @@ function SuggestionItem({ s }: { s: Suggestion }) {
         <div className="px-4 pb-3 space-y-2" style={{ backgroundColor: 'var(--surface)' }}>
           {s.description && (
             <div>
-              <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>问题描述：</span>
+              <span className="text-xs font-semibold" style={{ color: 'rgba(0,77,77,0.55)' }}>问题描述：</span>
               <span className="text-xs" style={{ color: 'var(--fg)' }}>{s.description}</span>
             </div>
           )}
           {s.principle && (
             <div>
-              <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>风水原理：</span>
+              <span className="text-xs font-semibold" style={{ color: 'rgba(0,77,77,0.55)' }}>风水原理：</span>
               <span className="text-xs" style={{ color: 'var(--fg)' }}>{s.principle}</span>
             </div>
           )}
