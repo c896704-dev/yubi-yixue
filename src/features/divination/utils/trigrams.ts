@@ -163,13 +163,13 @@ export function getTrigramByName(name: string): Trigram | undefined {
   return key ? trigrams[key] : undefined
 }
 
-/** 元素颜色映射 */
+/** 元素颜色映射（古籍五色，Tailwind 任意值） */
 export const elementColors: Record<FiveElement, { bg: string; text: string; border: string }> = {
-  '金': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-300' },
-  '木': { bg: 'bg-positive-50', text: 'text-positive-600', border: 'border-positive-300' },
-  '水': { bg: 'bg-water-50', text: 'text-water-600', border: 'border-water-300' },
-  '火': { bg: 'bg-negative-50', text: 'text-negative-600', border: 'border-negative-300' },
-  '土': { bg: 'bg-brand-50', text: 'text-brand-600', border: 'border-brand-300' },
+  '金': { bg: 'bg-[#f6f2e6]', text: 'text-[#b8960f]', border: 'border-[#d4af37]' },
+  '木': { bg: 'bg-[#eef4f0]', text: 'text-[#2d6a4f]', border: 'border-[#2d6a4f]' },
+  '水': { bg: 'bg-[#e6f0f0]', text: 'text-[#006666]', border: 'border-[#006666]' },
+  '火': { bg: 'bg-[#f6ecef]', text: 'text-[#9c3d54]', border: 'border-[#9c3d54]' },
+  '土': { bg: 'bg-[#f7f0dc]', text: 'text-[#b8960f]', border: 'border-[#d4af37]' },
 }
 
 export default trigrams

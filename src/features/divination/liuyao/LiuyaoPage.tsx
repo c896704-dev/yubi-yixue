@@ -417,7 +417,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
                 {hexOpts.map(opt => (
                   <button key={opt.key} onClick={() => setActiveLiuyaoHex(opt.key)}
                     className="px-3 py-1.5 text-xs rounded-t transition-colors"
-                    style={activeLiuyaoHex === opt.key ? { backgroundColor: 'var(--primary)', color: 'white', fontWeight: 600 } : { color: 'var(--muted)' }}>
+                    style={activeLiuyaoHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'var(--muted)' }}>
                     {opt.label} · {opt.name}
                   </button>
                 ))}
@@ -510,7 +510,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
               type="button"
               onClick={() => setMethod(m)}
               className="flex-1 py-2 px-4 rounded-lg text-sm cursor-pointer transition-all"
-              style={method === m ? { backgroundColor: 'var(--primary)', color: 'white' } : { backgroundColor: 'var(--bg)', color: 'var(--muted)' }}
+              style={method === m ? { backgroundColor: 'var(--primary)', color: '#fbfaf5' } : { backgroundColor: 'var(--bg)', color: 'var(--muted)' }}
             >
               {m === 'coin' ? '摇卦' : m === 'number' ? '数字' : '随机'}
             </button>

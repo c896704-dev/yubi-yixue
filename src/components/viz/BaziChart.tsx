@@ -9,11 +9,11 @@ interface BaziChartProps {
 const pillarLabels = ['年柱', '月柱', '日柱', '时柱']
 
 const elementColors: Record<string, string> = {
-  '木': '#7A9A7A',
-  '火': '#4A9E9E',
-  '土': '#8A8A8A',
-  '金': '#B8ADA0',
-  '水': '#6A9AB8',
+  '木': '#2d6a4f',
+  '火': '#9c3d54',
+  '土': '#b8960f',
+  '金': '#8a8072',
+  '水': '#006666',
 }
 
 export function BaziChart({ bazi, person, className = '' }: BaziChartProps) {
@@ -57,7 +57,7 @@ export function BaziChart({ bazi, person, className = '' }: BaziChartProps) {
                         {j > 0 && ' '}
                         <span
                           className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded text-[10px] text-white"
-                          style={{ backgroundColor: elementColors[hs] || '#999' }}
+                          style={{ backgroundColor: elementColors[hs] || 'rgba(0, 77, 77, 0.4)' }}
                         >
                           {hs}
                         </span>

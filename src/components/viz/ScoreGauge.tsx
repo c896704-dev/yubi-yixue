@@ -6,9 +6,9 @@ interface ScoreGaugeProps {
 }
 
 function scoreColor(s: number): string {
-  if (s >= 80) return '#7A9A7A'
-  if (s >= 60) return '#4A9E9E'
-  return '#C4664A'
+  if (s >= 80) return '#2d6a4f'
+  if (s >= 60) return '#006666'
+  return '#9c3d54'
 }
 
 export function ScoreGauge({ score, label, size = 180, className = '' }: ScoreGaugeProps) {
@@ -27,8 +27,8 @@ export function ScoreGauge({ score, label, size = 180, className = '' }: ScoreGa
   const largeArc = angle > 90 ? 1 : 0
   const color = scoreColor(clamped)
   const svgHeight = Math.round(size * 0.75)
-  const trackColor = '#E0DDD5'
-  const secondaryText = '#999'
+  const trackColor = 'rgba(0, 77, 77, 0.12)'
+  const secondaryText = 'rgba(0, 77, 77, 0.5)'
 
   return (
     <div className={`flex flex-col items-center ${className}`} style={{ maxWidth: size }}>

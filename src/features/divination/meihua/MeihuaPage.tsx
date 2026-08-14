@@ -367,7 +367,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
                 {hexOpts.map(opt => (
                   <button key={opt.key} onClick={() => setActiveDuanHex(opt.key)}
                     className="px-3 py-1.5 text-xs rounded-t transition-colors"
-                    style={activeDuanHex === opt.key ? { backgroundColor: 'var(--primary)', color: 'white', fontWeight: 600 } : { color: 'var(--muted)' }}>
+                    style={activeDuanHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'var(--muted)' }}>
                     {opt.label} · {opt.h.name}
                   </button>
                 ))}
@@ -491,7 +491,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
               type="button"
               onClick={() => setMethod(m)}
               className="flex-1 py-2 px-4 rounded-lg text-sm cursor-pointer transition-all"
-              style={method === m ? { backgroundColor: 'var(--primary)', color: 'white' } : { backgroundColor: 'var(--bg)', color: 'var(--muted)' }}
+              style={method === m ? { backgroundColor: 'var(--primary)', color: '#fbfaf5' } : { backgroundColor: 'var(--bg)', color: 'var(--muted)' }}
             >
               {m === 'number' ? '数字' : m === 'time' ? '时间' : '文字'}
             </button>

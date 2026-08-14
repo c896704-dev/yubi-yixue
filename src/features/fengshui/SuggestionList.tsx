@@ -10,9 +10,9 @@ interface Suggestion {
 }
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
-  high: { label: '高', color: '#C4664A' },
-  medium: { label: '中', color: '#B8A070' },
-  low: { label: '低', color: '#4A9E9E' },
+  high: { label: '高', color: '#9c3d54' },
+  medium: { label: '中', color: '#b8960f' },
+  low: { label: '低', color: '#006666' },
 }
 
 const categoryLabel: Record<string, string> = {
@@ -60,9 +60,9 @@ function SuggestionItem({ s }: { s: Suggestion }) {
             </div>
           )}
           {s.solution && (
-            <div className="p-2.5 rounded-lg border" style={{ backgroundColor: '#E8F0E8', borderColor: '#C8DCC8' }}>
-              <span className="text-xs font-semibold" style={{ color: '#5A7A5A' }}>改善方法：</span>
-              <div className="text-xs" style={{ color: '#4A6A4A' }}>{s.solution}</div>
+            <div className="p-2.5 rounded-lg border" style={{ backgroundColor: 'rgba(45, 106, 79, 0.07)', borderColor: 'rgba(45, 106, 79, 0.25)' }}>
+              <span className="text-xs font-semibold" style={{ color: '#2d6a4f' }}>改善方法：</span>
+              <div className="text-xs" style={{ color: '#1f2d2d' }}>{s.solution}</div>
             </div>
           )}
         </div>

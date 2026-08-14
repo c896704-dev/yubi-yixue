@@ -133,7 +133,7 @@ export function WannianliPage() {
             >下月 ›</button>
             <button
               className="px-3 py-1.5 rounded-lg text-sm ml-auto cursor-pointer"
-              style={{ backgroundColor: 'var(--primary)', color: 'white' }}
+              style={{ backgroundColor: 'var(--primary)', color: '#fbfaf5' }}
               onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); setSelected(null) }}
             >回到今天</button>
           </div>
@@ -170,14 +170,14 @@ export function WannianliPage() {
                   style={{
                     backgroundColor: isSel ? 'var(--primary)' : isToday ? 'var(--primary-light)' : undefined,
                     border: isToday && !isSel ? '1px solid var(--primary)' : '1px solid transparent',
-                    color: isSel ? 'white' : isWeekend ? 'var(--danger)' : 'var(--fg)',
+                    color: isSel ? '#fbfaf5' : isWeekend ? 'var(--danger)' : 'var(--fg)',
                   }}
                 >
                   <span className="text-sm sm:text-base font-semibold leading-none">{d}</span>
                   <span
                     className="text-[10px] sm:text-[11px] truncate w-full"
                     style={{
-                      color: isSel ? 'rgba(255,255,255,0.85)' : jieQi ? 'var(--hu-po-jin, #d4af37)' : 'var(--muted)',
+                      color: isSel ? 'rgba(251,250,245,0.85)' : jieQi ? 'var(--hu-po-jin, #d4af37)' : 'var(--muted)',
                       fontWeight: jieQi ? 600 : 400,
                     }}
                   >

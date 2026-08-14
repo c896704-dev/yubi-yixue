@@ -15,10 +15,10 @@ function scoreLabel(s: number): string {
 }
 
 function scoreBarColor(s: number): string {
-  if (s >= 80) return '#7A9A7A'
-  if (s >= 60) return '#4A9E9E'
-  if (s >= 40) return '#8A8A8A'
-  return '#C4664A'
+  if (s >= 80) return '#2d6a4f'
+  if (s >= 60) return '#006666'
+  if (s >= 40) return '#b8960f'
+  return '#9c3d54'
 }
 
 export function CompatScore({ result }: CompatScoreProps) {

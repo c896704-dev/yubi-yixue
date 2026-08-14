@@ -70,6 +70,20 @@ function AppContent() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // 追光效果：为卡片类元素设置鼠标位置 CSS 变量（--mouse-x / --mouse-y）
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const targets = document.querySelectorAll<HTMLElement>('.spotlight-card, .hub-card, .ai-insight')
+      for (const el of targets) {
+        const r = el.getBoundingClientRect()
+        el.style.setProperty('--mouse-x', `${e.clientX - r.left}px`)
+        el.style.setProperty('--mouse-y', `${e.clientY - r.top}px`)
+      }
+    }
+    window.addEventListener('mousemove', handler, { passive: true })
+    return () => window.removeEventListener('mousemove', handler)
+  }, [])
+
   const meta = pageMeta[tab]
 
   return (
@@ -78,9 +92,11 @@ function AppContent() {
       {!isMobile && (
         <aside className="sidebar">
           <div className="sidebar-header">
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--label)', letterSpacing: '-0.01em' }}>
-              御笔易学
+            <div className="sidebar-header-brand">
+              <span className="yb-seal" style={{ width: 38, height: 38, fontSize: 20 }}>御</span>
+              <span>御笔易学</span>
             </div>
+            <div className="sidebar-header-sub">命理 · 风水 · 占卜</div>
           </div>
 
           <div className="sidebar-title">功能</div>
@@ -152,7 +168,11 @@ function AppContent() {
             </div>
           </ErrorBoundary>
 
-          <div className="page-footer">御笔易学 · 命理参详</div>
+          <div className="page-footer">
+            <span className="ink-dot" style={{ marginRight: 8 }} />
+            御笔易学 · 命理参详
+            <span className="ink-dot" style={{ marginLeft: 8 }} />
+          </div>
         </div>
       </main>
 

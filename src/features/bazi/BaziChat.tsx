@@ -19,11 +19,11 @@ const btnStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   borderRadius: '50%',
-  background: 'linear-gradient(135deg, #0071e3, #0058b0)',
-  color: '#fff',
+  background: 'linear-gradient(135deg, #006666, #004d4d)',
+  color: '#fbfaf5',
   border: 'none',
   cursor: 'pointer',
-  boxShadow: '0 6px 24px rgba(0, 113, 227, 0.35), 0 2px 6px rgba(0, 0, 0, 0.1)',
+  boxShadow: '0 6px 24px rgba(0, 77, 77, 0.30), 0 2px 6px rgba(0, 0, 0, 0.12)',
   transition: 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease',
 }
 
@@ -39,10 +39,11 @@ const panelStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
-  borderRadius: '12px',
-  background: '#fff',
-  boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-  border: '1px solid hsl(0, 0%, 91%)',
+  borderRadius: '18px',
+  background: 'var(--xuan-zhi)',
+  boxShadow: '0 12px 40px rgba(0, 51, 51, 0.18)',
+  border: '1px solid rgba(0, 77, 77, 0.12)',
+  borderTop: '2px solid #d4af37',
   animation: 'scaleIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
 }
 
@@ -52,6 +53,8 @@ const suggestions = [
   '我需要注意什么健康问题？',
   '我的性格有什么特点？',
 ]
+
+const serifFont = '"Noto Serif SC", "Songti SC", serif'
 
 export function BaziChat({ result }: BaziChatProps) {
   const [open, setOpen] = useState(false)
@@ -90,10 +93,10 @@ export function BaziChat({ result }: BaziChatProps) {
         onClick={() => setOpen(true)}
         style={btnStyle}
         title="AI 命理解惑"
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08) translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 113, 227, 0.45), 0 4px 8px rgba(0, 0, 0, 0.15)' }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 113, 227, 0.35), 0 2px 6px rgba(0, 0, 0, 0.1)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08) translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 77, 77, 0.4), 0 0 0 3px rgba(212, 175, 55, 0.3)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 77, 77, 0.30), 0 2px 6px rgba(0, 0, 0, 0.12)' }}
       >
-        <span style={{ fontFamily: '-apple-system, "Noto Serif SC", serif', fontSize: 13, fontWeight: 700, userSelect: 'none', lineHeight: 1, letterSpacing: '0.02em' }}>
+        <span style={{ fontFamily: serifFont, fontSize: 13, fontWeight: 700, userSelect: 'none', lineHeight: 1, letterSpacing: '0.1em' }}>
           解惑
         </span>
       </button>
@@ -103,37 +106,37 @@ export function BaziChat({ result }: BaziChatProps) {
   return (
     <div style={panelStyle}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid hsl(0, 0%, 91%)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid rgba(0, 77, 77, 0.08)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'hsl(211, 100%, 50%)', color: '#fff', fontSize: 12, fontWeight: 600, flexShrink: 0, fontFamily: '-apple-system, "Noto Serif SC", serif' }}>
+          <span style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #006666, #004d4d)', color: '#fbfaf5', fontSize: 12, fontWeight: 600, flexShrink: 0, fontFamily: serifFont }}>
             解惑
           </span>
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#1d1d1f' }}>AI 命理解惑</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--dai-qing-dark)', fontFamily: serifFont, letterSpacing: '0.04em' }}>AI 命理解惑</span>
         </div>
         <button
           onClick={() => setOpen(false)}
-          style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#86868b', background: '#f5f5f7', border: 'none', cursor: 'pointer', fontSize: 14 }}
+          style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(0, 77, 77, 0.55)', background: 'rgba(0, 77, 77, 0.06)', border: 'none', cursor: 'pointer', fontSize: 14 }}
         >
           ✕
         </button>
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: '#f5f5f7' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: 'rgba(0, 77, 77, 0.035)' }}>
         {!result ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: '0 16px' }}>
-            <span style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'hsl(211, 100%, 50%)', color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 12, fontFamily: '-apple-system, "Noto Serif SC", serif' }}>
+            <span style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #006666, #004d4d)', color: '#fbfaf5', fontSize: 14, fontWeight: 600, marginBottom: 12, fontFamily: serifFont }}>
               解惑
             </span>
-            <p style={{ fontSize: 14, color: '#1d1d1f', margin: '0 0 4px', fontWeight: 500 }}>AI 命理解惑</p>
-            <p style={{ fontSize: 12, color: '#86868b', margin: 0 }}>
+            <p style={{ fontSize: 14, color: 'var(--dai-qing-dark)', margin: '0 0 4px', fontWeight: 500, fontFamily: serifFont }}>AI 命理解惑</p>
+            <p style={{ fontSize: 12, color: 'rgba(0, 77, 77, 0.55)', margin: 0 }}>
               请先完成八字排盘，即可与 AI 命理师对话
             </p>
           </div>
         ) : messages.length === 0 ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '8px' }}>
             {suggestions.map((s) => (
-              <button key={s} onClick={() => handleSend(s)} style={{ padding: '4px 12px', fontSize: 12, borderRadius: '99px', background: '#fff', color: '#0071e3', cursor: 'pointer', transition: 'background 0.12s', border: '1px solid hsl(0, 0%, 91%)', fontFamily: 'inherit' }}>
+              <button key={s} onClick={() => handleSend(s)} style={{ padding: '4px 12px', fontSize: 12, borderRadius: '99px', background: 'var(--xuan-zhi)', color: 'var(--dai-qing)', cursor: 'pointer', transition: 'background 0.12s', border: '1px solid rgba(0, 77, 77, 0.16)', fontFamily: 'inherit' }}>
                 {s}
               </button>
             ))}
@@ -141,19 +144,19 @@ export function BaziChat({ result }: BaziChatProps) {
         ) : null}
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: '8px', display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{ maxWidth: '80%', padding: '8px 12px', fontSize: 14, lineHeight: 1.45, whiteSpace: 'pre-wrap', borderRadius: '16px', ...(m.role === 'user' ? { background: 'hsl(211, 100%, 50%)', color: '#fff', borderBottomRightRadius: '4px' } : { background: '#fff', color: '#1d1d1f', border: '1px solid hsl(0, 0%, 91%)', borderBottomLeftRadius: '4px' }) }}>
+            <div style={{ maxWidth: '80%', padding: '8px 12px', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', borderRadius: '14px', ...(m.role === 'user' ? { background: 'linear-gradient(135deg, #006666, #004d4d)', color: '#fbfaf5', borderBottomRightRadius: '4px' } : { background: 'var(--xuan-zhi)', color: 'var(--dai-qing-dark)', border: '1px solid rgba(0, 77, 77, 0.12)', borderBottomLeftRadius: '4px' }) }}>
               {m.content}
             </div>
           </div>
         ))}
-        {loading && <div style={{ fontSize: 12, padding: '4px', color: '#86868b' }}>AI 正在思考...</div>}
+        {loading && <div style={{ fontSize: 12, padding: '4px', color: 'rgba(0, 77, 77, 0.5)' }}>AI 正在思考...</div>}
         <div ref={endRef} />
       </div>
 
       {/* Footer */}
-      <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', borderTop: '1px solid hsl(0, 0%, 91%)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', borderTop: '1px solid rgba(0, 77, 77, 0.08)', flexShrink: 0 }}>
         <input
-          style={{ flex: 1, padding: '8px 12px', fontSize: 14, borderRadius: '99px', outline: 'none', border: '1px solid hsl(0, 0%, 91%)', background: '#f5f5f7', color: '#1d1d1f', fontFamily: 'inherit' }}
+          style={{ flex: 1, padding: '8px 12px', fontSize: 14, borderRadius: '99px', outline: 'none', border: '1px solid rgba(0, 77, 77, 0.16)', background: 'rgba(0, 77, 77, 0.045)', color: 'var(--dai-qing-dark)', fontFamily: 'inherit' }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}

@@ -201,7 +201,7 @@ export function PillarTable({ result }: { result: AnalysisResult }) {
             {data.columns.map(c => (
               <td key={c.pillarKey} className={c.pillarKey === '日柱' ? 'pt-day-col' : ''}>
                 {c.shenSha.length > 0 ? (
-                  <div className="pt-chip-row">
+                  <div className="pt-shensha-cell">
                     {c.shenSha.map((s, i) => (
                       <span key={i} className={`pt-chip ss-pill ${shenShaColor(s.type)}`}>{s.name}</span>
                     ))}

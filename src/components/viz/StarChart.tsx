@@ -39,18 +39,18 @@ export function StarChart({ data, className = '' }: StarChartProps) {
       const x = col * cellW
       const y = row * cellH
 
-      ctx.strokeStyle = '#E0DDD5'
+      ctx.strokeStyle = 'rgba(0, 77, 77, 0.15)'
       ctx.lineWidth = 1
       ctx.strokeRect(x, y, cellW, cellH)
 
-      ctx.fillStyle = '#2C2C2C'
+      ctx.fillStyle = '#003333'
       ctx.font = '600 12px "Noto Serif SC", serif'
       ctx.textAlign = 'center'
       ctx.fillText(item.palace, x + cellW / 2, y + 18)
 
       item.stars.forEach((star, si) => {
         const sy = y + 32 + si * 18
-        ctx.fillStyle = star.type === 'auspicious' ? '#7A9A7A' : star.type === 'inauspicious' ? '#C4664A' : '#999'
+        ctx.fillStyle = star.type === 'auspicious' ? '#2d6a4f' : star.type === 'inauspicious' ? '#9c3d54' : 'rgba(0, 77, 77, 0.4)'
         ctx.font = '11px "Noto Sans SC", sans-serif'
         ctx.fillText(star.name, x + cellW / 2, sy)
       })

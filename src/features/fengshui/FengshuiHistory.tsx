@@ -9,9 +9,9 @@ import { Empty } from '../../components/ui/Empty'
 const typeLabels: Record<string, string> = { layout: '户型图', location: '楼盘', comprehensive: '综合' }
 
 function scoreCircleColor(s: number): string {
-  if (s >= 80) return '#7A9A7A'
-  if (s >= 60) return '#4A9E9E'
-  return '#C4664A'
+  if (s >= 80) return '#2d6a4f'
+  if (s >= 60) return '#006666'
+  return '#9c3d54'
 }
 
 interface FengshuiHistoryProps {

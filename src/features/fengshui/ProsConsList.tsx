@@ -16,9 +16,9 @@ interface FengshuiItem {
 }
 
 const impactStyle: Record<string, string> = {
-  '高': '#C4664A',
-  '中': '#B8A070',
-  '低': '#4A9E9E',
+  '高': '#9c3d54',
+  '中': '#b8960f',
+  '低': '#006666',
 }
 
 const typeLabel: Record<string, string> = {
@@ -31,7 +31,7 @@ function WeaknessItem({ item }: { item: FengshuiItem }) {
   const hasSolutions = item.solutions && item.solutions.length > 0
 
   return (
-    <div className="p-3 mb-2 rounded-lg border" style={{ backgroundColor: '#F5E6E0', borderColor: '#E5DCC8', borderLeft: `4px solid ${impact}` }}>
+    <div className="p-3 mb-2 rounded-lg border" style={{ backgroundColor: 'rgba(156, 61, 84, 0.05)', borderColor: 'rgba(156, 61, 84, 0.22)', borderLeft: `4px solid ${impact}` }}>
       <div className="flex items-start gap-2">
         <span className="text-base shrink-0 mt-0.5" style={{ color: 'var(--muted)' }}>◌</span>
         <div className="flex-1 min-w-0">
@@ -84,14 +84,14 @@ function WeaknessItem({ item }: { item: FengshuiItem }) {
 
 function ProsItem({ item }: { item: FengshuiItem }) {
   return (
-    <div className="p-3 mb-2 rounded-lg border" style={{ backgroundColor: '#E8F0E8', borderColor: '#C8DCC8', borderLeft: '4px solid #7A9A7A' }}>
+    <div className="p-3 mb-2 rounded-lg border" style={{ backgroundColor: 'rgba(45, 106, 79, 0.07)', borderColor: 'rgba(45, 106, 79, 0.25)', borderLeft: '4px solid #2d6a4f' }}>
       <div className="flex items-start gap-2">
         <span className="text-base shrink-0 mt-0.5" style={{ color: 'var(--muted)' }}>◉</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm" style={{ color: 'var(--fg)' }}>{item.item || item.title}</span>
             {item.impact && (
-              <span className="inline-block px-1.5 py-px rounded text-[10px] text-white" style={{ backgroundColor: impactStyle[item.impact] || '#B8A070' }}>{item.impact}影响</span>
+              <span className="inline-block px-1.5 py-px rounded text-[10px] text-white" style={{ backgroundColor: impactStyle[item.impact] || '#b8960f' }}>{item.impact}影响</span>
             )}
             {item.type && (
               <span className="text-[10px] px-1.5 py-px rounded" style={{ color: 'var(--primary-hover)', backgroundColor: 'var(--primary-light)' }}>{typeLabel[item.type] || item.type}</span>
@@ -121,7 +121,7 @@ export function ProsConsList({ strengths, weaknesses }: ProsConsListProps) {
     <div>
       {hasStrengths && (
         <div className="mb-6">
-          <h3 className="text-[17px] font-bold mb-3 pb-2 border-b-2" style={{ color: '#5A7A5A', borderColor: '#C8DCC8' }}>
+          <h3 className="text-[17px] font-bold mb-3 pb-2 border-b-2" style={{ color: '#2d6a4f', borderColor: 'rgba(45, 106, 79, 0.3)' }}>
             ◉ 主要优点 ({strengths!.length})
           </h3>
           {strengths!.map((s, i) => <ProsItem key={`s-${i}`} item={s} />)}
@@ -129,7 +129,7 @@ export function ProsConsList({ strengths, weaknesses }: ProsConsListProps) {
       )}
       {hasWeaknesses && (
         <div>
-          <h3 className="text-[17px] font-bold mb-3 pb-2 border-b-2" style={{ color: '#B05840', borderColor: '#E5CCB8' }}>
+          <h3 className="text-[17px] font-bold mb-3 pb-2 border-b-2" style={{ color: '#9c3d54', borderColor: 'rgba(156, 61, 84, 0.3)' }}>
             ◌ 主要缺点 ({weaknesses!.length})
           </h3>
           {weaknesses!.map((w, i) => <WeaknessItem key={`w-${i}`} item={w} />)}

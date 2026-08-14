@@ -11,11 +11,11 @@ interface FiveElementsProps {
 }
 
 const elementColors: Record<string, string> = {
-  '木': '#34C759',
-  '火': '#FF3B30',
-  '土': '#FF9500',
-  '金': '#FFCC00',
-  '水': '#007AFF',
+  '木': '#2d6a4f',
+  '火': '#9c3d54',
+  '土': '#b8960f',
+  '金': '#8a8072',
+  '水': '#006666',
 }
 
 export function FiveElements({ elements, className = '' }: FiveElementsProps) {
@@ -23,7 +23,7 @@ export function FiveElements({ elements, className = '' }: FiveElementsProps) {
     <div className={`elements ${className}`}>
       {elements.map((el) => {
         const ratio = el.maxValue > 0 ? el.value / el.maxValue : 0
-        const color = elementColors[el.name] || '#86868B'
+        const color = elementColors[el.name] || 'rgba(0, 77, 77, 0.45)'
         const pct = Math.round(ratio * 100)
 
         return (

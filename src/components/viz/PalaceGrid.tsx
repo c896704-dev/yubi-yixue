@@ -14,17 +14,17 @@ interface PalaceGridProps {
 }
 
 const elementColors: Record<string, string> = {
-  '木': '#7A9A7A',
-  '火': '#4A9E9E',
-  '土': '#8A8A8A',
-  '金': '#B8ADA0',
-  '水': '#6A9AB8',
+  '木': '#2d6a4f',
+  '火': '#9c3d54',
+  '土': '#b8960f',
+  '金': '#8a8072',
+  '水': '#006666',
 }
 
 function scoreTextColor(s: number): string {
-  if (s >= 80) return '#7A9A7A'
-  if (s >= 60) return '#4A9E9E'
-  return '#C4664A'
+  if (s >= 80) return '#2d6a4f'
+  if (s >= 60) return '#006666'
+  return '#9c3d54'
 }
 
 export function PalaceGrid({ cells, centerLabel, className = '' }: PalaceGridProps) {
@@ -45,7 +45,7 @@ export function PalaceGrid({ cells, centerLabel, className = '' }: PalaceGridPro
     <div className="palace-grid">
       {gridCells.slice(0, 9).map((cell, i) => {
         const isCenter = cell.isCenter || i === 4
-        const elColor = elementColors[cell.element || ''] || '#999'
+        const elColor = elementColors[cell.element || ''] || 'rgba(0, 77, 77, 0.4)'
 
         return (
           <div
