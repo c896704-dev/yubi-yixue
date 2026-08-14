@@ -35,6 +35,7 @@ import { judgeBodyStrength, judgeClimate, SHI_ER_CHANG_SHENG } from './wangshuai
 import { determineYongShen } from './yongshen'
 import { calculateShenSha, getKongWang } from './shensha'
 import { getChongHeAnalysis, getTaiYuan, getMingGong, getMingGongStem } from './chonghe'
+import { Solar } from 'lunar-typescript'
 
 const ELEM_SYMBOL: Record<FiveElement, string> = { '木': '🌳', '火': '🔥', '土': '⛰️', '金': '⚜️', '水': '💧' }
 const ELEM_COLOR: Record<FiveElement, string> = { '木': '绿', '火': '红', '土': '黄', '金': '白', '水': '黑/蓝' }
@@ -262,51 +263,8 @@ export function renderFundamentalReport(result: AnalysisResult): string {
     md += '\n'
   }
 
-  // 八字排盘表格（10列：主星/天干/地支/藏干/副星/星运/自坐/空亡/纳音/神煞）
-  md += '### 📅 八字排盘\n\n'
-  md += '| 柱位 | 主星 | 天干 | 地支 | 藏干 | 副星 | 星运 | 自坐 | 空亡 | 纳音 | 神煞 |\n'
-  md += '|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|\n'
-
-  const pillars: [string, Pillar][] = [
-    ['**年柱**', bazi.year],
-    ['**月柱**', bazi.month],
-    ['**日柱**', bazi.day],
-    ['**时柱**', bazi.hour],
-  ]
-
-  // 空亡（以日柱干支查）
-  const kongWangBranches = getKongWang(bazi.day.stem, bazi.day.branch)
-  // 神煞按柱位分组（天德/月德等"全局"类归入日柱列显示）
-  const shenShaByPillar: Record<string, string[]> = { 年支: [], 月支: [], 日支: [], 时支: [], 全局: [] }
-  for (const s of result.shenSha.all) {
-    const key = s.pillar in shenShaByPillar ? s.pillar : '全局'
-    shenShaByPillar[key]!.push(s.name)
-  }
-
-  for (const [label, p] of pillars) {
-    const hs = p.hiddenStems.join('、')
-    // 副星：藏干各天干对日主的十神
-    const fuXing = p.hiddenStems.map(hsStem => {
-      const god = getTenGod(bazi.dayMaster, hsStem as HeavenlyStem)
-      return `${hsStem}${god}`
-    }).join(' ')
-    // 星运：十二长生（日主在该地支的状态）
-    const xingYun = SHI_ER_CHANG_SHENG[bazi.dayMaster]?.[p.branch] || '—'
-    // 自坐：仅日柱显示（日支本气藏干对日主的十神）
-    const ziZuo = label === '**日柱**'
-      ? `自坐${getTenGod(bazi.dayMaster, (p.hiddenStems[0] || p.stem) as HeavenlyStem)}`
-      : '—'
-    // 空亡
-    const kongWang = kongWangBranches.includes(p.branch) ? '空' : '—'
-    // 神煞
-    const pillarKey = label.replace(/\*\*/g, '') as '年支' | '月支' | '日支' | '时支'
-    const shenShaNames = [...(shenShaByPillar[pillarKey] || []), ...(pillarKey === '日支' ? (shenShaByPillar['全局'] || []) : [])]
-    const shenShaText = shenShaNames.length > 0 ? shenShaNames.join('、') : '—'
-
-    md += `| ${label} | ${p.tenGod} | **${p.stem}** | **${p.branch}** | ${hs} | ${fuXing} | ${xingYun} | ${ziZuo} | ${kongWang} | ${p.naYin} | ${shenShaText} |\n`
-  }
-
-  md += `\n> **判官批语：** 日主 **${bazi.dayMaster}**（${ELEM_SYMBOL[STEM_ELEMENT[bazi.dayMaster]]}${STEM_ELEMENT[bazi.dayMaster]}），生于${bazi.month.branch}月，为 **${geJu}**。\n\n`
+  // 排盘表与五行能量由 PillarTable / ElementBars 组件渲染，此处只出判官批语
+  md += `> **判官批语：** 日主 **${bazi.dayMaster}**（${ELEM_SYMBOL[STEM_ELEMENT[bazi.dayMaster]]}${STEM_ELEMENT[bazi.dayMaster]}），生于${bazi.month.branch}月，为 **${geJu}**。\n\n`
 
   // 排盘方法论说明
   md += renderPaipanDisclaimer(person, bazi)
@@ -319,18 +277,6 @@ export function renderFundamentalReport(result: AnalysisResult): string {
   md += `| **喜用神** | ${favorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')} |\n`
   md += `| **忌神** | ${unfavorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')} |\n`
 
-  md += '\n'
-
-  // 五行能量分布（数值表；可视化条形图由 BaziReport 组件渲染）
-  md += '### 🔢 五行能量分布\n\n'
-  md += '| 五行 | 能量值 | 强弱 |\n|:---|:---|:---|\n'
-  const maxVal = Math.max(...Object.values(fiveElementDistribution), 1)
-  for (const elem of FIVE_ELEMENTS) {
-    const val = fiveElementDistribution[elem]
-    const ratio = val / maxVal
-    const level = ratio >= 0.85 ? '旺' : ratio >= 0.6 ? '中' : '弱'
-    md += `| ${ELEM_SYMBOL[elem]} ${elem} | ${val.toFixed(1)} | ${level} |\n`
-  }
   md += '\n'
 
   // 旺衰详细
@@ -346,15 +292,6 @@ export function renderFundamentalReport(result: AnalysisResult): string {
   if (result.strengthDetail.coldPenalty !== 0) md += `| 寒暖修正 | ${result.strengthDetail.coldPenalty} | 冬火减力/夏水减力 |\n`
   md += '\n'
 
-  // 用神详细
-  md += '### 🎯 用神体系（四维加权）\n\n'
-  md += '| 用神维度 | 五行 |\n|:---|:---|\n'
-  md += `| 扶抑用神 | ${result.yongShen.fuYi.join('、')} |\n`
-  md += `| 调候用神 | ${result.yongShen.tiaoHou.join('、')}（天干：${result.yongShen.tiaoHouStems.join('、')}）|\n`
-  md += `| 通关用神 | ${result.yongShen.tongGuan.length > 0 ? result.yongShen.tongGuan.join('、') : '无'} |\n`
-  md += `| 病药用神 | ${result.yongShen.bingYao.length > 0 ? result.yongShen.bingYao.join('、') : '无'} |\n`
-  md += '\n'
-
   // 格局
   if (result.specialGeJu) {
     md += `> **特殊格局：** ⚠️ 此命为「**${result.specialGeJu}**」，非寻常格局，论断需格外谨慎。`
@@ -363,19 +300,6 @@ export function renderFundamentalReport(result: AnalysisResult): string {
 
   // 寒暖燥湿
   md += `**寒暖燥湿：** ${result.climate.label === '寒' ? '❄️ 寒局，需火调候' : result.climate.label === '暖' ? '☀️ 暖局，需水调候' : result.climate.label === '燥' ? '🔥 燥局，需水润泽' : result.climate.label === '湿' ? '💧 湿局，需火暖局' : '✅ 气候中和'}（暖度${result.climate.warmthScore} / 湿度${result.climate.humidityScore}）${result.climate.needTiaoHou ? ' ⚠️需调候' : ''} | **胎元：** ${result.taiYuan.stem}${result.taiYuan.branch} | **命宫：** ${result.mingGong.stem}${result.mingGong.branch}\n\n`
-
-  // 神煞
-  md += '### 🔮 神煞一览\n\n'
-  if (result.shenSha.all.length > 0) {
-    md += '| 神煞 | 类型 | 所在 | 含义 |\n|:---|:---|:---|:---|\n'
-    for (const s of result.shenSha.all) {
-      const typeIcon = s.type === '吉' ? '✅' : s.type === '凶' ? '⚠️' : '🔵'
-      md += `| ${s.name} | ${typeIcon}${s.type} | ${s.pillar} | ${s.description} |\n`
-    }
-    md += '\n'
-  } else {
-    md += '命局无明显神煞配置。\n\n'
-  }
 
   // 刑冲合害
   md += '### ⚡ 刑冲合害\n\n'
@@ -426,36 +350,8 @@ export function renderLifeStagesReport(result: AnalysisResult): string {
     md += `> **起运年龄：** ${startAge}岁起运（系统采用排盘引擎自动计算）。大运每十年一换，逢交运之年（如${startAge + 10}岁、${startAge + 20}岁前后）人生有重大转换。\n\n`
   }
 
-  const stages: { name: string; ageStart: number; ageEnd: number; icon: string }[] = [
-    { name: '少年启智', ageStart: 0, ageEnd: 19, icon: '🌱' },
-    { name: '青年立身', ageStart: 20, ageEnd: 39, icon: '⚡' },
-    { name: '中年沉淀', ageStart: 40, ageEnd: 59, icon: '🏔️' },
-    { name: '晚年颐养', ageStart: 60, ageEnd: 99, icon: '🌅' },
-  ]
-
-  for (const stage of stages) {
-    md += `### ${stage.icon} ${stage.name}（${stage.ageStart}-${stage.ageEnd}岁）\n\n`
-    // 大运按起始年龄分配所属阶段
-    const relevantFortunes = bigFortunes.filter(
-      f => f.startAge >= stage.ageStart && f.startAge < stage.ageEnd + 1,
-    )
-
-    if (relevantFortunes.length === 0) {
-      md += '此阶段无大运流转记录。\n\n'
-      continue
-    }
-
-    md += '| 大运 | 干支 | 纳音 | 十神 | 运势简述 |\n'
-    md += '|:---|:---|:---|:---|:---|\n'
-
-    for (const fortune of relevantFortunes) {
-      // 跳过干支为空的占位符行
-      if (!fortune.stem || !fortune.branch) continue
-      const desc = describeFortune(fortune, bazi, result.favorableElements, result.unfavorableElements, fortune.startAge)
-      md += `| ${fortune.startAge}-${fortune.endAge}岁 | **${fortune.stem}${fortune.branch}** | ${fortune.naYin} | ${fortune.tenGod} | ${desc} |\n`
-    }
-    md += '\n'
-  }
+  // 大运与流年由 FortuneTimelineV2 时间轴组件呈现（点大运节点展开流年，点流年看逐年分析）
+  md += '> 💡 **大运流年时间轴见下**——点击大运节点可展开该十年内的逐年流年，点击流年节点查看"干支+十神+吉凶"分析。\n\n'
 
   // 当前大运（大运段按虚岁计算，显示年龄须与查找逻辑一致：虚岁 = 周岁 + 1）
   if (currentFortune) {
@@ -585,8 +481,128 @@ export function renderCompatibilityPreview(result: AnalysisResult): string {
 }
 
 // ============================================================
-// 报告章节编排器 — 统一章节顺序/编号/折叠策略
+// 命盘基础信息结构化数据（供 PillarTable 组件渲染"字段为行、四柱为列"纵向大表）
 // ============================================================
+
+export interface PillarTableCell {
+  pillarKey: '年柱' | '月柱' | '日柱' | '时柱'
+  pillarLabel: string
+  mainStar: TenGod            // 主星 = 天干十神
+  stem: HeavenlyStem
+  branch: EarthlyBranch
+  hiddenStems: HeavenlyStem[] // 藏干
+  subStars: { stem: HeavenlyStem; god: TenGod }[] // 副星 = 藏干十神
+  xingYun: string             // 星运 = 十二长生
+  ziZuo: string               // 自坐 = 地支本气藏干十神（日柱前缀"自坐"）
+  isKongWang: boolean         // 该柱地支是否落空亡
+  naYin: string
+  shenSha: { name: string; type: '吉' | '凶' | '中性' }[]
+}
+
+export interface PillarTableData {
+  columns: PillarTableCell[]
+  kongWangBranches: EarthlyBranch[] // 旬空二支
+  globalShenSha: { name: string; type: '吉' | '凶' | '中性'; desc: string }[] // 天德/月德等全局神煞
+  shenShaDetails: { name: string; type: '吉' | '凶' | '中性'; pillar: string; desc: string }[]
+}
+
+export function buildPillarTableData(result: AnalysisResult): PillarTableData {
+  const { bazi } = result
+  const pillars: { key: '年柱' | '月柱' | '日柱' | '时柱'; label: string; p: Pillar }[] = [
+    { key: '年柱', label: '年柱', p: bazi.year },
+    { key: '月柱', label: '月柱', p: bazi.month },
+    { key: '日柱', label: '日柱', p: bazi.day },
+    { key: '时柱', label: '时柱', p: bazi.hour },
+  ]
+
+  const kongWangBranches = getKongWang(bazi.day.stem, bazi.day.branch)
+
+  // 神煞按柱位分组（pillar 值为 年支/月支/日支/时支/日柱/全局）
+  const shenShaByPillar: Record<string, typeof result.shenSha.all> = {}
+  for (const s of result.shenSha.all) {
+    const key = s.pillar || '全局'
+    if (!shenShaByPillar[key]) shenShaByPillar[key] = []
+    shenShaByPillar[key]!.push(s)
+  }
+
+  const columns: PillarTableCell[] = pillars.map(({ key, label, p }) => {
+    const hiddenStems = p.hiddenStems as HeavenlyStem[]
+    const subStars = hiddenStems.map(stem => ({ stem, god: getTenGod(bazi.dayMaster, stem) }))
+    const ziZuoGod = getTenGod(bazi.dayMaster, hiddenStems[0] ?? p.stem)
+    const branchKey = key.replace('柱', '支') // 年柱→年支
+    const shenShaList = [
+      ...(shenShaByPillar[branchKey] || []),
+      ...(key === '日柱' ? (shenShaByPillar['日柱'] || []) : []),
+    ]
+    return {
+      pillarKey: key,
+      pillarLabel: label,
+      mainStar: p.tenGod,
+      stem: p.stem,
+      branch: p.branch,
+      hiddenStems,
+      subStars,
+      xingYun: SHI_ER_CHANG_SHENG[bazi.dayMaster]?.[p.branch] || '—',
+      ziZuo: (key === '日柱' ? '自坐' : '坐') + ziZuoGod,
+      isKongWang: kongWangBranches.includes(p.branch),
+      naYin: p.naYin,
+      shenSha: shenShaList.map(s => ({ name: s.name, type: s.type })),
+    }
+  })
+
+  return {
+    columns,
+    kongWangBranches,
+    globalShenSha: (shenShaByPillar['全局'] || []).map(s => ({ name: s.name, type: s.type, desc: s.description })),
+    shenShaDetails: result.shenSha.all.map(s => ({ name: s.name, type: s.type, pillar: s.pillar, desc: s.description })),
+  }
+}
+
+// ============================================================
+// 流年生成（当前大运段内逐年，供 FortuneTimelineV2 时间轴）
+// ============================================================
+
+export interface LiuNianItem {
+  year: number          // 公历年
+  age: number           // 虚岁
+  ganZhi: string        // 流年干支（立春为界）
+  tenGod: TenGod        // 流年天干对日主的十神
+  luck: '吉' | '平' | '凶'
+  note: string          // 一句判词
+}
+
+export function buildFortuneYears(result: AnalysisResult): LiuNianItem[] {
+  const { bazi, person, currentFortune } = result
+  if (!currentFortune) return []
+  const years: LiuNianItem[] = []
+  // 当前大运的起止公历年：虚岁 startAge 对应 出生年+startAge-1
+  const startYear = person.birthYear + currentFortune.startAge - 1
+  const endYear = person.birthYear + currentFortune.endAge - 1
+  const godNote: Record<TenGod, { good: string; bad: string }> = {
+    '正印': { good: '贵人运旺，利学业文书、置业', bad: '思虑过重，防因保守错失机会' },
+    '偏印': { good: '偏门技艺有突破，利进修', bad: '孤僻多疑，注意人际疏离' },
+    '正官': { good: '事业有晋升机遇，得认可', bad: '压力加大，谨防官非口舌' },
+    '偏官': { good: '魄力爆发，宜主动出击', bad: '小人暗算，防意外冲突' },
+    '正财': { good: '正财运稳，利储蓄置业', bad: '为财所累，开销增大' },
+    '偏财': { good: '意外之财可期，利投资', bad: '投机易损，谨防破财' },
+    '食神': { good: '才思敏捷，生活安逸有福', bad: '贪图安逸，进取不足' },
+    '伤官': { good: '才华外露，名声提升', bad: '口舌是非，职场人际紧张' },
+    '比肩': { good: '人脉助力，合作共赢', bad: '竞争加剧，合伙易散' },
+    '劫财': { good: '社交活跃，朋友相助', bad: '破财风险高，谨防损友' },
+  }
+  for (let y = startYear; y <= endYear; y++) {
+    const gz = Solar.fromYmd(y, 6, 15).getLunar().getYearInGanZhi() // 年中取干支，避开立春边界
+    const stem = gz.charAt(0) as HeavenlyStem
+    const god = getTenGod(bazi.dayMaster, stem)
+    const elem = STEM_ELEMENT[stem]
+    const isFav = result.favorableElements.includes(elem)
+    const isUnfav = result.unfavorableElements.includes(elem)
+    const luck: '吉' | '平' | '凶' = isFav ? '吉' : isUnfav ? '凶' : '平'
+    const note = isFav ? godNote[god].good : isUnfav ? godNote[god].bad : `${god}流年，运势平稳，按部就班即可`
+    years.push({ year: y, age: currentFortune.startAge + (y - startYear), ganZhi: gz, tenGod: god, luck, note })
+  }
+  return years
+}
 
 export interface ReportSection {
   id: string

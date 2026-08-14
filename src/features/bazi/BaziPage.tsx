@@ -10,9 +10,13 @@ import {
 } from '../../utils/analysis'
 import { BaziInput } from './BaziInput'
 import { BaziResult } from './BaziResult'
-import { BaziReport, AiInsightCard, ElementBars, FortuneTimeline } from './BaziReport'
+import {
+  BaziReport, AiInsightCard, ElementBars, PillarTable,
+  ShenShaGrid, YongShenBadges, FortuneTimelineV2,
+} from './BaziReport'
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
 import { Loading } from '../../components/ui/Loading'
 
 function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
@@ -99,7 +103,7 @@ export default function BaziPage() {
   const handleReset = useCallback(() => { reset() }, [reset])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {!result && !loading && (
         <>
           <BaziInput onSubmit={handleAnalyze} loading={loading} />
@@ -121,8 +125,26 @@ export default function BaziPage() {
 
       {result && !loading && (
         <>
+          {/* 紧凑信息条（受判人基本信息） */}
+          <div className="person-info-strip">
+            <span className="person-info-name">{result.person.name || '命主'}</span>
+            <span className="person-info-sep">|</span>
+            <span>{result.person.gender}</span>
+            <span className="person-info-sep">|</span>
+            <span>{result.person.birthYear}-{String(result.person.birthMonth).padStart(2, '0')}-{String(result.person.birthDay).padStart(2, '0')} {String(result.person.birthHour).padStart(2, '0')}:{String(result.person.birthMinute).padStart(2, '0')}</span>
+            <span className="person-info-sep">|</span>
+            <span>{result.person.birthPlace}</span>
+          </div>
+
+          {/* 命盘基础信息：字段为行、四柱为列的纵向大表 */}
+          <Card title="命盘基础信息">
+            <PillarTable result={result} />
+          </Card>
+
+          {/* 身强弱 + 格局大卡（基础信息正下方） */}
           <BaziResult result={result} />
-          {/* 一、乾坤定盘（含排盘表 + 五行能量条形图） */}
+
+          {/* 一、乾坤定盘（文字部分 + 五行能量条形图 + 神煞/用神徽章） */}
           {reportSections[0] && (
             <div className="report-section" id="section-fundamental">
               <div className="report-section-header">
@@ -137,26 +159,21 @@ export default function BaziPage() {
                   </ReactMarkdown>
                 </div>
                 <ElementBars result={result} />
+                <h4 className="comp-subtitle">🎯 用神体系</h4>
+                <YongShenBadges result={result} />
+                <h4 className="comp-subtitle">🔮 神煞一览</h4>
+                <ShenShaGrid result={result} />
               </div>
             </div>
           )}
           {/* AI 总评（紧随定盘之后） */}
           <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} />
-          {/* 二~八 + 附录A 折叠章节 */}
-          <BaziReport sections={reportSections.slice(1)} result={result} />
-          {/* 七、运程时间轴（可视化补充） */}
-          {result.bigFortunes.length > 0 && (
-            <div className="report-section" id="section-fortunes-visual">
-              <div className="report-section-header">
-                <span className="report-section-num">⏳</span>
-                <span className="report-section-icon">📈</span>
-                <span className="report-section-title">大运时间轴</span>
-              </div>
-              <div className="report-section-body">
-                <FortuneTimeline result={result} />
-              </div>
-            </div>
-          )}
+          {/* 二~八 + 附录A 折叠章节（七、运程长卷内嵌时间轴） */}
+          <BaziReport
+            sections={reportSections.slice(1)}
+            result={result}
+            fortuneTimeline={<FortuneTimelineV2 result={result} />}
+          />
           <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新排盘</Button>
             <Button variant="ghost" onClick={() => window.print()}>打印报告</Button>
