@@ -1,14 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ToolHeader } from '../../components/layout/ToolHeader'
-import { Search, Star } from '../../components/ui/Icon'
+import { DateTimePicker } from '../../components/form/DateTimePicker'
+import { Search, Star, History, Clock } from '../../components/ui/Icon'
 import { calculateShenSha, type ShenShaDetail } from '../../utils/shensha'
-
-/** 全部六十甲子 */
-const GANZHI_60: string[] = Array.from({ length: 60 }, (_, i) => {
-  const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
-  const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
-  return STEMS[i % 10] + BRANCHES[i % 12]
-})
+import { getSizhu } from '../../utils/ganzhi'
+import { getAllRecordsMerged, type SavedRecord } from '../../utils/db'
 
 /** 神煞词典（与引擎神煞集一致，简明释义） */
 const DICT: { name: string; type: '吉' | '凶' | '中性'; desc: string }[] = [
@@ -36,58 +32,57 @@ const DICT: { name: string; type: '吉' | '凶' | '中性'; desc: string }[] = [
   { name: '空亡', type: '中性', desc: '旬空之支，主虚而不实；用神落空则减力。' },
 ]
 
-const GZ_OPTIONS = GANZHI_60.map((gz, i) => ({ value: gz, label: gz }))
-
-interface PillarSelectProps {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}
-
-function PillarSelect({ label, value, onChange }: PillarSelectProps) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="ds-label">{label}</span>
-      <div className="ds-select-wrap">
-        <select className="ds-select" value={value} onChange={(e) => onChange(e.target.value)}>
-          <option value="">— 请选择 —</option>
-          {GZ_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-        <span className="ds-select-arrow" aria-hidden="true" />
-      </div>
-    </div>
-  )
-}
-
-function pillarGroup(gz: string): { stem: string; branch: string } {
-  return { stem: gz.slice(0, 1), branch: gz.slice(1) }
-}
-
 export function ShenShaPage() {
-  const [yearGz, setYearGz] = useState('')
-  const [monthGz, setMonthGz] = useState('')
-  const [dayGz, setDayGz] = useState('')
-  const [hourGz, setHourGz] = useState('')
+  // 出生信息（档案或手动时间）
+  const [records, setRecords] = useState<SavedRecord[]>([])
+  const [recordId, setRecordId] = useState('')
+  const [year, setYear] = useState<number | ''>('')
+  const [month, setMonth] = useState<number | ''>('')
+  const [day, setDay] = useState<number | ''>('')
+  const [hour, setHour] = useState<number | ''>('')
+  const [minute, setMinute] = useState<number | ''>(0)
   const [query, setQuery] = useState('')
 
+  useEffect(() => {
+    getAllRecordsMerged().then(setRecords).catch(() => setRecords([]))
+  }, [])
+
+  /** 从档案记录载入出生信息 */
+  const handleLoadRecord = useCallback((id: string) => {
+    setRecordId(id)
+    const r = records.find((x) => x.id === id)
+    if (!r) return
+    setYear(r.person.birthYear)
+    setMonth(r.person.birthMonth)
+    setDay(r.person.birthDay)
+    setHour(r.person.birthHour)
+    setMinute(r.person.birthMinute ?? 0)
+  }, [records])
+
+  /** 出生信息 → 四柱 → 神煞 */
   const result = useMemo(() => {
-    if (!yearGz || !monthGz || !dayGz || !hourGz) return null
-    const y = pillarGroup(yearGz)
-    const m = pillarGroup(monthGz)
-    const d = pillarGroup(dayGz)
-    const h = pillarGroup(hourGz)
+    if (year === '' || month === '' || day === '' || hour === '') return null
+    const sz = getSizhu(year, month, day, hour)
+    const y = sz.year
+    const m = sz.month
+    const d = sz.day
+    const h = sz.hour
     try {
       return calculateShenSha(
-        d.stem as any, y.stem as any, y.branch as any,
-        m.branch as any, d.branch as any, h.branch as any,
-        dayGz, undefined, [y.stem, m.stem, d.stem, h.stem] as any,
+        d.gan as any, y.gan as any, y.zhi as any,
+        m.zhi as any, d.zhi as any, h.zhi as any,
+        d.full, undefined, [y.gan, m.gan, d.gan, h.gan] as any,
       )
     } catch {
       return null
     }
-  }, [yearGz, monthGz, dayGz, hourGz])
+  }, [year, month, day, hour])
+
+  /** 四柱展示（从出生时间推算） */
+  const sizhu = useMemo(() => {
+    if (year === '' || month === '' || day === '' || hour === '') return null
+    return getSizhu(year, month, day, hour)
+  }, [year, month, day, hour])
 
   const byPillar = useMemo(() => {
     if (!result) return [] as { pillar: string; items: ShenShaDetail[] }[]
@@ -115,23 +110,64 @@ export function ShenShaPage() {
         desc="以《渊海子平》《三命通会》为据：输入四柱干支，逐柱神煞一望便知；神煞词典随查随阅。"
       />
 
-      <div className="grid gap-6 lg:grid-cols-[380px_1fr] items-start">
-        {/* 左：四柱查询 */}
+      <div className="grid gap-6 lg:grid-cols-[400px_1fr] items-start">
+        {/* 左：出生信息（档案 / 时间） */}
         <div className="ds-card">
-          <h2 className="ds-card-head"><Star size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />四柱查询</h2>
+          <h2 className="ds-card-head"><Star size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />出生信息</h2>
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              <PillarSelect label="年柱" value={yearGz} onChange={setYearGz} />
-              <PillarSelect label="月柱" value={monthGz} onChange={setMonthGz} />
-              <PillarSelect label="日柱" value={dayGz} onChange={setDayGz} />
-              <PillarSelect label="时柱" value={hourGz} onChange={setHourGz} />
+            {/* 档案选择 */}
+            <div>
+              <span className="ds-label"><History size={11} style={{ marginRight: 3, verticalAlign: -1 }} />选择档案</span>
+              <div className="ds-select-wrap" style={{ marginTop: 4 }}>
+                <select
+                  className="ds-select"
+                  value={recordId}
+                  onChange={(e) => handleLoadRecord(e.target.value)}
+                >
+                  <option value="">— 从八字排盘记录中选择 —</option>
+                  {records.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.label} · {r.person.gender}{r.person.birthYear}年{r.person.birthMonth}月{r.person.birthDay}日
+                    </option>
+                  ))}
+                </select>
+                <span className="ds-select-arrow" aria-hidden="true" />
+              </div>
+              {records.length === 0 && (
+                <p className="text-xs mt-1.5" style={{ color: 'rgba(0,77,77,0.5)' }}>
+                  暂无历史档案，可先在「八字排盘」页排盘生成，或直接填写下方出生时间。
+                </p>
+              )}
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: 'rgba(0,77,77,0.55)' }}>
-              提示：如已有八字排盘结果，可对照报告中的四柱干支输入；干支以「日干」为中心推算神煞。
-            </p>
-            {!result && (
+
+            <div style={{ borderTop: '1px solid var(--dan-mo)', paddingTop: 14 }}>
+              <DateTimePicker
+                label="出生日期与时间"
+                year={year} month={month} day={day} hour={hour} minute={minute}
+                onYearChange={setYear} onMonthChange={setMonth} onDayChange={setDay}
+                onHourChange={setHour} onMinuteChange={setMinute}
+              />
+            </div>
+
+            {/* 四柱预览 */}
+            {sizhu && (
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: '年柱', gz: sizhu.year.full },
+                  { label: '月柱', gz: sizhu.month.full },
+                  { label: '日柱', gz: sizhu.day.full },
+                  { label: '时柱', gz: sizhu.hour.full },
+                ].map((p) => (
+                  <span key={p.label} className="ds-chip ds-chip-gold">
+                    {p.label} <b className="font-serif" style={{ fontSize: 12 }}>{p.gz}</b>
+                  </span>
+                ))}
+              </div>
+            )}
+            {!sizhu && (
               <p className="text-sm" style={{ color: 'rgba(0,77,77,0.6)' }}>
-                请选择完整的年、月、日、时四柱，即可查看逐柱神煞。
+                <Clock size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+                选择档案或填写出生时间，即可自动排出四柱并查看逐柱神煞。
               </p>
             )}
           </div>
@@ -140,6 +176,11 @@ export function ShenShaPage() {
         {/* 右：查询结果 */}
         <div className="flex flex-col gap-5">
           {result ? (
+            byPillar.length === 0 ? (
+              <div className="ds-card flex items-center justify-center" style={{ minHeight: 180 }}>
+                <p className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>此命局未命中常见神煞，命格清简。</p>
+              </div>
+            ) : (
             <>
               {byPillar.map((g) => (
                 <div key={g.pillar} className="ds-card">
@@ -158,11 +199,12 @@ export function ShenShaPage() {
                 </div>
               ))}
             </>
+            )
           ) : (
             <div className="ds-card flex items-center justify-center" style={{ minHeight: 220 }}>
               <div className="text-center">
                 <Search size={28} strokeWidth={1.4} style={{ color: 'rgba(0,77,77,0.3)', marginBottom: 8 }} />
-                <p className="text-sm" style={{ color: 'rgba(0,77,77,0.5)' }}>选择四柱后，神煞将在此呈现</p>
+                <p className="text-sm" style={{ color: 'rgba(0,77,77,0.5)' }}>选择档案或填写出生时间后，神煞将在此呈现</p>
               </div>
             </div>
           )}

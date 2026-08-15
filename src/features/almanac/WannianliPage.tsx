@@ -6,7 +6,7 @@ import { Card } from '../../components/ui/Card'
 /**
  * 万年历组件
  * 基于 lunar-typescript:公历/农历/干支/生肖/节气/宜忌
- * 布局:顶部紧凑今日条 + 桌面两栏(日历|详情),移动端堆叠
+ * 布局:桌面两栏(日历|详情),移动端堆叠
  */
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -78,35 +78,6 @@ export function WannianliPage() {
         title="万年历"
         desc="农历 · 干支 · 节气 · 宜忌，通览时日吉凶。"
       />
-      {/* 紧凑今日条 */}
-      <div className="rounded-xl p-3 sm:p-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"
-        style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <span className="font-[family-name:var(--font-title)] font-bold text-base" style={{ color: 'var(--fg)' }}>
-          今日 · {today.getFullYear()}-{String(today.getMonth() + 1).padStart(2, '0')}-{String(today.getDate()).padStart(2, '0')}
-          <span className="ml-1 text-sm font-normal" style={{ color: 'rgba(0,77,77,0.55)' }}>周{WEEKDAYS[today.getDay()]}</span>
-        </span>
-        <span style={{ color: 'rgba(0,77,77,0.55)' }}>
-          农历 <b style={{ color: 'var(--fg)' }}>{todayInfo.lunarDate}</b>
-        </span>
-        <span style={{ color: 'rgba(0,77,77,0.55)' }}>
-          干支 <b style={{ color: 'var(--fg)' }}>{todayInfo.yearGanZhi}年 {todayInfo.monthGanZhi}月 {todayInfo.dayGanZhi}日</b>
-        </span>
-        <span style={{ color: 'rgba(0,77,77,0.55)' }}>
-          生肖 <b style={{ color: 'var(--fg)' }}>{todayInfo.shengXiao}</b>
-          {todayInfo.jieQi && <> · 节气 <b style={{ color: 'var(--fg)' }}>{todayInfo.jieQi}</b></>}
-        </span>
-        <span className="ml-auto flex items-center gap-2">
-          <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>宜</span>
-          <b className="text-xs font-normal" style={{ color: 'var(--success)' }}>
-            {todayInfo.yi.length > 0 ? todayInfo.yi.slice(0, 4).join('、') : '诸事不宜'}
-          </b>
-          <span className="text-xs ml-2" style={{ color: 'rgba(0,77,77,0.55)' }}>忌</span>
-          <b className="text-xs font-normal" style={{ color: 'var(--danger)' }}>
-            {todayInfo.ji.length > 0 ? todayInfo.ji.slice(0, 4).join('、') : '诸事皆宜'}
-          </b>
-        </span>
-      </div>
-
       {/* 桌面两栏：日历 + 详情 */}
       <div className="grid lg:grid-cols-[1.35fr_1fr] gap-4 items-start">
         {/* 日历 */}

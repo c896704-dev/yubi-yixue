@@ -159,9 +159,14 @@ body {
   50% { box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.75), 0 0 18px rgba(212, 175, 55, 0.5); }
 }
 @keyframes glyph-rise {
-  0% { opacity: 0; transform: translateY(30px) scale(0.9); }
-  25%, 75% { opacity: 0.5; }
-  100% { opacity: 0; transform: translateY(-60px) scale(1.05); }
+  0% { opacity: 0; transform: translateY(30px); }
+  40% { opacity: 0.5; transform: translateY(0); }
+  60% { opacity: 0.5; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+@keyframes wave-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 @keyframes btn-sheen { 0% { transform: translateX(-160%) skewX(-20deg); } 50%, 100% { transform: translateX(420%) skewX(-20deg); } }
@@ -474,6 +479,8 @@ body {
   background: #fff;
   border: 1px solid var(--dan-mo);
   border-radius: 10px;
+  width: fit-content;
+  align-self: flex-start;
 }
 .ds-seg-item {
   padding: 7px 16px;
@@ -1247,6 +1254,7 @@ body {
 /* 章节卡片 / 目录 */
 .report-section {
   position: relative;
+  scroll-margin-top: 84px;
   margin: 20px 0;
   background: #fff;
   border: 1px solid var(--dan-mo);

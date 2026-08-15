@@ -10,12 +10,12 @@ interface HomeLandingProps {
   onNavigate: (tab: AppTab) => void
 }
 
-/* ── Hero 打字机文案 ── */
+/* ── Hero 打字机文案（照搬 design-showcase 原文） ── */
 const TYPING_LINES = [
-  '古籍锚定，可溯源 · 可验证',
-  '宣纸为底，黛青为骨，琥珀为金',
-  '以古籍为骨 · 以 AI 为笔 · 以数据为墨',
-  '每一句解读，皆有古籍为证',
+  '每一句解读，皆有古籍为证。',
+  '八字 · 紫微 · 六爻 · 奇门 · 大六壬',
+  'RAG 古籍锚定，可溯源 · 可验证。',
+  '宣纸为底，黛青为骨，琥珀为金。',
 ]
 
 const GLYPHS = [
@@ -147,6 +147,60 @@ function Hero({ onNavigate }: HomeLandingProps) {
           {g.char}
         </span>
       ))}
+
+      {/* 波浪海（照搬 design-showcase hero 特效） */}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[60%] overflow-hidden" aria-hidden="true">
+        <svg
+          viewBox="0 0 1440 420"
+          preserveAspectRatio="none"
+          className="absolute bottom-0 w-full h-full"
+          style={{ minWidth: 1200 }}
+        >
+          <defs>
+            <linearGradient id="sea-far" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#004d4d" stopOpacity="0.04" />
+              <stop offset="50%" stopColor="#004d4d" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#003a3a" stopOpacity="0.22" />
+            </linearGradient>
+            <linearGradient id="sea-mid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#004d4d" stopOpacity="0.10" />
+              <stop offset="60%" stopColor="#004040" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="#003333" stopOpacity="0.40" />
+            </linearGradient>
+            <linearGradient id="sea-near" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#003d3d" stopOpacity="0.20" />
+              <stop offset="50%" stopColor="#003333" stopOpacity="0.42" />
+              <stop offset="100%" stopColor="#002a2a" stopOpacity="0.55" />
+            </linearGradient>
+            <linearGradient id="sea-front" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#003333" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="#002222" stopOpacity="0.65" />
+            </linearGradient>
+            <linearGradient id="crest-gold" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#d4af37" stopOpacity="0" />
+              <stop offset="25%" stopColor="#d4af37" stopOpacity="0.45" />
+              <stop offset="50%" stopColor="#e8c84a" stopOpacity="0.35" />
+              <stop offset="75%" stopColor="#d4af37" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="#d4af37" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <g style={{ animation: 'wave-bob 10s ease-in-out infinite' }}>
+            <path d="M0,280 C180,240 360,290 540,260 C720,225 900,280 1080,250 C1260,220 1380,265 1440,260 L1440,420 L0,420 Z" fill="url(#sea-far)" />
+          </g>
+          <g style={{ animation: 'wave-bob 7.5s ease-in-out infinite 1.2s' }}>
+            <path d="M0,310 C240,260 480,320 720,275 C960,230 1200,290 1440,265 L1440,420 L0,420 Z" fill="url(#sea-mid)" />
+            <path d="M0,310 C240,260 480,320 720,275 C960,230 1200,290 1440,265" fill="none" stroke="url(#crest-gold)" strokeWidth="1.2" opacity="0.5" />
+          </g>
+          <g style={{ animation: 'wave-bob 6s ease-in-out infinite 0.6s' }}>
+            <path d="M0,335 C200,295 400,350 600,315 C800,280 1000,340 1200,305 C1320,285 1380,315 1440,310 L1440,420 L0,420 Z" fill="url(#sea-near)" />
+            <path d="M0,335 C200,295 400,350 600,315 C800,280 1000,340 1200,305 C1320,285 1380,315 1440,310" fill="none" stroke="url(#crest-gold)" strokeWidth="1.8" opacity="0.7" />
+          </g>
+          <g style={{ animation: 'wave-bob 4.5s ease-in-out infinite 2s' }}>
+            <path d="M0,365 C220,335 440,380 660,350 C880,320 1100,370 1320,345 C1380,338 1410,355 1440,352 L1440,420 L0,420 Z" fill="url(#sea-front)" />
+            <path d="M0,365 C220,335 440,380 660,350 C880,320 1100,370 1320,345 C1380,338 1410,355 1440,352" fill="none" stroke="#d4af37" strokeWidth="1" strokeOpacity="0.3" />
+          </g>
+        </svg>
+      </div>
 
       <div className="land-hero-inner">
         <Reveal delay={80}>
