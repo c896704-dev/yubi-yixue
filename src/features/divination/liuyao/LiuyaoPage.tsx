@@ -231,17 +231,14 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
 
         {/* 卦象展示 + 卦局分析 */}
         <Card>
-          <div className="flex flex-col md:flex-row justify-center gap-8 items-start print-hexagrams">
+          <div className="hexagram-row">
             <HexagramDisplay
               hexagram={result.originalHexagram}
               label="本卦"
               changingPositions={result.changingPositions}
             />
             {result.changedHexagram && (
-              <div className="flex items-center self-center text-2xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-                style={{ color: 'rgba(0,77,77,0.55)' }}>
-                →
-              </div>
+              <span className="hex-sep">→</span>
             )}
             {result.changedHexagram && (
               <HexagramDisplay
@@ -572,7 +569,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
             <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
               输入三个数字（0-999），分别对应上卦、下卦、动爻
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
               <div>
                 <span className="ds-label">上卦数</span>
                 <input className="field" type="number" value={num1} onChange={(e) => setNum1(e.target.value)} placeholder="如 3" />

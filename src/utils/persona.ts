@@ -1468,11 +1468,7 @@ export function renderCareerReport(result: AnalysisResult): string {
   // 城市/方位
   md += '### 🗺️ 发展方位与城市\n\n'
   md += `> **最佳方位：** ${c.bestDirections.join('、')}\n\n`
-  md += '**推荐城市：**\n\n'
-  for (const city of c.bestCities.slice(0, 6)) {
-    md += `- 🏙️ ${city}\n`
-  }
-  md += '\n'
+  md += '**推荐城市：** 见下方地图（标记为喜用神方位代表城市，可缩放查看具体位置）。\n\n'
 
   // 副业
   md += '### 💰 副业方向\n\n'

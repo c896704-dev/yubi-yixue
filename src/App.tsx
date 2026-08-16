@@ -24,7 +24,7 @@ function AppContent() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
 
   // 主题（含本地持久化）
   useEffect(() => {
@@ -70,11 +70,6 @@ function AppContent() {
 
   const toggleTheme = useCallback(() => setTheme(t => (t === 'dark' ? 'light' : 'dark')), [])
 
-  const handleLogout = useCallback(() => {
-    logout()
-    setMigrateResult(null)
-  }, [logout])
-
   return (
     <NavProvider value={go}>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -83,9 +78,6 @@ function AppContent() {
           onTabChange={go}
           theme={theme}
           onToggleTheme={toggleTheme}
-          user={user}
-          onLoginClick={() => setLoginOpen(true)}
-          onLogout={handleLogout}
         />
 
         <main style={{ flex: 1 }}>
@@ -118,8 +110,6 @@ function AppContent() {
         <BottomDock
           activeTab={tab}
           onTabChange={go}
-          user={user}
-          onLoginClick={() => setLoginOpen(true)}
         />
 
         <LoginModal

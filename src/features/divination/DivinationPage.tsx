@@ -21,7 +21,12 @@ export function DivinationPage() {
 
   const goHub = () => { setView('hub'); setViewingRecord(null); loadHistory() }
 
-  const handleViewRecord = (r: DivinationRecord) => { setViewingRecord(r); setView(r.type) }
+  const handleViewRecord = (r: DivinationRecord) => {
+    setViewingRecord(r)
+    setView(r.type)
+    // 从算卦历史进入报告时回到顶部
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
 
   if (view === 'liuyao') return <LiuyaoPage onBack={goHub} viewingRecord={viewingRecord?.type === 'liuyao' ? viewingRecord : undefined} />
   if (view === 'meihua') return <MeihuaPage onBack={goHub} viewingRecord={viewingRecord?.type === 'meihua' ? viewingRecord : undefined} />

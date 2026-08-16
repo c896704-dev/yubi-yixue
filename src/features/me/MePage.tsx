@@ -19,7 +19,7 @@ interface MePageProps {
 }
 
 export function MePage({ onOpenLogin }: MePageProps) {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { toast } = useToast()
   const [baziRecords, setBaziRecords] = useState<Awaited<ReturnType<typeof getAllRecordsMerged>>>([])
   const [divRecords, setDivRecords] = useState<Awaited<ReturnType<typeof getAllDivinationRecordsMerged>>>([])
@@ -108,6 +108,7 @@ export function MePage({ onOpenLogin }: MePageProps) {
             {user.isAdmin && (
               <span className="ds-chip ds-chip-gold"><ShieldCheck size={12} /> 管理员</span>
             )}
+            <Button variant="secondary" size="sm" onClick={() => { logout(); toast('info', '已退出登录') }}>退出登录</Button>
           </div>
         </div>
       ) : (

@@ -33,27 +33,27 @@ export function HexagramDisplay({
           const pos = i + 1
           const isChanging = changingPositions.includes(pos)
           return (
-            <div key={i} className="flex items-center justify-center" style={{ minHeight: 22 }}>
+            <div key={i} className="hex-line flex items-center justify-center">
               {/* 动爻标记：固定宽度占位，保证对齐 */}
-              <span className="inline-block w-5 text-center text-xs font-bold" style={{ color: 'var(--danger)' }}>
+              <span className="hex-change-mark inline-block text-center font-bold" style={{ color: 'var(--danger)' }}>
                 {isChanging ? (line === 1 ? '○' : '×') : ''}
               </span>
               {line === 1 ? (
-                <div className="w-[60px] h-[6px] rounded-sm" style={{ backgroundColor: 'var(--fg)' }} />
+                <div className="hex-bar" style={{ backgroundColor: 'var(--fg)' }} />
               ) : (
-                <div className="flex gap-[10px] w-[60px]">
-                  <div className="flex-1 h-[6px] rounded-sm" style={{ backgroundColor: 'var(--fg)' }} />
-                  <div className="flex-1 h-[6px] rounded-sm" style={{ backgroundColor: 'var(--fg)' }} />
+                <div className="hex-yin-bar">
+                  <span style={{ backgroundColor: 'var(--fg)' }} />
+                  <span style={{ backgroundColor: 'var(--fg)' }} />
                 </div>
               )}
               {/* 右侧留白保持对称 */}
-              <span className="inline-block w-5" />
+              <span className="hex-change-mark inline-block" />
             </div>
           )
         })}
       </div>
       {/* 卦名 */}
-      <div className={`font-[family-name:var(--font-title)] text-lg font-bold ${color.text}`}>
+      <div className={`hex-name font-[family-name:var(--font-title)] font-bold ${color.text}`}>
         {hexagram.name}
       </div>
       {/* 上下卦 */}

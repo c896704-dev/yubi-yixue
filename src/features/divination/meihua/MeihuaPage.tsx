@@ -196,34 +196,25 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
 
         {/* 本卦 + 互卦 + 变卦 + 错卦 + 综卦 */}
         <Card>
-          <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 items-start print-hexagrams">
+          <div className="hexagram-row">
             <HexagramDisplay
               hexagram={result.originalHexagram}
               label="本卦"
               changingPositions={[result.changingYao]}
             />
-            <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-              style={{ color: 'rgba(0,77,77,0.55)' }}>
-              →
-            </div>
+            <span className="hex-sep">→</span>
             <HexagramDisplay
               hexagram={result.huHexagram}
               label="互卦"
             />
-            <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-              style={{ color: 'rgba(0,77,77,0.55)' }}>
-              →
-            </div>
+            <span className="hex-sep">→</span>
             <HexagramDisplay
               hexagram={result.changedHexagram}
               label="变卦"
             />
             {result.cuoHexagram && (
               <>
-                <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-                  style={{ color: 'rgba(0,77,77,0.55)' }}>
-                  ·
-                </div>
+                <span className="hex-sep">·</span>
                 <HexagramDisplay
                   hexagram={result.cuoHexagram}
                   label="错卦"
@@ -232,10 +223,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
             )}
             {result.zongHexagram && (
               <>
-                <div className="flex items-center self-center text-xl font-[family-name:var(--font-title)] md:self-start md:mt-12"
-                  style={{ color: 'rgba(0,77,77,0.55)' }}>
-                  ·
-                </div>
+                <span className="hex-sep">·</span>
                 <HexagramDisplay
                   hexagram={result.zongHexagram}
                   label="综卦"
@@ -504,7 +492,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
             <div className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>
               输入三个数字，对应上卦、下卦、动爻（第三数可选）
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
               <div>
                 <span className="ds-label">上卦数</span>
                 <input className="field" type="number" value={num1} onChange={(e) => setNum1(e.target.value)} placeholder="第一个数" />

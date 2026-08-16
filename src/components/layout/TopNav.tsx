@@ -1,4 +1,4 @@
-import { Moon, Sun, User, X } from '../ui/Icon'
+import { Moon, Sun, User } from '../ui/Icon'
 import type { AppTab } from '../../context/NavContext'
 
 interface TopNavProps {
@@ -6,9 +6,6 @@ interface TopNavProps {
   onTabChange: (tab: AppTab) => void
   theme: 'light' | 'dark'
   onToggleTheme: () => void
-  user: { username: string; isAdmin?: boolean } | null
-  onLoginClick: () => void
-  onLogout: () => void
 }
 
 export const NAV_ITEMS: { key: AppTab; label: string }[] = [
@@ -22,14 +19,14 @@ export const NAV_ITEMS: { key: AppTab; label: string }[] = [
   { key: 'me', label: '我的' },
 ]
 
-export function TopNav({ activeTab, onTabChange, theme, onToggleTheme, user, onLoginClick, onLogout }: TopNavProps) {
+export function TopNav({ activeTab, onTabChange, theme, onToggleTheme }: TopNavProps) {
   return (
     <header className="site-topnav">
       <div className="site-container">
         <div className="site-topnav-inner">
           <button className="topnav-brand" onClick={() => onTabChange('home')} aria-label="回首页">
             <span className="yb-seal" style={{ width: 34, height: 34, fontSize: 17 }}>御</span>
-            <span>
+            <span className="topnav-brand-text">
               <span className="topnav-brand-name">御笔易学</span>
               <span className="topnav-brand-sub">YUBI · YIXUE</span>
             </span>
@@ -56,27 +53,14 @@ export function TopNav({ activeTab, onTabChange, theme, onToggleTheme, user, onL
             >
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
-            {user ? (
-              <>
-                <button
-                  className="ds-btn ds-btn-secondary ds-btn-sm"
-                  onClick={() => onTabChange('me')}
-                >
-                  <User size={14} />
-                  {user.username}
-                  {user.isAdmin ? ' · 管理' : ''}
-                </button>
-                <button className="ds-btn ds-btn-ghost ds-btn-sm" onClick={onLogout} title="退出登录">
-                  <X size={14} />
-                  退出
-                </button>
-              </>
-            ) : (
-              <button className="ds-btn ds-btn-primary ds-btn-sm" onClick={onLoginClick}>
-                <User size={14} />
-                登录 / 注册
-              </button>
-            )}
+            <button
+              className="topnav-me-btn"
+              onClick={() => onTabChange('me')}
+              aria-label="我的"
+            >
+              <User size={14} />
+              <span>我的</span>
+            </button>
           </div>
         </div>
       </div>

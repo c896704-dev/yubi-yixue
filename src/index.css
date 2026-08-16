@@ -269,15 +269,21 @@ body {
   border-bottom: 1px solid var(--dan-mo);
 }
 .site-topnav-inner {
-  display: flex; align-items: center; gap: 24px;
+  display: flex; align-items: center; gap: 12px;
   height: 60px;
 }
-.topnav-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; border: none; background: none; font-family: inherit; }
+.topnav-brand {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  border: none; background: none; font-family: inherit;
+  flex: 0 0 auto; min-width: 0; max-width: 100%;
+}
+.topnav-brand-text { display: flex; flex-direction: column; min-width: 0; white-space: nowrap; }
 .topnav-brand-name {
   font-family: var(--font-serif); font-size: 19px; font-weight: 900;
   color: var(--dai-qing); letter-spacing: 0.06em; line-height: 1.1;
+  white-space: nowrap;
 }
-.topnav-brand-sub { display: block; font-size: 8px; letter-spacing: 0.3em; color: var(--dai-qing-light); margin-top: 1px; }
+.topnav-brand-sub { display: block; font-size: 8px; letter-spacing: 0.3em; color: var(--dai-qing-light); margin-top: 1px; white-space: nowrap; }
 
 .topnav-links { display: none; align-items: center; gap: 2px; flex: 1; }
 @media (min-width: 1024px) { .topnav-links { display: flex; } }
@@ -301,7 +307,18 @@ body {
 }
 .topnav-link:hover::after, .topnav-link.active::after { transform: scaleX(1); }
 
-.topnav-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.topnav-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+.topnav-me-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 34px; padding: 6px 12px;
+  font-size: 13px; font-weight: 500;
+  color: var(--dai-qing-light);
+  background: none; border: 1px solid var(--dan-mo); border-radius: var(--radius-sm);
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+  transition: all 0.15s;
+}
+.topnav-me-btn:hover { background: var(--xuan-zhi-dark); color: var(--dai-qing); border-color: rgba(var(--rgb-ink), 0.18); }
+@media (min-width: 1024px) { .topnav-me-btn { display: none; } }
 .topnav-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border-radius: var(--radius-sm);
@@ -341,10 +358,49 @@ body {
 .dock-item .dock-icon { font-size: 18px; line-height: 1; color: rgba(var(--rgb-ink), 0.6); transition: color 0.15s; }
 .dock-item.active { color: var(--dai-qing); font-weight: 600; background: rgba(212, 175, 55, 0.12); }
 .dock-item.active .dock-icon { color: var(--dai-qing); }
+.dock-more-overlay {
+  position: fixed; inset: 0; z-index: 58;
+  background: rgba(0, 51, 51, 0.35);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.dock-more-sheet {
+  position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%);
+  z-index: 59; width: min(320px, calc(100vw - 32px));
+  background: #fff; border: 1px solid var(--dan-mo);
+  border-top: 2px solid var(--hu-po-jin); border-radius: 16px;
+  box-shadow: var(--shadow-hover); padding: 12px;
+  animation: fade-up 0.2s var(--ease-out);
+}
+.dock-more-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 6px 10px; font-family: var(--font-serif);
+  font-weight: 700; color: var(--dai-qing);
+}
+.dock-more-close {
+  width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: none; background: var(--xuan-zhi-dark); color: rgba(var(--rgb-ink), 0.55); cursor: pointer;
+}
+.dock-more-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dock-more-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 68px; border: 1px solid var(--dan-mo); border-radius: 10px;
+  background: #fff; color: var(--dai-qing); font-size: 12px;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
+}
+.dock-more-item.active { border-color: rgba(212, 175, 55, 0.6); background: rgba(212, 175, 55, 0.1); }
+.dock-more-icon { display: inline-flex; color: var(--dai-qing-light); }
+.dock-more-item.active .dock-more-icon { color: var(--hu-po-jin-dark); }
 
 /* ── 工具页头 ────────────────────────────────────────── */
-.tool-header { padding: 36px 0 28px; }
-@media (min-width: 640px) { .tool-header { padding: 52px 0 36px; } }
+.tool-header { padding: 10px 0 12px; }
+@media (min-width: 640px) { .tool-header { padding: 28px 0 24px; } }
+@media (min-width: 1024px) { .tool-header { padding: 40px 0 32px; } }
+@media (max-width: 639px) {
+  .tool-back { display: none !important; }
+  .tool-title { font-size: 1.55rem !important; }
+  .tool-desc { font-size: 13px !important; line-height: 1.6 !important; }
+}
 .tool-back {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 13px; color: var(--dai-qing-light);
@@ -472,6 +528,27 @@ body {
   pointer-events: none;
 }
 
+/* 原生字段兜底：部分表单仍用 .field，此前该 class 未定义导致输入框塌陷/重叠 */
+.field {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--dai-qing);
+  background: #fff;
+  border: 1px solid var(--dan-mo);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+textarea.field { min-height: 110px; line-height: 1.6; resize: vertical; }
+.field::placeholder { color: rgba(var(--rgb-ink), 0.35); }
+.field:focus { border-color: var(--dai-qing-light); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+input.field[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+input.field[type='number']::-webkit-outer-spin-button,
+input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 /* ── 分段控件（showcase 原版） ── */
 .ds-segmented {
   display: inline-flex; gap: 2px;
@@ -503,8 +580,9 @@ body {
   border: 1px solid var(--dan-mo);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 24px;
+  padding: 16px;
 }
+@media (min-width: 640px) { .ds-card { padding: 24px; } }
 .ds-card-hover { transition: all 0.25s var(--ease-out); }
 .ds-card-hover:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
 .ds-card-head {
@@ -535,6 +613,28 @@ body {
   border-radius: var(--radius-pill);
   font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
 }
+
+/* ── 推荐城市地图（Leaflet + 高德公开瓦片） ── */
+.career-city-map {
+  width: 100%; height: 320px;
+  border: 1px solid var(--dan-mo); border-radius: var(--radius-lg);
+  margin: 14px 0 4px; overflow: hidden; z-index: 0;
+}
+.career-city-marker { background: none; border: none; }
+.career-city-pin {
+  position: relative; display: inline-block; white-space: nowrap;
+  padding: 3px 8px; border-radius: 999px;
+  background: var(--dai-qing); color: #fff;
+  font-size: 11px; font-weight: 600; line-height: 1.4;
+  box-shadow: 0 1px 5px rgba(0, 51, 51, 0.35);
+  transform: translate(-50%, -100%);
+}
+.career-city-pin::after {
+  content: ""; position: absolute; left: 50%; top: 100%;
+  width: 0; height: 0; margin-left: -4px;
+  border: 4px solid transparent; border-top-color: var(--dai-qing);
+}
+.career-city-map .leaflet-control-zoom a { color: var(--dai-qing); }
 
 /* ── 弹窗 ── */
 .ds-modal-overlay {
@@ -677,8 +777,12 @@ body {
 .actions { display: flex; gap: 10px; justify-content: center; margin-top: 32px; padding-top: 24px; }
 .site-footer { background: var(--xuan-zhi-dark); border-top: 1px solid var(--dan-mo); margin-top: 64px; }
 .site-footer-inner { padding: 48px 0 28px; }
-.footer-grid { display: grid; gap: 32px; grid-template-columns: 1fr; }
-@media (min-width: 768px) { .footer-grid { grid-template-columns: 1.5fr 1fr 1fr 1fr; } }
+.footer-grid { display: grid; gap: 20px 16px; grid-template-columns: repeat(3, 1fr); }
+.footer-grid > :first-child { grid-column: 1 / -1; }
+@media (min-width: 768px) {
+  .footer-grid { gap: 32px; grid-template-columns: 1.5fr 1fr 1fr 1fr; }
+  .footer-grid > :first-child { grid-column: auto; }
+}
 .footer-brand-line { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .footer-brand-name { font-family: var(--font-serif); font-size: 18px; font-weight: 700; color: var(--dai-qing); }
 .footer-brand-sub { font-size: 12px; color: rgba(var(--rgb-ink), 0.55); }
@@ -923,11 +1027,11 @@ body {
 
 /* 法门卡（算卦/风水 hub） */
 .hub-grid { display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 720px; margin: 0 auto; width: 100%; }
-@media (min-width: 640px) { .hub-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 640px) { .hub-grid { grid-template-columns: 1fr 1fr; } .hub-card { padding: 40px 24px; } }
 .hub-card {
   position: relative;
   text-align: center;
-  padding: 40px 24px;
+  padding: 22px 16px;
   cursor: pointer;
   background: #fff;
   border: 1px solid var(--dan-mo);
@@ -1447,6 +1551,38 @@ body {
   .ds-seg-item { min-height: 38px; }
 }
 
-/* 卦象打印容器 */
-.print-hexagrams { display: flex; flex-direction: column; }
-@media (min-width: 768px) { .print-hexagrams { flex-direction: row; } }
+/* 窄屏字段：时间选择五列并排时，压缩右留白避免数值与下拉箭头重叠 */
+@media (max-width: 480px) {
+  .ds-select {
+    padding: 9px 20px 9px 6px;
+    font-size: 13px;
+  }
+  .ds-select-arrow { right: 6px; width: 7px; height: 7px; }
+  .form-card { padding: 16px; }
+}
+
+/* 卦象容器：移动端也横排，卦画做小 */
+.hexagram-row {
+  display: flex; flex-direction: row; align-items: flex-start; justify-content: center;
+  gap: 2px; width: 100%;
+}
+@media (min-width: 768px) { .hexagram-row { gap: 22px; align-items: center; } }
+.hex-sep {
+  display: flex; align-items: center; align-self: center;
+  font-size: 10px; line-height: 1; color: rgba(var(--rgb-ink), 0.5);
+  padding: 0; flex: 0 0 auto;
+}
+@media (min-width: 768px) { .hex-sep { font-size: 18px; } }
+.hex-line { min-height: 14px; }
+.hex-change-mark { width: 9px; font-size: 8px; line-height: 1; }
+.hex-bar { width: 22px; height: 3px; border-radius: 1.5px; }
+.hex-yin-bar { display: flex; gap: 2px; width: 22px; }
+.hex-yin-bar > span { flex: 1; height: 3px; border-radius: 1.5px; }
+.hex-name { font-size: 11px !important; line-height: 1.25; white-space: nowrap; }
+@media (min-width: 768px) {
+  .hex-line { min-height: 22px; }
+  .hex-change-mark { width: 20px; font-size: 12px; }
+  .hex-bar, .hex-yin-bar { width: 60px; height: 6px; }
+  .hex-yin-bar > span { height: 6px; }
+  .hex-name { font-size: 18px !important; }
+}

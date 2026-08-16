@@ -370,9 +370,8 @@ export async function saveRecord(person: PersonInfo, resultData?: any, aiInsight
 
 /** 获取所有记录（合并服务端 + IndexedDB，按 id 去重） */
 export async function getAllRecordsMerged(): Promise<SavedRecord[]> {
-  // 登录后只从服务端取（服务器负责权限隔离），避免 IndexedDB 绕过权限
-  const hasToken = !!localStorage.getItem('auth_token')
-  const local = hasToken ? [] : await getAllRecords()
+  // 始终先读本地作为兜底：登录后服务端不可用时，移动端/离线用户仍能看到本地历史记录
+  const local = await getAllRecords().catch(() => [] as SavedRecord[])
   try {
     const api = await baziApi()
     const res = await api.getServerBaziRecords()
@@ -501,9 +500,8 @@ export async function getAllDivinationRecords(): Promise<DivinationRecord[]> {
 
 /** 合并服务端 + IndexedDB 算卦记录 */
 export async function getAllDivinationRecordsMerged(): Promise<DivinationRecord[]> {
-  // 登录后跳过 IndexedDB（服务器负责权限隔离）
-  const hasToken = !!localStorage.getItem('auth_token')
-  const local = hasToken ? [] : await getAllDivinationRecords()
+  // 始终先读本地作为兜底：服务端不可用时仍保留本地记录
+  const local = await getAllDivinationRecords().catch(() => [] as DivinationRecord[])
   try {
     const api = await divApi()
     const res = await api.getServerDivinationRecords()

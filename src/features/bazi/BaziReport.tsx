@@ -7,6 +7,7 @@ import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
 import type { ReportSection, PillarTableData, LiuNianItem } from '../../utils/analysis'
 import { buildPillarTableData, buildFortuneYears } from '../../utils/analysis'
+import { CareerCityMap } from '../../components/viz/CareerCityMap'
 import { STEM_ELEMENT } from '../../constants'
 import type { FiveElement, HeavenlyStem } from '../../constants'
 
@@ -396,6 +397,8 @@ export function BaziReport({ markdown, sections, result, fortuneTimeline }: Bazi
 
           {sections.map((s, i) => (
             <ReportSectionCard key={s.id} section={s} result={result} index={i}>
+              {/* 事业前程：推荐发展城市地图 */}
+              {s.id === 'career' && <CareerCityMap result={result} />}
               {/* 运程长卷章节内嵌大运流年时间轴 */}
               {s.id === 'lifestages' && fortuneTimeline}
             </ReportSectionCard>

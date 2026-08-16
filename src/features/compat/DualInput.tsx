@@ -4,8 +4,7 @@ import type { SavedRecord } from '../../utils/db'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { DateTimePicker } from '../../components/form/DateTimePicker'
-import { ChinaMapPicker } from '../../components/form/ChinaMapPicker'
-import { RECOMMENDED_CITIES, type RecommendedCity } from '../../utils/cityData'
+import { CITY_LONGITUDES } from '../../utils/solarTime'
 
 interface DualInputProps {
   label: string
@@ -24,8 +23,7 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
   const [day, setDay] = useState<number | ''>('')
   const [hour, setHour] = useState<number | ''>('')
   const [minute, setMinute] = useState<number | ''>(0)
-  const [selectedCity, setSelectedCity] = useState<RecommendedCity | null>(null)
-  const [fallbackPlace, setFallbackPlace] = useState('北京')
+  const [birthPlace, setBirthPlace] = useState('北京')
   const [error, setError] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
@@ -48,9 +46,7 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
     setDay(r.person.birthDay)
     setHour(r.person.birthHour)
     setMinute(r.person.birthMinute ?? 0)
-    const match = RECOMMENDED_CITIES.find((c) => c.name === r.person.birthPlace)
-    if (match) setSelectedCity(match)
-    else setFallbackPlace(r.person.birthPlace)
+    setBirthPlace(r.person.birthPlace)
     setPickerOpen(false)
     onSubmit(r.person)
   }
@@ -59,8 +55,8 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
     e.preventDefault()
     if (year === '' || month === '' || day === '' || hour === '') { setError('请填写完整的出生信息'); return }
     setError('')
-    const longitude = selectedCity?.lng ?? 116.4
-    onSubmit({ name: name || label, gender, birthYear: year as number, birthMonth: month as number, birthDay: day as number, birthHour: hour as number, birthMinute: minute === '' ? 0 : minute, birthPlace: selectedCity?.name || fallbackPlace, longitude })
+    const longitude = CITY_LONGITUDES[birthPlace] ?? 116.4
+    onSubmit({ name: name || label, gender, birthYear: year as number, birthMonth: month as number, birthDay: day as number, birthHour: hour as number, birthMinute: minute === '' ? 0 : minute, birthPlace, longitude })
   }
 
   if (analyzed && person) {
@@ -133,10 +129,10 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
           onYearChange={setYear} onMonthChange={setMonth} onDayChange={setDay}
           onHourChange={setHour} onMinuteChange={setMinute} />
         <div>
-          <span className="ds-label">出生地（地图选点）</span>
-          <div style={{ marginTop: 4 }}>
-            <ChinaMapPicker compact value={selectedCity} onSelect={(c) => setSelectedCity(c)} />
-          </div>
+          <span className="ds-label">出生地</span>
+          <select className="ds-select" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} style={{ marginTop: 4 }}>
+            {['北京', '上海', '广州', '深圳', '成都', '杭州', '南京', '武汉', '重庆'].map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
         {error && <span className="ds-field-error">{error}</span>}
         <Button type="submit" loading={loading} size="sm">开始分析</Button>

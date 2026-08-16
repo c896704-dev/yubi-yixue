@@ -100,6 +100,8 @@ export default function CompatPage() {
     const compatResult = await runCompat(male, female)
     setReport(renderEnhancedCompatibilityReport(compatResult))
     setHasRunCompat(true); setShowCompatHistory(false)
+    // 从历史记录进入报告时回到顶部
+    window.scrollTo({ top: 0, behavior: 'auto' })
   }, [runCompat])
 
   const handleDeleteCompatRecord = useCallback(async (id: string) => {

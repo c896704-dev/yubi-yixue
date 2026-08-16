@@ -1,4 +1,3 @@
-import { Quote } from '../ui/Icon'
 import type { AppTab } from '../../context/NavContext'
 
 interface SiteFooterProps {
@@ -36,10 +35,6 @@ export function SiteFooter({ onNavigate }: SiteFooterProps) {
             <p className="footer-desc">
               以宣纸为底，黛青为骨，琥珀为金。融合八字、合盘、风水、六爻梅花与每日时令，每一句解读皆有古籍为证。
             </p>
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>
-              <Quote size={14} style={{ color: 'var(--hu-po-jin)' }} />
-              <span>仿青囊(qingnang.cc)美学体系重构</span>
-            </div>
           </div>
 
           <div className="footer-col">
@@ -81,7 +76,7 @@ export function SiteFooter({ onNavigate }: SiteFooterProps) {
           <div className="flex items-center gap-3">
             <span>© 2026 御笔易学</span>
             <span className="ink-dot" style={{ opacity: 0.5 }} />
-            <span>沪ICP备XXXXXXXX号-1</span>
+            <span>青ICP备2026000952号-1</span>
           </div>
           <div className="font-serif tracking-[0.2em]">墨韵 · 古意 · 新知</div>
         </div>

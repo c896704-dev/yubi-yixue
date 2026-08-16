@@ -86,12 +86,19 @@ export function ShenShaPage() {
 
   const byPillar = useMemo(() => {
     if (!result) return [] as { pillar: string; items: ShenShaDetail[] }[]
-    const groups: { pillar: string; items: ShenShaDetail[] }[] = []
-    for (const p of ['年柱', '月柱', '日柱', '时柱', '全局']) {
-      const items = result.all.filter((s) => s.pillar === p || (p === '全局' && s.pillar === '全局'))
-      if (items.length) groups.push({ pillar: p, items })
+    // 引擎返回的柱位为“年支/月支/日支/时支”，页面按“X柱”展示，需统一归组；
+    // 旧实现只匹配“年柱/月柱/日柱/时柱”，导致大量神煞被丢弃、只剩日柱/全局。
+    const pillarAlias: Record<string, string> = {
+      '年柱': '年柱', '年支': '年柱',
+      '月柱': '月柱', '月支': '月柱',
+      '日柱': '日柱', '日支': '日柱',
+      '时柱': '时柱', '时支': '时柱',
+      '全局': '全局',
     }
-    return groups
+    return ['年柱', '月柱', '日柱', '时柱', '全局'].map((pillar) => ({
+      pillar,
+      items: result.all.filter((s) => pillarAlias[s.pillar] === pillar),
+    }))
   }, [result])
 
   const dictFiltered = useMemo(() => {

@@ -95,6 +95,8 @@ export default function BaziPage() {
     const fresh = record.id ? await getRecordById(record.id) : null
     pendingAiRef.current = fresh?.aiInsight || record.aiInsight || null
     await analyze(record.person)
+    // 从历史记录进入报告时，必须回到页面顶部（此前会停留在历史列表中上部）
+    window.scrollTo({ top: 0, behavior: 'auto' })
   }, [analyze])
 
   const handleDeleteRecord = useCallback(async (id: string) => {
