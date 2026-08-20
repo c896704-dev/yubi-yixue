@@ -177,7 +177,7 @@ export default function BaziPage() {
           )}
           {/* AI 总评（紧随定盘之后） */}
           <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} />
-          {/* 二~八 + 附录A 折叠章节（七、运程长卷内嵌时间轴） */}
+          {/* 深度报告（内部从一编号）+ 附录A；运程长卷内嵌时间轴 */}
           <BaziReport
             sections={reportSections.slice(1)}
             result={result}

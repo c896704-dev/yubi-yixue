@@ -378,15 +378,23 @@ export function FortuneTimelineV2({ result }: { result: AnalysisResult }) {
   )
 }
 
+const SECTION_NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+
 export function BaziReport({ markdown, sections, result, fortuneTimeline }: BaziReportProps) {
   // 新式：sections 驱动（含折叠/目录），旧式 markdown 兜底
   if (sections && result) {
+    // 深度报告拥有独立编号：此处从“一”开始，附录A保持附录编号
+    const displaySections = sections.map((s, i) => ({
+      ...s,
+      num: s.id === 'appearance' ? s.num : (SECTION_NUMS[i] || String(i + 1)),
+    }))
+
     return (
       <Card title="深度分析报告">
         <div className="report">
-          {/* 目录导航 */}
+          {/* 目录导航（静态定位，不悬浮遮挡正文） */}
           <nav className="report-toc" aria-label="报告目录">
-            {sections.map((s) => (
+            {displaySections.map((s) => (
               <a key={s.id} href={`#section-${s.id}`} className="report-toc-item">
                 <span className="report-toc-num">{s.num}</span>
                 <span className="report-toc-icon">{s.icon}</span>
@@ -395,7 +403,7 @@ export function BaziReport({ markdown, sections, result, fortuneTimeline }: Bazi
             ))}
           </nav>
 
-          {sections.map((s, i) => (
+          {displaySections.map((s, i) => (
             <ReportSectionCard key={s.id} section={s} result={result} index={i}>
               {/* 事业前程：推荐发展城市地图 */}
               {s.id === 'career' && <CareerCityMap result={result} />}

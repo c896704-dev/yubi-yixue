@@ -89,20 +89,24 @@ export function WannianliPage() {
               style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
               onClick={() => changeMonth(-1)}
             >‹ 上月</button>
-            <select
-              className="ds-select"
-              value={year}
-              onChange={(e) => { setYear(Number(e.target.value)); setSelected(null) }}
-            >
-              {yearOptions.map((y) => <option key={y} value={y}>{y}年</option>)}
-            </select>
-            <select
-              className="ds-select"
-              value={month}
-              onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}月</option>)}
-            </select>
+            <div className="flex items-center gap-2" style={{ flex: '0 0 auto' }}>
+              <select
+                className="ds-select"
+                style={{ width: 120 }}
+                value={year}
+                onChange={(e) => { setYear(Number(e.target.value)); setSelected(null) }}
+              >
+                {yearOptions.map((y) => <option key={y} value={y}>{y}年</option>)}
+              </select>
+              <select
+                className="ds-select"
+                style={{ width: 92 }}
+                value={month}
+                onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}月</option>)}
+              </select>
+            </div>
             <button
               className="px-3 py-1.5 rounded-lg text-sm cursor-pointer"
               style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}

@@ -188,24 +188,30 @@ export function ShenShaPage() {
                 <p className="text-sm" style={{ color: 'rgba(0,77,77,0.55)' }}>此命局未命中常见神煞，命格清简。</p>
               </div>
             ) : (
-            <>
-              {byPillar.map((g) => (
-                <div key={g.pillar} className="ds-card">
-                  <h3 className="ds-card-head">{g.pillar}神煞</h3>
-                  <div className="flex flex-col gap-2.5">
-                    {g.items.map((s, i) => (
-                      <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg" style={{ background: 'var(--xuan-zhi-dark)' }}>
-                        <span className={`ds-chip ${typeChip(s.type)}`} style={{ flexShrink: 0, marginTop: 2 }}>{s.name}</span>
-                        <div className="min-w-0">
-                          <div className="text-xs" style={{ color: 'rgba(0,77,77,0.5)' }}>{s.basedOn}</div>
-                          <div className="text-[13px] leading-relaxed" style={{ color: 'var(--dai-qing)' }}>{s.description}</div>
-                        </div>
+              <div className="ss-result-grid">
+                {byPillar.map((g) => (
+                  <div key={g.pillar} className={`ds-card ss-result-card ${g.pillar === '全局' ? 'ss-result-global' : ''}`}>
+                    <h3 className="ds-card-head ss-result-head">{g.pillar}神煞</h3>
+                    {g.items.length === 0 ? (
+                      <div className="ss-result-empty">
+                        {g.pillar === '全局' ? '此命局未命中天德/月德等全局神煞。' : `${g.pillar}未命中神煞。`}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="ss-result-list">
+                        {g.items.map((s, i) => (
+                          <div key={i} className="ss-result-item">
+                            <span className={`ds-chip ${typeChip(s.type)}`} style={{ flexShrink: 0, marginTop: 1 }}>{s.name}</span>
+                            <div className="min-w-0">
+                              <div className="text-[11px]" style={{ color: 'rgba(0,77,77,0.5)' }}>{s.basedOn}</div>
+                              <div className="text-[12px] leading-snug" style={{ color: 'var(--dai-qing)' }}>{s.description}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-            </>
+                ))}
+              </div>
             )
           ) : (
             <div className="ds-card flex items-center justify-center" style={{ minHeight: 220 }}>
