@@ -35,6 +35,7 @@ import { judgeBodyStrength, judgeClimate, SHI_ER_CHANG_SHENG } from './wangshuai
 import { determineYongShen } from './yongshen'
 import { calculateShenSha, getKongWang } from './shensha'
 import { getChongHeAnalysis, getTaiYuan, getMingGong, getMingGongStem } from './chonghe'
+import { analyzeMuKu } from './interaction'
 import { Solar } from 'lunar-typescript'
 
 const ELEM_SYMBOL: Record<FiveElement, string> = { '木': '🌳', '火': '🔥', '土': '⛰️', '金': '⚜️', '水': '💧' }
@@ -79,10 +80,18 @@ export function analyzePerson(person: PersonInfo): AnalysisResult {
     [bazi.year.stem, bazi.month.stem, bazi.day.stem, bazi.hour.stem],
   )
 
-  // 5. 刑冲合害
+  // 5. 刑冲合害（含天干五合相冲、干支自合、六破；天干不太弱供自合方向判定）
   const chongHe = getChongHeAnalysis(
     bazi.year.branch, bazi.month.branch,
     bazi.day.branch, bazi.hour.branch,
+    [bazi.year.stem, bazi.month.stem, bazi.day.stem, bazi.hour.stem],
+    strengthDetail.stemTooWeak,
+  )
+
+  // 5.5 墓库分析（辰水库/戌火库/丑金库/未木库）
+  const muku = analyzeMuKu(
+    [bazi.year, bazi.month, bazi.day, bazi.hour],
+    fiveElementDistribution,
   )
 
   // 6. 胎元命宫
@@ -122,6 +131,7 @@ export function analyzePerson(person: PersonInfo): AnalysisResult {
     mingGong: { stem: mingGongStem, branch: mingGongBranch },
     climate: climateResult,
     specialGeJu,
+    muku,
   }
 }
 
@@ -292,6 +302,15 @@ export function renderFundamentalReport(result: AnalysisResult): string {
   if (result.strengthDetail.coldPenalty !== 0) md += `| 寒暖修正 | ${result.strengthDetail.coldPenalty} | 冬火减力/夏水减力 |\n`
   md += '\n'
 
+  // 干支作用路线说明（竖向同柱 / 横向相邻；地支不克天干除非自合；燥土寒水）
+  if (result.strengthDetail.verticalNotes.length > 0) {
+    md += '**干支作用路线：**\n\n'
+    for (const note of result.strengthDetail.verticalNotes) {
+      md += `- ${note}\n`
+    }
+    md += '\n'
+  }
+
   // 格局
   if (result.specialGeJu) {
     md += `> **特殊格局：** ⚠️ 此命为「**${result.specialGeJu}**」，非寻常格局，论断需格外谨慎。`
@@ -310,6 +329,15 @@ export function renderFundamentalReport(result: AnalysisResult): string {
     md += '\n'
   } else {
     md += '命局地支平和，无明显刑冲合害。\n\n'
+  }
+
+  // 墓库
+  if (result.muku.length > 0) {
+    md += '**墓库：**\n\n'
+    for (const m of result.muku) {
+      md += `- ${m.branch}（${m.name}）：${m.state === '库' ? '旺而为库' : m.state === '墓' ? '衰而为墓' : '中和之库'}，库门${m.door}${m.notes.length > 0 ? ` — ${m.notes.join('；')}` : ''}\n`
+    }
+    md += '\n'
   }
 
   return md

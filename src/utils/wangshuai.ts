@@ -9,8 +9,9 @@
  */
 
 import type { HeavenlyStem, EarthlyBranch, FiveElement } from '../constants'
-import { HEAVENLY_STEMS, EARTHLY_BRANCHES, STEM_ELEMENT, FIVE_ELEMENTS } from '../constants'
+import { HEAVENLY_STEMS, STEM_ELEMENT, FIVE_ELEMENTS } from '../constants'
 import type { BaziChart, Pillar } from '../types'
+import { getVerticalInteraction, buildClimateContext } from './interaction'
 
 // ============================================================
 // 十二长生表 — 天干在地支的十二宫状态
@@ -30,13 +31,6 @@ export const SHI_ER_CHANG_SHENG: Record<HeavenlyStem, Record<EarthlyBranch, ShiE
   '辛': { '子':'长生','亥':'沐浴','戌':'冠带','酉':'临官','申':'帝旺','未':'衰','午':'病','巳':'死','辰':'墓','卯':'绝','寅':'胎','丑':'养' },
   '壬': { '申':'长生','酉':'沐浴','戌':'冠带','亥':'临官','子':'帝旺','丑':'衰','寅':'病','卯':'死','辰':'墓','巳':'绝','午':'胎','未':'养' },
   '癸': { '卯':'长生','寅':'沐浴','丑':'冠带','子':'临官','亥':'帝旺','戌':'衰','酉':'病','申':'死','未':'墓','午':'绝','巳':'胎','辰':'养' },
-}
-
-/** 天干十二长生宫位分值 */
-const GONG_SCORE: Record<ShiErGong, number> = {
-  '长生': 2, '沐浴': 0.5, '冠带': 1, '临官': 3, '帝旺': 4,
-  '衰': -0.5, '病': -1.5, '死': -3, '墓': 1.5, '绝': -2,
-  '胎': 0, '养': 0.5,
 }
 
 // ============================================================
@@ -202,7 +196,7 @@ function stemHasRoot(stem: HeavenlyStem, pillars: Pillar[]): boolean {
  *  注意：月干、时干均不计入本维度——月干、时干的生扶已在三围生克维度计入，避免重复计分。
  *  仅年干在此计分（年干不属三围）。旧实现把时柱也计入，导致时干比劫印被双计
  *  （help +2 + 三围 +1.5 = +3.5 vs 月干比劫仅 +2）。 */
-export function getHelpScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number {
+export function getHelpScore(pillars: Pillar[]): number {
   let score = 0
   const otherPillars = [pillars[0]!] // 年（月干、时干由三围维度负责）
 
@@ -223,57 +217,75 @@ export function getHelpScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number
 }
 
 // ============================================================
-// 三围生克计算（《滴天髓》旺衰篇）
+// 三围生克计算（《滴天髓》旺衰篇 + 古籍干支作用路线）
 // ============================================================
 
-/** 日主周围三柱（月干、日支、时干）对日主的影响
- *  月干生扶日主在此全额计分（生助维度不计月干，避免双算）；虚浮透干减半 */
-export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[]): number {
-  let score = 0
-  const dmElem = STEM_ELEMENT[dayMaster]
+/** 同柱干支竖向作用中"消耗天干力量"的类型（盖头/截脚：同柱先互相消耗，同柱优先） */
+const VERTICAL_DRAIN_KINDS = new Set(['干克支', '自合-干克支', '自合-支克干', '自合-支克干弱'])
 
-  // 月干：直接影响最大的位置（虚浮透干减半；比劫印生助在此全额计分，生助维度已排除月干）
+export interface SurroundResult {
+  score: number
+  /** 三围竖向/横向作用的逐条说明（旺衰报告展示用） */
+  notes: string[]
+}
+
+/** 日主周围三柱（月干、日支、时干）对日主的影响
+ *  路线规则：月干/时干为横向作用（干与干）；日支为竖向作用（同柱干支）。
+ *  地支不能直接克天干（除非干支自合四组）；支生干受燥土寒水限制；
+ *  同柱优先：月干/时干自身与坐支有盖头截脚时，对日主的作用力减半。 */
+export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[], stemTooWeak = false): SurroundResult {
+  const ctx = buildClimateContext(pillars)
+  const dmElem = STEM_ELEMENT[dayMaster]
+  let score = 0
+  const notes: string[] = []
+
+  // 月干：横向作用（虚浮透干减半；比劫印生助在此全额计分，生助维度已排除月干）
   const monthStemElem = pillars[1]!.stemElement
   let monthContribution = 0
   if (monthStemElem === dmElem) monthContribution = 2 // 同五行
-  else {
-    // 生我
-    if (
-      (monthStemElem === '木' && dmElem === '火') || (monthStemElem === '火' && dmElem === '土') ||
-      (monthStemElem === '土' && dmElem === '金') || (monthStemElem === '金' && dmElem === '水') ||
-      (monthStemElem === '水' && dmElem === '木')
-    ) monthContribution = 1.5
-    // 克我
-    else if (
-      (monthStemElem === '金' && dmElem === '木') || (monthStemElem === '木' && dmElem === '土') ||
-      (monthStemElem === '土' && dmElem === '水') || (monthStemElem === '水' && dmElem === '火') ||
-      (monthStemElem === '火' && dmElem === '金')
-    ) monthContribution = -1.5
-  }
+  else if (
+    (monthStemElem === '木' && dmElem === '火') || (monthStemElem === '火' && dmElem === '土') ||
+    (monthStemElem === '土' && dmElem === '金') || (monthStemElem === '金' && dmElem === '水') ||
+    (monthStemElem === '水' && dmElem === '木')
+  ) monthContribution = 1.5
+  // 克我
+  else if (
+    (monthStemElem === '金' && dmElem === '木') || (monthStemElem === '木' && dmElem === '土') ||
+    (monthStemElem === '土' && dmElem === '水') || (monthStemElem === '水' && dmElem === '火') ||
+    (monthStemElem === '火' && dmElem === '金')
+  ) monthContribution = -1.5
+
   if (monthContribution !== 0) {
     if (!stemHasRoot(pillars[1]!.stem, pillars)) monthContribution *= 0.5
+    // 同柱优先：月柱干支竖向先互相作用（盖头/截脚），月干余力才横向作用于日主
+    const vertical = getVerticalInteraction(pillars[1]!.stem, pillars[1]!.branch, ctx, stemTooWeak)
+    if (VERTICAL_DRAIN_KINDS.has(vertical.kind)) {
+      monthContribution *= 0.5
+      notes.push(`月干${pillars[1]!.stem}：${vertical.desc}，同柱先作用，对日主之力减半`)
+    }
     score += monthContribution
   }
 
-  // 日支：内心根基（日支之力在根气维度已全额计入，此处只论五行生克，不与根气重复）
-  const dayBranchElem = pillars[2]!.branchElement
-  if (dayBranchElem === dmElem) {
-    // 日支为日主同五行时，根气维度已按禄刃/本气根计分，此处仅补"贴身同类"之微力
-    score += 0.5
-  } else {
-    const generates = (a: FiveElement, b: FiveElement) =>
-      (a === '木' && b === '火') || (a === '火' && b === '土') ||
-      (a === '土' && b === '金') || (a === '金' && b === '水') || (a === '水' && b === '木')
-    const controls = (a: FiveElement, b: FiveElement) =>
-      (a === '金' && b === '木') || (a === '木' && b === '土') ||
-      (a === '土' && b === '水') || (a === '水' && b === '火') || (a === '火' && b === '金')
-
-    if (generates(dayBranchElem, dmElem)) score += 1.5
-    else if (controls(dayBranchElem, dmElem)) score -= 1.5
-    else if (generates(dmElem, dayBranchElem)) score -= 1 // 日主生支，泄身
+  // 日支：竖向作用（同柱干支路线）——地支不能直接克天干（除非自合），
+  // 支生干默认成立但燥土不生金、寒水不生木；日支之根已在根气维度计分，不重复
+  const dayBranch = pillars[2]!.branch
+  const dayVertical = getVerticalInteraction(dayMaster, dayBranch, ctx, stemTooWeak)
+  let dayContribution = 0
+  switch (dayVertical.kind) {
+    case '比和': dayContribution = 0.5; break // 贴身同类微力（根气维度已按禄刃/本气根计分）
+    case '支生干': dayContribution = 1.5; break
+    case '自合-支克干':
+    case '自合-支克干弱': dayContribution = -1.5; break // 干支自合，截脚成立
+    case '自合-干克支': dayContribution = -0.5; break // 盖头成立，日主克日支，耗身轻微
+    case '干生支': dayContribution = -1; break // 日主生支，泄身
+    default: dayContribution = 0; break // 支不生干 / 干克支 / 无作用：不计分
+  }
+  score += dayContribution
+  if (dayVertical.kind !== '比和') {
+    notes.push(`日支${dayBranch}：${dayVertical.desc}（计${dayContribution >= 0 ? '+' : ''}${dayContribution}）`)
   }
 
-  // 时干：晚年倚靠（虚浮透干减半；与月干一致，比劫印也在三围全额计分、无根时减半）
+  // 时干：横向作用（虚浮透干减半；与月干一致）
   const hourStemElem = pillars[3]!.stemElement
   const hourStem = pillars[3]!.stem
   let hourContribution = 0
@@ -291,10 +303,16 @@ export function getSurroundScore(dayMaster: HeavenlyStem, pillars: Pillar[]): nu
 
   if (hourContribution !== 0) {
     if (!stemHasRoot(hourStem, pillars)) hourContribution *= 0.5
+    // 同柱优先：时柱干支竖向先互相作用（盖头/截脚），时干余力才横向作用于日主
+    const vertical = getVerticalInteraction(hourStem, pillars[3]!.branch, ctx, stemTooWeak)
+    if (VERTICAL_DRAIN_KINDS.has(vertical.kind)) {
+      hourContribution *= 0.5
+      notes.push(`时干${hourStem}：${vertical.desc}，同柱先作用，对日主之力减半`)
+    }
     score += hourContribution
   }
 
-  return score
+  return { score, notes }
 }
 
 // ============================================================
@@ -313,6 +331,10 @@ export interface StrengthResult {
   totalScore: number
   rootDetails: RootDetail[]
   details: string[]
+  /** 三围干支作用路线逐条说明（日支竖向作用 / 月时干盖头截脚） */
+  verticalNotes: string[]
+  /** 日主是否太弱（无根且月令死囚）——干支自合（癸巳/己亥）方向判定共用 */
+  stemTooWeak: boolean
 }
 
 /** 五行生克：a 是否生 b */
@@ -414,10 +436,15 @@ export function judgeBodyStrength(bazi: BaziChart): StrengthResult {
   const rootResult = getRootScore(dm, pillars)
 
   // 3. 天干生助得分
-  const helpScore = getHelpScore(dm, pillars)
+  const helpScore = getHelpScore(pillars)
 
-  // 4. 三围生克得分
-  const surroundScore = getSurroundScore(dm, pillars)
+  // 4. 三围生克得分（古籍作用路线：竖向同柱、横向相邻，地支不克天干除非自合）
+  // 癸巳/己亥自合方向判定：天干无根且月令死囚 → 太弱，反被坐支克
+  const dmRootTotal = rootResult.total
+  const dmWangXiang = wangXiang
+  const stemTooWeak = dmRootTotal <= 0 && (dmWangXiang === '死' || dmWangXiang === '囚')
+  const surround = getSurroundScore(dm, pillars, stemTooWeak)
+  const surroundScore = surround.score
 
   // 5. 连锁生克惩罚
   const chainPenalty = getChainPenalty(dm, pillars, dist)
@@ -460,6 +487,8 @@ export function judgeBodyStrength(bazi: BaziChart): StrengthResult {
     totalScore,
     rootDetails: rootResult.details,
     details,
+    verticalNotes: surround.notes,
+    stemTooWeak,
   }
 }
 

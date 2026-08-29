@@ -8,6 +8,7 @@
 
 import type { HeavenlyStem, EarthlyBranch } from '../constants'
 import { HEAVENLY_STEMS, EARTHLY_BRANCHES } from '../constants'
+import { getStemPairInteraction, getZiHe } from './interaction'
 
 // ============================================================
 // 地支关系常量
@@ -39,11 +40,18 @@ const LIU_HAI: [EarthlyBranch, EarthlyBranch][] = [
   ['子', '未'], ['丑', '午'], ['寅', '巳'], ['卯', '辰'], ['申', '亥'], ['酉', '戌'],
 ]
 
-// 相刑
+// 相刑（典籍正名：寅巳申=无恩之刑"恩生于害、恩将仇报"；丑戌未=恃势之刑"依仗权势"；
+// 子卯=无礼之刑"母仁子惠反相害"；自刑=辰午酉亥）
 const WU_LI_XING: [EarthlyBranch, EarthlyBranch][] = [['子', '卯']]
-const CHI_SHI_XING: EarthlyBranch[] = ['寅', '巳', '申']
-const WU_EN_XING: EarthlyBranch[] = ['丑', '戌', '未']
+const WU_EN_XING: EarthlyBranch[] = ['寅', '巳', '申']
+const CHI_SHI_XING: EarthlyBranch[] = ['丑', '戌', '未']
 const ZI_XING: EarthlyBranch[] = ['辰', '午', '酉', '亥']
+
+// 六破（冲之轻者，关系较浅）：子酉、丑辰、寅亥、卯午、巳申、戌未
+// 其中寅亥、巳申既合又破，合中带破
+const LIU_PO: [EarthlyBranch, EarthlyBranch][] = [
+  ['子', '酉'], ['丑', '辰'], ['寅', '亥'], ['卯', '午'], ['巳', '申'], ['戌', '未'],
+]
 
 // ============================================================
 // 计算结果类型
@@ -80,6 +88,14 @@ export interface ChongHeResult {
   liuChong: ChongResult[]
   liuHai: ChongResult[]
   xiangXing: XingResult[]
+  /** 六破（冲之轻者） */
+  liuPo: ChongResult[]
+  /** 相邻天干五合（横：年-月、月-日、日-时） */
+  ganHe: GanHeResult[]
+  /** 相邻天干相冲（甲庚/乙辛/丙壬/丁癸） */
+  ganChong: GanChongResult[]
+  /** 同柱干支自合（丁亥/辛巳/癸巳/己亥） */
+  ziHe: ZiHeResult[]
   summary: string[]
   /** 最强关系类型优先级：合 > 冲 > 刑 > 害 > 无 */
   priority: '合' | '冲' | '刑' | '害' | '无'
@@ -88,6 +104,35 @@ export interface ChongHeResult {
   /** 冲突优先级解决说明 */
   conflictResolution: string[]
 }
+
+/** 相邻天干五合 */
+export interface GanHeResult {
+  stems: [HeavenlyStem, HeavenlyStem]
+  positions: [PillarName2, PillarName2]
+  name: string
+  desc: string
+}
+
+/** 相邻天干相冲 */
+export interface GanChongResult {
+  stems: [HeavenlyStem, HeavenlyStem]
+  positions: [PillarName2, PillarName2]
+  desc: string
+}
+
+/** 同柱干支自合 */
+export interface ZiHeResult {
+  pillar: PillarName2
+  ganzhi: string
+  heName: string
+  hePosition: string
+  /** 天干不太弱 → 盖头（干克支）；太弱 → 截脚（支克干） */
+  direction: '盖头' | '截脚'
+  desc: string
+}
+
+/** 柱位简称（天干横向作用用） */
+type PillarName2 = '年柱' | '月柱' | '日柱' | '时柱'
 
 // ============================================================
 // 辅助映射
@@ -208,13 +253,13 @@ function findXiangXing(branches: EarthlyBranch[], bMap: Map<EarthlyBranch, Pilla
   const chiShiFound = CHI_SHI_XING.filter(b => branches.includes(b))
   if (chiShiFound.length >= 2) {
     const pos = getPositions(chiShiFound, bMap)
-    results.push({ type: '持势之刑', branches: chiShiFound, positions: pos, desc: `${chiShiFound.join('')}持势之刑，主恃势凌人，易有官非` })
+    results.push({ type: '持势之刑', branches: chiShiFound, positions: pos, desc: `${chiShiFound.join('')}持势之刑（丑戌未），主恃势凌人，易有官非` })
   }
 
   const wuEnFound = WU_EN_XING.filter(b => branches.includes(b))
   if (wuEnFound.length >= 2) {
     const pos = getPositions(wuEnFound, bMap)
-    results.push({ type: '无恩之刑', branches: wuEnFound, positions: pos, desc: `${wuEnFound.join('')}无恩之刑，主知恩不报，易有官讼` })
+    results.push({ type: '无恩之刑', branches: wuEnFound, positions: pos, desc: `${wuEnFound.join('')}无恩之刑（寅巳申），主知恩不报，易有官讼` })
   }
 
   for (const b of ZI_XING) {
@@ -224,6 +269,64 @@ function findXiangXing(branches: EarthlyBranch[], bMap: Map<EarthlyBranch, Pilla
     }
   }
 
+  return results
+}
+
+/** 六破检测（冲之轻者，关系较浅） */
+function findLiuPo(branches: EarthlyBranch[], bMap: Map<EarthlyBranch, PillarName[]>): ChongResult[] {
+  const results: ChongResult[] = []
+  for (const [a, b] of LIU_PO) {
+    if (branches.includes(a) && branches.includes(b)) {
+      const pos = getPositions([a, b], bMap) as [PillarName, PillarName]
+      results.push({ type: '六害', branches: [a, b], positions: pos, desc: `${a}${b}相破（冲之轻者，关系较浅）` })
+    }
+  }
+  return results
+}
+
+const PILLAR_NAMES2: PillarName2[] = ['年柱', '月柱', '日柱', '时柱']
+
+/** 相邻天干横向作用（五合/相冲）——只有相邻柱位作用，隔位不作用 */
+function findStemInteractions(stems: HeavenlyStem[]): { ganHe: GanHeResult[]; ganChong: GanChongResult[] } {
+  const ganHe: GanHeResult[] = []
+  const ganChong: GanChongResult[] = []
+  for (let i = 0; i < 3; i++) {
+    const a = stems[i]!
+    const b = stems[i + 1]!
+    const pair = getStemPairInteraction(a, b)
+    const positions: [PillarName2, PillarName2] = [PILLAR_NAMES2[i]!, PILLAR_NAMES2[i + 1]!]
+    if (pair.kind === '五合') {
+      ganHe.push({ stems: [a, b], positions, name: pair.name!, desc: `${positions[0]}${a}与${positions[1]}${b}相邻，${pair.desc}` })
+    } else if (pair.kind === '相冲') {
+      ganChong.push({ stems: [a, b], positions, desc: `${positions[0]}${a}与${positions[1]}${b}相邻，${pair.desc}` })
+    }
+  }
+  return { ganHe, ganChong }
+}
+
+/** 同柱干支自合检测（丁亥/辛巳/癸巳/己亥）——竖向作用 */
+function findZiHe(
+  pillars: { stem: HeavenlyStem; branch: EarthlyBranch }[],
+  stemTooWeak: boolean,
+): ZiHeResult[] {
+  const results: ZiHeResult[] = []
+  for (let i = 0; i < 4; i++) {
+    const { stem, branch } = pillars[i]!
+    const info = getZiHe(stem, branch)
+    if (!info) continue
+    const direction: ZiHeResult['direction'] = (stem === '癸' || stem === '己') && stemTooWeak ? '截脚' : (stem === '癸' || stem === '己') ? '盖头' : '截脚'
+    const directionDesc = (stem === '癸' || stem === '己')
+      ? direction === '盖头' ? '天干不太弱，天干克地支（盖头）' : '天干太弱，反被坐支克（截脚）'
+      : '合主气力纯，坐支克天干（截脚）'
+    results.push({
+      pillar: PILLAR_NAMES2[i]!,
+      ganzhi: `${stem}${branch}`,
+      heName: info.heName,
+      hePosition: info.position,
+      direction,
+      desc: `${PILLAR_NAMES2[i]!} ${stem}${branch} 干支自合（${info.heName}，合${info.position}），${directionDesc}`,
+    })
+  }
   return results
 }
 
@@ -335,6 +438,8 @@ export function getChongHeAnalysis(
   monthBranch: EarthlyBranch,
   dayBranch: EarthlyBranch,
   hourBranch: EarthlyBranch,
+  stems?: HeavenlyStem[],
+  stemTooWeak = false,
 ): ChongHeResult {
   const branches = [yearBranch, monthBranch, dayBranch, hourBranch]
   const bMap = buildBranchMap(yearBranch, monthBranch, dayBranch, hourBranch)
@@ -345,6 +450,26 @@ export function getChongHeAnalysis(
   const liuChong = findLiuChong(branches, bMap)
   const liuHai = findLiuHai(branches, bMap)
   const xiangXing = findXiangXing(branches, bMap)
+  const liuPo = findLiuPo(branches, bMap)
+
+  // 天干横向作用 + 同柱干支自合（传入天干时启用）
+  let ganHe: GanHeResult[] = []
+  let ganChong: GanChongResult[] = []
+  let ziHe: ZiHeResult[] = []
+  if (stems && stems.length === 4) {
+    const stemInter = findStemInteractions(stems)
+    ganHe = stemInter.ganHe
+    ganChong = stemInter.ganChong
+    ziHe = findZiHe(
+      [
+        { stem: stems[0]!, branch: yearBranch },
+        { stem: stems[1]!, branch: monthBranch },
+        { stem: stems[2]!, branch: dayBranch },
+        { stem: stems[3]!, branch: hourBranch },
+      ],
+      stemTooWeak,
+    )
+  }
 
   // 柱位专属解读增强
   for (const c of liuChong) {
@@ -374,22 +499,26 @@ export function getChongHeAnalysis(
   if (liuChong.length > 0) summary.push(`⚠️ 命局${liuChong.map(c => c.desc).join('、')}，主变动冲突`)
   if (liuHai.length > 0) summary.push(`⚠️ 命局${liuHai.map(c => c.desc).join('、')}，主暗中损害`)
   if (xiangXing.length > 0) summary.push(`⚠️ 命局${xiangXing.map(x => x.desc).join('；')}`)
+  if (liuPo.length > 0) summary.push(`命局${liuPo.map(p => p.desc).join('、')}，主暗耗`)
+  if (ganHe.length > 0) summary.push(`天干${ganHe.map(g => `${g.stems[0]}${g.stems[1]}五合（${g.name}）`).join('、')}，合绊有情`)
+  if (ganChong.length > 0) summary.push(`⚠️ 天干${ganChong.map(g => `${g.stems[0]}${g.stems[1]}相冲`).join('、')}，冲克激烈`)
+  if (ziHe.length > 0) summary.push(ziHe.map(z => z.desc).join('；'))
 
   // 优先级确定
   let priority: ChongHeResult['priority'] = '无'
-  if (liuHe.length > 0 || sanHe.length > 0 || sanHui.length > 0) priority = '合'
-  else if (liuChong.length > 0) priority = '冲'
+  if (liuHe.length > 0 || sanHe.length > 0 || sanHui.length > 0 || ganHe.length > 0) priority = '合'
+  else if (liuChong.length > 0 || ganChong.length > 0) priority = '冲'
   else if (xiangXing.length > 0) priority = '刑'
   else if (liuHai.length > 0) priority = '害'
 
   // 冲突解决
-  const partial: ChongHeResult = { liuHe, sanHe, sanHui, liuChong, liuHai, xiangXing, summary, priority, positionImpacts: {} as Record<PillarName, string>, conflictResolution: [] }
+  const partial: ChongHeResult = { liuHe, sanHe, sanHui, liuChong, liuHai, xiangXing, liuPo, ganHe, ganChong, ziHe, summary, priority, positionImpacts: {} as Record<PillarName, string>, conflictResolution: [] }
   const conflictResolution = resolveBranchConflicts(partial)
 
   // 柱位影响汇总
   const positionImpacts = buildPositionImpacts(partial)
 
-  return { liuHe, sanHe, sanHui, liuChong, liuHai, xiangXing, summary, priority, positionImpacts, conflictResolution }
+  return { liuHe, sanHe, sanHui, liuChong, liuHai, xiangXing, liuPo, ganHe, ganChong, ziHe, summary, priority, positionImpacts, conflictResolution }
 }
 
 function buildPositionImpacts(chongHe: Omit<ChongHeResult, 'positionImpacts'>): Record<PillarName, string> {
@@ -488,7 +617,6 @@ export function getChongHeFortuneImpact(
   chongHe: ChongHeResult,
   fortuneBranch: EarthlyBranch,
   chongLiuChong: EarthlyBranch[],
-  chongLiuHe: [EarthlyBranch, EarthlyBranch][],
 ): string {
   const parts: string[] = []
 

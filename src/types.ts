@@ -3,6 +3,7 @@ import type { StrengthResult, ClimateResult } from './utils/wangshuai'
 import type { YongShenResult } from './utils/yongshen'
 import type { ShenShaResult } from './utils/shensha'
 import type { ChongHeResult } from './utils/chonghe'
+import type { MuKuResult } from './utils/interaction'
 
 export interface Pillar {
   stem: HeavenlyStem
@@ -69,6 +70,8 @@ export interface AnalysisResult {
   mingGong: { stem: HeavenlyStem; branch: EarthlyBranch }
   climate: ClimateResult
   specialGeJu?: string
+  /** 墓库分析（辰水库/戌火库/丑金库/未木库，开库/出库状态） */
+  muku: MuKuResult[]
 }
 
 export interface CompatibilityResult {
