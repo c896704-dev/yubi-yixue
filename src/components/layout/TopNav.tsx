@@ -14,6 +14,7 @@ export const NAV_ITEMS: { key: AppTab; label: string }[] = [
   { key: 'compat', label: '合盘' },
   { key: 'fengshui', label: '风水' },
   { key: 'divination', label: '算卦' },
+  { key: 'renshi', label: '识人' },
   { key: 'almanac', label: '万年历' },
   { key: 'shensha', label: '神煞' },
   { key: 'me', label: '我的' },

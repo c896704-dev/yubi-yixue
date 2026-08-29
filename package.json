@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n srv,web -c cyan,magenta \"node server/index.js\" \"vite\"",
+    "dev": "concurrently -n srv,web -c cyan,magenta \"PORT=3002 node server/index.js\" \"vite\"",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",

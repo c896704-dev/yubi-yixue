@@ -15,6 +15,7 @@ import FengshuiPage from './features/fengshui/FengshuiPage'
 import { DivinationPage } from './features/divination/DivinationPage'
 import WannianliPage from './features/almanac/WannianliPage'
 import { ShenShaPage } from './features/shensha/ShenShaPage'
+import { RenshiPage } from './features/renshi/RenshiPage'
 import { MePage } from './features/me/MePage'
 import { useAuth } from './hooks/useAuth'
 import { migrateAllRecords } from './services/migrateService'
@@ -99,6 +100,7 @@ function AppContent() {
                   {tab === 'divination' && <DivinationPage />}
                   {tab === 'almanac' && <WannianliPage />}
                   {tab === 'shensha' && <ShenShaPage />}
+                  {tab === 'renshi' && <RenshiPage />}
                   {tab === 'me' && <MePage onOpenLogin={() => setLoginOpen(true)} />}
                 </div>
               </ErrorBoundary>

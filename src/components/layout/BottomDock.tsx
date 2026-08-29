@@ -18,6 +18,7 @@ const DOCK_ITEMS: { key: AppTab | 'more'; label: string; Icon: React.ComponentTy
 const MORE_ITEMS: { key: AppTab; label: string; Icon: React.ComponentType<{ size?: number }> }[] = [
   { key: 'fengshui', label: '风水', Icon: Mountain },
   { key: 'almanac', label: '万年历', Icon: Calendar },
+  { key: 'renshi', label: '识人', Icon: Users },
   { key: 'shensha', label: '神煞', Icon: Sparkles },
 ]
 

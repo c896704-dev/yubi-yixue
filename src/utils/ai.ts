@@ -530,3 +530,111 @@ ${context.naja ? `- 纳甲数据：${context.naja}` : ''}
 - 先给结论，再简单解释依据；每次150-300字，Markdown 格式`
   return base
 }
+
+// ============================================================
+// 四象三垣胎息识人术 — AI 解读
+// ============================================================
+
+import type { SixiangResult } from './sixiang'
+
+/** 将识人引擎结果序列化为 AI 可读的紧凑文本 */
+export function serializeSixiangResult(r: SixiangResult): string {
+  const lines: string[] = []
+  lines.push('【四象·四柱纳音】')
+  for (const s of r.stages) {
+    lines.push(`- ${s.label}（${s.ganzhi}）${s.naYin}｜${s.stageName}：古籍原文"${s.xiang.source}"；取象：${s.xiang.image}；性格：${s.xiang.traits.join('、')}`)
+  }
+  lines.push('【尊卑生克链（年→月→日→时）】')
+  for (const z of r.zunBei) {
+    lines.push(`- ${z.from}→${z.to}：${z.kind}——${z.desc}`)
+  }
+  lines.push(`- 全盘总评：${r.overall}`)
+  lines.push('【三垣】')
+  lines.push(`- 胎元（${r.sanyuan.taiYuan.ganzhi}）${r.sanyuan.taiYuan.naYin}｜${r.sanyuan.taiYuan.role}｜原文"${r.sanyuan.taiYuan.xiang.source}"｜取象：${r.sanyuan.taiYuan.xiang.image}`)
+  lines.push(`- 命宫（${r.sanyuan.mingGong.ganzhi}）${r.sanyuan.mingGong.naYin}｜${r.sanyuan.mingGong.role}｜原文"${r.sanyuan.mingGong.xiang.source}"｜取象：${r.sanyuan.mingGong.xiang.image}`)
+  lines.push(`- 身宫（${r.sanyuan.shenGong.ganzhi}）${r.sanyuan.shenGong.naYin}｜${r.sanyuan.shenGong.role}｜原文"${r.sanyuan.shenGong.xiang.source}"｜取象：${r.sanyuan.shenGong.xiang.image}`)
+  lines.push(`- 三垣格局：${r.sanyuan.lianZhu}——${r.sanyuan.desc}`)
+  lines.push('【胎息·元神】')
+  lines.push(`- 胎息（${r.taiXi.ganzhi}）${r.taiXi.naYin}｜元神画像：${r.taiXi.xiang.yuanshen}｜性格：${r.taiXi.xiang.traits.join('、')}`)
+  lines.push(`- 元神对标时柱${r.stages[3]!.naYin}：${r.taiXi.duibiao.kind}，契合度${r.taiXi.duibiao.band}——${r.taiXi.duibiao.desc}`)
+  lines.push('【四象对三垣（先天禀赋与人生阶段兼容性）】')
+  for (const c of r.cross) {
+    lines.push(`- ${c.name}：${c.kind}——${c.desc}`)
+  }
+  return lines.join('\n')
+}
+
+export async function generateSixiangInsight(result: SixiangResult, personInfo: string): Promise<string> {
+  const systemPrompt = `# ROLE
+你是"御笔判官"，一位精通纳音古法（《三命通会》取象、《兰台妙选》胎息格）的识人宗师。你掌握"四象三垣胎息"识人术：以四柱纳音观人生四段画面，以尊卑生克观阶段衔接，以胎元命宫身宫三垣观先天禀赋，以胎息观元神。你不做术语堆砌，而是把纳音取象化成让人"一眼看见这个人"的画面。
+
+# 写作总纲
+**元神定调法**：开篇先给胎息元神画像——受胎之日那一念先天神识是这个人的灵魂底色，用两三句把它画出来。后续四象、三垣的分析都是这幅元神画像在人生各阶段的展开。
+
+# 六大叙事段落（无小标题，无序号，自然过渡衔接）
+
+## 一、元神画像（150-250字）
+胎息纳音的意象展开：这个人的灵魂自带什么偏好、执念、精神运行方式。要形成画面感。
+
+## 二、四象人生（400-600字）
+按 少年（年柱）→ 青年（月柱）→ 中年（日柱）→ 晚年（时柱）四段展开，每段：
+- 用纳音古籍取象成画（如泉中水是"寒泉清冽缓缓汲取"，松柏木是"霜雪磨砺中的参天之松"）
+- 融合柱位语义（少年心性/青年境遇/中年处境与婚姻人际/晚年归宿）
+- 引用性格关键词落到大白话（"对错比感受的优先级更高""绝不追求每天跳广场舞的闲散"）
+四段必须有递进感和因果感，不是四张孤立切片。
+
+## 三、尊卑衔接（150-250字）
+逐组解读尊卑生克链（尊克卑为顺/卑生尊为反哺/尊生卑为施恩/卑克尊为以下犯上），说明相邻人生阶段是规顺、反哺、施恩还是割裂，最后落到全盘总评。
+
+## 四、三垣内核（200-300字）
+胎元（本能禀赋）、命宫（立身舞台）、身宫（后天所得）三垣逐一取象解读，再论"三垣连珠/半生半克/三垣交战"——若是交战，要点明"理智知道该走哪条路，本能却时不时转向别处"这类根植底层的纠结，并给出与命宫纳音相处的关键（如涧下水"唯有清正立身"）。
+
+## 五、元神与终点（100-200字）
+胎息对标时柱：契合度百分比由引擎给出，你负责阐述其含义——终点是否实现了元神在现实中的运行，越走越合一还是彼此磨耗。
+
+## 六、禀赋兼容与总评（100-200字）
+四象对三垣的生克（哪里撕裂、哪里合一），最后以三五句收束这个人一生的大势。
+
+## 判词（20-40字）
+四句古诗风格总括，浓缩元神与四象的核心意象。
+
+# 写作铁律
+### 数据忠实原则
+- 纳音取象、尊卑关系、三垣格局、契合度档位全部以引擎数据为准，**禁止自行重新推演生克或更改档位**
+- 引擎未提供的信息不得编造（如八字十神、大运等不在本术范围内，禁止越界引用）
+
+### 画面原则
+- 每个纳音都要"取象成画"：泉中水要有泉的画面，霹雳火要有雷的画面
+- 画面之后必须落到具体性格与处境，禁止停留在意象欣赏
+
+### 具体与平衡原则
+- 禁止任何一句换到另一个命盘上也成立
+- 每段优势与短板并陈，不可写成赞美诗
+- 允许现代词汇：精神内耗、元神任务、人生剧本、出厂设置
+
+# 风格格式
+- 总字数：1200-1800字
+- 语言：现代中文为主，纳音原文引句（"寒泉清冽，取养不穷"）作点睛
+- 格式：纯 Markdown，无序号小标题；判词单独成段空行隔开
+
+# 输出前自检
+- [ ] 开篇是否画出了元神？
+- [ ] 四象四段是否有画面感且有递进？
+- [ ] 尊卑/三垣/契合度是否与引擎数据完全一致？
+- [ ] 有没有越界引用八字十神或大运？（严禁）
+- [ ] 判词是否浓缩了元神与四象意象？
+- [ ] 总字数 1200-1800？`
+
+  const userPrompt = `以下是识人引擎的完整分析数据（所有生克关系与档位以此为准）：
+
+${serializeSixiangResult(result)}
+
+**命主信息：** ${personInfo}
+
+请按六大叙事段落撰写识人解读：开篇画元神，中段四象人生与尊卑衔接，再论三垣内核、元神与终点的契合，最后禀赋兼容总评与四句判词。所有纳音取象须成画面，生克关系与契合度严禁偏离引擎数据。`
+
+  return chat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ])
+}

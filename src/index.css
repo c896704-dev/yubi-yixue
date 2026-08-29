@@ -1613,3 +1613,136 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
   .hex-yin-bar > span { height: 6px; }
   .hex-name { font-size: 18px !important; }
 }
+
+/* ============================================================
+   四象三垣胎息 · 识人术
+   ============================================================ */
+
+.rs-report { display: flex; flex-direction: column; gap: 18px; }
+.rs-section { padding: 22px; }
+
+/* 八信息总览盘 */
+.rs-board-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.rs-board-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 14px 6px 12px;
+  background: linear-gradient(180deg, rgba(212,175,55,0.05), transparent);
+  border: 1px solid var(--dan-mo);
+}
+.rs-board-yuan { background: linear-gradient(180deg, rgba(0,77,77,0.04), transparent); }
+.rs-board-taixi { background: linear-gradient(180deg, rgba(156,61,84,0.05), transparent); }
+.rs-board-label { font-size: 10px; letter-spacing: 0.12em; color: rgba(0,77,77,0.5); }
+.rs-board-ganzhi { font-size: 16px; font-weight: 600; color: var(--dai-qing); }
+.rs-board-nayin { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
+
+/* 四象时间轴 */
+.rs-timeline { display: flex; flex-direction: column; gap: 14px; }
+.rs-timeline-item { display: flex; flex-direction: column; gap: 10px; }
+.rs-stage {
+  padding: 16px 18px;
+  border: 1px solid var(--dan-mo);
+  border-left: 3px solid var(--hu-po-jin);
+  background: linear-gradient(90deg, rgba(212,175,55,0.04), transparent 40%);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.rs-stage-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rs-stage-ganzhi { font-size: 15px; font-weight: 600; color: var(--dai-qing); }
+.rs-stage-nayin { font-size: 21px; font-weight: 700; letter-spacing: 0.08em; }
+.rs-stage-source {
+  font-size: 12.5px; color: rgba(0,77,77,0.65);
+  padding: 6px 10px; background: rgba(0,77,77,0.03);
+  border-left: 2px solid var(--hu-po-jin);
+}
+.rs-stage-image { font-size: 13.5px; line-height: 1.75; color: rgba(0,77,77,0.8); }
+
+/* 尊卑连线 */
+.rs-zunbei {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 12px; margin: 0 0 0 14px;
+  border-left: 2px dashed var(--hu-po-jin);
+  font-size: 12px;
+}
+.rs-zunbei-text { line-height: 1.6; color: rgba(0,77,77,0.7); }
+
+/* 全盘总评 */
+.rs-overall {
+  margin-top: 16px; padding: 12px 16px;
+  border: 1px solid var(--hu-po-jin); background: rgba(212,175,55,0.06);
+  font-size: 13px; line-height: 1.7; color: var(--dai-qing);
+}
+.rs-overall-warn { border-color: var(--zhu-sha); background: rgba(156,61,84,0.05); color: var(--zhu-sha); }
+
+/* 三垣 */
+.rs-sanyuan-desc { font-size: 13.5px; line-height: 1.75; color: rgba(0,77,77,0.8); margin-bottom: 14px; }
+.rs-yuan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.rs-yuan-card {
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 16px 14px; border: 1px solid var(--dan-mo);
+  background: linear-gradient(180deg, rgba(0,77,77,0.03), transparent);
+}
+.rs-yuan-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rs-yuan-name { font-size: 15px; font-weight: 700; color: var(--dai-qing); letter-spacing: 0.1em; }
+.rs-yuan-gz { font-size: 13px; color: rgba(0,77,77,0.6); }
+.rs-yuan-nayin { font-size: 16px; font-weight: 700; }
+.rs-yuan-role { font-size: 11.5px; line-height: 1.6; color: rgba(0,77,77,0.55); }
+.rs-yuan-image { font-size: 12.5px; line-height: 1.7; color: rgba(0,77,77,0.8); }
+
+/* 胎息元神 */
+.rs-taixi { display: flex; flex-direction: column; gap: 12px; }
+.rs-taixi-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rs-taixi-gz { font-size: 20px; font-weight: 700; color: var(--dai-qing); }
+.rs-taixi-nayin { font-size: 22px; font-weight: 700; letter-spacing: 0.08em; }
+.rs-taixi-yuanshen {
+  font-size: 16px; line-height: 1.9; color: var(--dai-qing);
+  padding: 14px 18px; background: rgba(212,175,55,0.05);
+  border-left: 3px solid var(--hu-po-jin);
+}
+.rs-taixi-desc { font-size: 13px; line-height: 1.75; color: rgba(0,77,77,0.75); }
+
+/* 四象对三垣 */
+.rs-cross-list { display: flex; flex-direction: column; gap: 10px; }
+.rs-cross-row { display: flex; gap: 10px; align-items: flex-start; }
+.rs-cross-name { font-size: 13px; font-weight: 600; color: var(--dai-qing); }
+.rs-cross-desc { font-size: 12.5px; line-height: 1.65; color: rgba(0,77,77,0.7); }
+
+/* AI 解读卡 */
+.rs-ai-card { padding: 22px; }
+.rs-ai-loading { display: flex; flex-direction: column; align-items: center; padding: 30px 0; }
+.rs-ai-md { font-size: 14px; line-height: 1.85; color: rgba(0,77,77,0.88); }
+.rs-ai-md p { margin: 0 0 12px; }
+.rs-ai-md h1, .rs-ai-md h2, .rs-ai-md h3 {
+  font-size: 15px; font-weight: 700; color: var(--dai-qing); margin: 18px 0 10px;
+}
+.rs-ai-md blockquote {
+  margin: 10px 0; padding: 8px 14px; border-left: 3px solid var(--hu-po-jin);
+  background: rgba(212,175,55,0.05); color: rgba(0,77,77,0.75); font-size: 13px;
+}
+.rs-ai-md ul, .rs-ai-md ol { margin: 0 0 12px; padding-left: 20px; }
+.rs-ai-md li { margin-bottom: 4px; }
+.rs-ai-md strong { color: var(--dai-qing); }
+.rs-ai-md hr { border: none; border-top: 1px solid var(--dan-mo); margin: 16px 0; }
+
+/* 导出按钮行 */
+.rs-export { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* 移动端 */
+@media (max-width: 640px) {
+  .rs-section { padding: 16px; }
+  .rs-board-grid { grid-template-columns: repeat(2, 1fr); }
+  .rs-yuan-grid { grid-template-columns: 1fr; }
+  .rs-stage-nayin { font-size: 18px; }
+  .rs-stage { padding: 13px 14px; }
+  .rs-zunbei { margin-left: 4px; }
+  .rs-taixi-nayin { font-size: 18px; }
+  .rs-export .ds-btn, .rs-export .ds-btn-primary { flex: 1; }
+}
+
+/* 打印 */
+@media print {
+  .rs-export, .no-print { display: none !important; }
+  .rs-report, .rs-ai-card { gap: 12px; }
+  .rs-board-cell, .rs-stage, .rs-yuan-card, .rs-overall {
+    background: #fff !important; border-color: #ccc !important;
+  }
+  .rs-ai-md { font-size: 12px; }
+}
