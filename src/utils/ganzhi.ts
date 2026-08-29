@@ -16,11 +16,13 @@ export interface Sizhu {
   hour:  { gan: string; zhi: string; full: string }
 }
 
-/** 获取完整四柱（lunar-typescript 精确排盘） */
+/** 获取完整四柱（lunar-typescript 精确排盘）
+ *  子时约定与八字排盘一致：23:00-01:00 为一个完整子时，23:00 起日柱进位到第二天（sect=1） */
 export function getSizhu(y: number, mo: number, d: number, h: number): Sizhu {
   const solar = Solar.fromYmdHms(y, mo, d, h, 0, 0)
   const lunar = solar.getLunar()
   const ec = lunar.getEightChar()
+  ec.setSect(1)
 
   const year = ec.getYear()
   const month = ec.getMonth()

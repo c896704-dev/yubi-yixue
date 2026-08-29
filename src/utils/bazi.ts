@@ -60,9 +60,12 @@ export function calculateBazi(person: PersonInfo): BaziChart {
     getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
 
   // 使用 lunar-typescript 进行精确排盘
+  // 子时约定：子时不分早晚，23:00-01:00 为一个完整子时，23:00 起即次日之始，
+  // 日柱进位到第二天（sect=1，晚子时日柱按明天）；时柱随次日日干五鼠遁
   const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, actualHour, actualMinute, 0)
   const lunar = solar.getLunar()
   const eightChar = lunar.getEightChar()
+  eightChar.setSect(1)
 
   const dayMaster = toStem(eightChar.getDayGan())
 
@@ -119,6 +122,8 @@ export function calculateBigFortunes(bazi: BaziChart, person: PersonInfo): BigFo
   const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, actualHour, actualMinute, 0)
   const lunar = solar.getLunar()
   const eightChar = lunar.getEightChar()
+  // 与 calculateBazi 同一流派：晚子时（23:00-23:59）日柱按明天
+  eightChar.setSect(1)
 
   // 性别：1=男, 0=女
   const genderCode = person.gender === '男' ? 1 : 0
