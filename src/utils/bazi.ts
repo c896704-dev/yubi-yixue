@@ -55,14 +55,16 @@ function makePillarFromGanZhi(
 export function calculateBazi(person: PersonInfo): BaziChart {
   const { birthYear, birthMonth, birthDay, birthHour, birthMinute, longitude } = person
 
-  // 真太阳时修正（经度差 + 均时差）
-  const { branch: hourBranchIdx, actualHour, actualMinute } =
+  // 真太阳时修正（经度差 + 均时差）；校准后跨自然日界的，日期随 dayOffset 进退——
+  // 排盘基准时刻 = 校准后的真实日期 + 真太阳时刻
+  const { actualHour, actualMinute, dayOffset } =
     getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
 
   // 使用 lunar-typescript 进行精确排盘
   // 子时约定：子时不分早晚，23:00-01:00 为一个完整子时，23:00 起即次日之始，
   // 日柱进位到第二天（sect=1，晚子时日柱按明天）；时柱随次日日干五鼠遁
-  const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, actualHour, actualMinute, 0)
+  const solarDate = Solar.fromYmd(birthYear, birthMonth, birthDay).next(dayOffset)
+  const solar = Solar.fromYmdHms(solarDate.getYear(), solarDate.getMonth(), solarDate.getDay(), actualHour, actualMinute, 0)
   const lunar = solar.getLunar()
   const eightChar = lunar.getEightChar()
   eightChar.setSect(1)
@@ -116,13 +118,14 @@ export function calculateBazi(person: PersonInfo): BaziChart {
 export function calculateBigFortunes(bazi: BaziChart, person: PersonInfo): BigFortune[] {
   const { birthYear, birthMonth, birthDay, birthHour, birthMinute, longitude } = person
 
-  const { actualHour, actualMinute } =
+  // 与 calculateBazi 同口径：真太阳时校准（含跨日 dayOffset）+ 晚子时日柱按明天
+  const { actualHour, actualMinute, dayOffset } =
     getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
 
-  const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, actualHour, actualMinute, 0)
+  const solarDate = Solar.fromYmd(birthYear, birthMonth, birthDay).next(dayOffset)
+  const solar = Solar.fromYmdHms(solarDate.getYear(), solarDate.getMonth(), solarDate.getDay(), actualHour, actualMinute, 0)
   const lunar = solar.getLunar()
   const eightChar = lunar.getEightChar()
-  // 与 calculateBazi 同一流派：晚子时（23:00-23:59）日柱按明天
   eightChar.setSect(1)
 
   // 性别：1=男, 0=女

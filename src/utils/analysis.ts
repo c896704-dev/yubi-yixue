@@ -202,8 +202,10 @@ function renderPaipanDisclaimer(person: PersonInfo, bazi: BaziChart): string {
   const { birthYear, birthMonth, birthDay, birthHour, birthMinute, longitude } = person
   const originalTime = `${String(birthHour).padStart(2, '0')}:${String(birthMinute).padStart(2, '0')}`
 
-  const { actualHour, actualMinute } = getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
-  const solarTime = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`
+  const { actualHour, actualMinute, dayOffset } = getTrueSolarHourBranch(birthHour, birthMinute, longitude, birthYear, birthMonth, birthDay)
+  const solarTime = dayOffset === 0
+    ? `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`
+    : `${dayOffset > 0 ? '次日' : '前一日'} ${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`
 
   // 检查是否处于子时（23:00-01:00）
   const isZiShi = birthHour === 23 || birthHour === 0
@@ -247,8 +249,8 @@ function renderPaipanDisclaimer(person: PersonInfo, bazi: BaziChart): string {
   }
 
   // 子时说明
-  if (isZiShi) {
-    lines.push(`> - **子时处理：** 出生时间位于子时（23:00-01:00），当前采用常规子时法。不同流派对子时换日有不同处理（如晚子时法、子初换日法等），日柱可能不同。若命理与实际不符，可尝试其他子时处理方式对比验证。`)
+  if (isZiShi || dayOffset !== 0) {
+    lines.push(`> - **子时处理：** 子时不分早晚，23:00-01:00 为一个完整子时（起于23点终于1点）。先按真太阳时校准：校准后落在 23:00-23:59（晚子时）的，日柱进位为第二天；落在 00:00-00:59（早子时）的，日柱即为校准后当日${dayOffset !== 0 ? `（本次校准${dayOffset > 0 ? '跨入次日' : '回退至前一日'}，已按校准后日期排盘）` : ''}。`)
   }
 
   lines.push('')

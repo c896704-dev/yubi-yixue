@@ -26,7 +26,9 @@ export function getSolarTimeOffset(longitude: number): number {
   return degreeDiff * 4 // 每度经度差4分钟
 }
 
-/** 将北京时间转换为真太阳时（经度修正 + 均时差修正） */
+/** 将北京时间转换为真太阳时（经度修正 + 均时差修正）
+ *  dayOffset：校准后跨自然日界时的日期偏移（-1=前一日，0=当日，+1=次日）。
+ *  例：23:50 + 28min → 次日 00:18（dayOffset=+1）；00:30 - 3h → 前一日 21:30（dayOffset=-1） */
 export function toTrueSolarTime(
   beijingHour: number,
   beijingMinute: number,
@@ -34,15 +36,17 @@ export function toTrueSolarTime(
   year?: number,
   month?: number,
   day?: number,
-): { hour: number; minute: number } {
+): { hour: number; minute: number; dayOffset: number } {
   const offsetMinutes = getSolarTimeOffset(longitude)
   // 均时差修正（缺省日期时按 0 处理，保持向后兼容）
   const eot = year && month && day ? getEquationOfTime(year, month, day) : 0
-  const totalMinutes = beijingHour * 60 + beijingMinute + offsetMinutes + eot
-  const normalizedMinutes = Math.round(((totalMinutes % 1440) + 1440) % 1440)
+  const totalMinutes = Math.round(beijingHour * 60 + beijingMinute + offsetMinutes + eot)
+  const dayOffset = Math.floor(totalMinutes / 1440)
+  const normalizedMinutes = ((totalMinutes % 1440) + 1440) % 1440
   return {
     hour: Math.floor(normalizedMinutes / 60),
     minute: normalizedMinutes % 60,
+    dayOffset,
   }
 }
 
@@ -54,12 +58,12 @@ export function getTrueSolarHourBranch(
   year?: number,
   month?: number,
   day?: number,
-): { branch: number; actualHour: number; actualMinute: number } {
-  const { hour, minute } = toTrueSolarTime(beijingHour, beijingMinute, longitude, year, month, day)
+): { branch: number; actualHour: number; actualMinute: number; dayOffset: number } {
+  const { hour, minute, dayOffset } = toTrueSolarTime(beijingHour, beijingMinute, longitude, year, month, day)
   // 时辰地支：子时=23~1, 丑时=1~3, ..., 亥时=21~23
   // branchIndex: 0=子, 1=丑, ..., 11=亥
   const branchIndex = Math.floor(((hour + 1) % 24) / 2)
-  return { branch: branchIndex, actualHour: hour, actualMinute: minute }
+  return { branch: branchIndex, actualHour: hour, actualMinute: minute, dayOffset }
 }
 
 /** 中国主要城市经度表 */
