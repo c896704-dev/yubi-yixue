@@ -24,20 +24,20 @@ function OverviewBoard({ r }: { r: SixiangResult }) {
           <div key={s.label} className="rs-board-cell">
             <span className="rs-board-label">{s.label} · {s.stageName}</span>
             <span className="rs-board-ganzhi">{s.ganzhi}</span>
-            <span className="rs-board-nayin gold-foil-text">{s.naYin}</span>
+            <span className="rs-board-nayin rs-gold">{s.naYin}</span>
           </div>
         ))}
         {[r.sanyuan.taiYuan, r.sanyuan.mingGong, r.sanyuan.shenGong].map((y) => (
           <div key={y.name} className="rs-board-cell rs-board-yuan">
             <span className="rs-board-label">三垣 · {y.name}</span>
             <span className="rs-board-ganzhi">{y.ganzhi}</span>
-            <span className="rs-board-nayin gold-foil-text">{y.naYin}</span>
+            <span className="rs-board-nayin rs-gold">{y.naYin}</span>
           </div>
         ))}
         <div className="rs-board-cell rs-board-taixi">
           <span className="rs-board-label">胎息 · 元神</span>
           <span className="rs-board-ganzhi">{r.taiXi.ganzhi}</span>
-          <span className="rs-board-nayin gold-foil-text">{r.taiXi.naYin}</span>
+          <span className="rs-board-nayin rs-gold">{r.taiXi.naYin}</span>
         </div>
       </div>
     </div>
@@ -51,7 +51,7 @@ function StageCard({ s }: { s: SixiangStage }) {
       <div className="rs-stage-head">
         <span className="ds-chip ds-chip-gold">{s.label} · {s.stageName}</span>
         <span className="rs-stage-ganzhi font-serif">{s.ganzhi}</span>
-        <span className="rs-stage-nayin gold-foil-text">{s.naYin}</span>
+        <span className="rs-stage-nayin rs-gold">{s.naYin}</span>
       </div>
       <p className="rs-stage-source font-serif">
         <Quote size={12} style={{ marginRight: 6, verticalAlign: -2, color: 'var(--hu-po-jin-dark)' }} />
@@ -85,7 +85,7 @@ function YuanCard({ y }: { y: YuanInfo }) {
       <div className="rs-yuan-head">
         <span className="rs-yuan-name">{y.name}</span>
         <span className="rs-yuan-gz font-serif">{y.ganzhi}</span>
-        <span className="rs-yuan-nayin gold-foil-text">{y.naYin}</span>
+        <span className="rs-yuan-nayin rs-gold">{y.naYin}</span>
       </div>
       <p className="rs-yuan-role">{y.role}</p>
       <p className="rs-yuan-image">{y.xiang.image}。</p>
@@ -151,7 +151,7 @@ export function RenshiReport({ r }: { r: SixiangResult }) {
         <div className="rs-taixi">
           <div className="rs-taixi-head">
             <span className="rs-taixi-gz font-serif">{r.taiXi.ganzhi}</span>
-            <span className="rs-taixi-nayin gold-foil-text">{r.taiXi.naYin}</span>
+            <span className="rs-taixi-nayin rs-gold">{r.taiXi.naYin}</span>
             <span className="ds-chip ds-chip-gold">对标时柱 · {r.stages[3]!.naYin}</span>
             <span className={`ds-chip ${r.taiXi.duibiao.kind === '卑克尊' ? 'ds-chip-xiong' : 'ds-chip-ji'}`}>契合度 {r.taiXi.duibiao.band}</span>
           </div>

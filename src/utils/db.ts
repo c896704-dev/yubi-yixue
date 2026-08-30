@@ -6,7 +6,7 @@
 import type { PersonInfo } from '../types'
 
 const DB_NAME = 'yubi-panguan'
-const DB_VERSION = 4
+const DB_VERSION = 5
 const STORE_NAME = 'records'
 
 // Lazy imports to avoid circular deps
@@ -15,6 +15,7 @@ let _divApi: any = null; const divApi = () => { if (!_divApi) _divApi = import('
 let _compatApi: any = null; const compatApi = () => { if (!_compatApi) _compatApi = import('../services/compatApi'); return _compatApi }
 const DIVINATION_STORE = 'divination_records'
 const COMPAT_STORE = 'compat_records'
+const RENSHI_STORE = 'renshi_records'
 const LEGACY_DB_NAMES = [
   DB_NAME,
   'yubi-yixue',
@@ -68,6 +69,11 @@ function openDB(): Promise<IDBDatabase> {
         : db.createObjectStore(COMPAT_STORE, { keyPath: 'id' })
       if (!compatStore.indexNames.contains('createdAt')) {
         compatStore.createIndex('createdAt', 'createdAt', { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(RENSHI_STORE)) {
+        const renshiStore = db.createObjectStore(RENSHI_STORE, { keyPath: 'id' })
+        renshiStore.createIndex('createdAt', 'createdAt', { unique: false })
       }
     }
     req.onsuccess = () => resolve(req.result)
@@ -577,4 +583,124 @@ function waitTx(tx: IDBTransaction): Promise<void> {
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })
+}
+
+// ============================================================
+// 识人记录（四象三垣胎息 · 本地 IndexedDB）
+// ============================================================
+
+export interface RenshiRecord {
+  id: string
+  person: PersonInfo
+  createdAt: number
+  label: string
+  aiInsight?: string | null
+  resultData?: any // SixiangResult（结构化，JSON 可序列化）
+}
+
+/** 保存/更新识人记录（同命同时间去重） */
+export async function saveRenshiRecord(person: PersonInfo, resultData?: any, aiInsight?: string | null): Promise<string> {
+  const db = await openDB()
+  const all: RenshiRecord[] = await new Promise((resolve, reject) => {
+    const tx = db.transaction(RENSHI_STORE, 'readonly')
+    const req = tx.objectStore(RENSHI_STORE).openCursor()
+    const rows: RenshiRecord[] = []
+    req.onsuccess = () => {
+      const c = req.result
+      if (c) { rows.push(c.value); c.continue() } else resolve(rows)
+    }
+    req.onerror = () => reject(req.error)
+  })
+
+  const existing = all.find(r =>
+    r.person.name === person.name &&
+    r.person.birthYear === person.birthYear &&
+    r.person.birthMonth === person.birthMonth &&
+    r.person.birthDay === person.birthDay &&
+    r.person.birthHour === person.birthHour &&
+    r.person.birthMinute === person.birthMinute
+  )
+
+  let id: string
+  if (existing) {
+    if (aiInsight) existing.aiInsight = aiInsight
+    if (resultData) existing.resultData = resultData
+    const tx = db.transaction(RENSHI_STORE, 'readwrite')
+    tx.objectStore(RENSHI_STORE).put(existing)
+    await waitTx(tx)
+    db.close()
+    return existing.id
+  }
+
+  const record: RenshiRecord = {
+    id: generateId(),
+    person: { ...person },
+    createdAt: Date.now(),
+    label: makeLabel(person),
+    aiInsight: aiInsight || null,
+    resultData: resultData || null,
+  }
+  id = record.id
+  const tx = db.transaction(RENSHI_STORE, 'readwrite')
+  tx.objectStore(RENSHI_STORE).add(record)
+  await waitTx(tx)
+  db.close()
+  return id
+}
+
+/** 获取全部识人记录（按创建时间倒序） */
+export async function getRenshiRecords(): Promise<RenshiRecord[]> {
+  const db = await openDB()
+  const rows: RenshiRecord[] = await new Promise((resolve, reject) => {
+    const tx = db.transaction(RENSHI_STORE, 'readonly')
+    const req = tx.objectStore(RENSHI_STORE).openCursor()
+    const out: RenshiRecord[] = []
+    req.onsuccess = () => {
+      const c = req.result
+      if (c) { out.push(c.value); c.continue() } else resolve(out)
+    }
+    req.onerror = () => reject(req.error)
+  })
+  db.close()
+  return rows.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+}
+
+/** 按 id 获取单条识人记录 */
+export async function getRenshiRecordById(id: string): Promise<RenshiRecord | null> {
+  const db = await openDB()
+  const row: RenshiRecord | undefined = await new Promise((resolve, reject) => {
+    const tx = db.transaction(RENSHI_STORE, 'readonly')
+    const req = tx.objectStore(RENSHI_STORE).get(id)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+  db.close()
+  return row ?? null
+}
+
+/** 补写识人记录的 AI 解读 */
+export async function updateRenshiAi(id: string, aiInsight: string): Promise<void> {
+  const db = await openDB()
+  const tx = db.transaction(RENSHI_STORE, 'readwrite')
+  const store = tx.objectStore(RENSHI_STORE)
+  const row: RenshiRecord | undefined = await new Promise((resolve, reject) => {
+    const req = store.get(id)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+  if (row) {
+    row.aiInsight = aiInsight
+    store.put(row)
+  }
+  await waitTx(tx)
+  db.close()
+}
+
+/** 删除识人记录 */
+export async function deleteRenshiRecord(id: string): Promise<void> {
+  const db = await openDB()
+  const tx = db.transaction(RENSHI_STORE, 'readwrite')
+  tx.objectStore(RENSHI_STORE).delete(id)
+  await waitTx(tx)
+  db.close()
 }

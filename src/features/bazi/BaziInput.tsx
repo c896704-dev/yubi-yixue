@@ -10,6 +10,8 @@ import { PROVINCE_CITIES } from '../../utils/cityData'
 interface BaziInputProps {
   onSubmit: (person: PersonInfo) => void
   loading?: boolean
+  /** 提交按钮文案（默认"开始排盘"，供复用方定制） */
+  submitLabel?: string
 }
 
 function PillBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -24,7 +26,7 @@ function PillBtn({ label, active, onClick }: { label: string; active: boolean; o
   )
 }
 
-export function BaziInput({ onSubmit, loading }: BaziInputProps) {
+export function BaziInput({ onSubmit, loading, submitLabel = '开始排盘' }: BaziInputProps) {
   const [name, setName] = useState('')
   const [gender, setGender] = useState<'男' | '女'>('男')
   const [year, setYear] = useState<number | ''>('')
@@ -138,7 +140,7 @@ export function BaziInput({ onSubmit, loading }: BaziInputProps) {
         </div>
 
         {error && <span className="ds-field-error">{error}</span>}
-        <Button type="submit" loading={loading} size="lg" className="mt-2">开始排盘</Button>
+        <Button type="submit" loading={loading} size="lg" className="mt-2">{submitLabel}</Button>
       </form>
     </Card>
   )

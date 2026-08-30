@@ -1699,28 +1699,17 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 }
 .rs-taixi-desc { font-size: 13px; line-height: 1.75; color: rgba(0,77,77,0.75); }
 
+/* 纳音金标（静态，避免多处动画导致滚动重绘卡顿） */
+.rs-gold {
+  color: var(--hu-po-jin-dark);
+  text-shadow: 0 0 1px rgba(212, 175, 55, 0.35);
+}
+
 /* 四象对三垣 */
 .rs-cross-list { display: flex; flex-direction: column; gap: 10px; }
 .rs-cross-row { display: flex; gap: 10px; align-items: flex-start; }
 .rs-cross-name { font-size: 13px; font-weight: 600; color: var(--dai-qing); }
 .rs-cross-desc { font-size: 12.5px; line-height: 1.65; color: rgba(0,77,77,0.7); }
-
-/* AI 解读卡 */
-.rs-ai-card { padding: 22px; }
-.rs-ai-loading { display: flex; flex-direction: column; align-items: center; padding: 30px 0; }
-.rs-ai-md { font-size: 14px; line-height: 1.85; color: rgba(0,77,77,0.88); }
-.rs-ai-md p { margin: 0 0 12px; }
-.rs-ai-md h1, .rs-ai-md h2, .rs-ai-md h3 {
-  font-size: 15px; font-weight: 700; color: var(--dai-qing); margin: 18px 0 10px;
-}
-.rs-ai-md blockquote {
-  margin: 10px 0; padding: 8px 14px; border-left: 3px solid var(--hu-po-jin);
-  background: rgba(212,175,55,0.05); color: rgba(0,77,77,0.75); font-size: 13px;
-}
-.rs-ai-md ul, .rs-ai-md ol { margin: 0 0 12px; padding-left: 20px; }
-.rs-ai-md li { margin-bottom: 4px; }
-.rs-ai-md strong { color: var(--dai-qing); }
-.rs-ai-md hr { border: none; border-top: 1px solid var(--dan-mo); margin: 16px 0; }
 
 /* 导出按钮行 */
 .rs-export { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -1740,9 +1729,8 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 /* 打印 */
 @media print {
   .rs-export, .no-print { display: none !important; }
-  .rs-report, .rs-ai-card { gap: 12px; }
+  .rs-report { gap: 12px; }
   .rs-board-cell, .rs-stage, .rs-yuan-card, .rs-overall {
     background: #fff !important; border-color: #ccc !important;
   }
-  .rs-ai-md { font-size: 12px; }
 }
