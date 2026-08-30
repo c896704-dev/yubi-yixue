@@ -1734,3 +1734,54 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
     background: #fff !important; border-color: #ccc !important;
   }
 }
+
+/* ============================================================
+   识人术 v2：口径披露/干支事实层/运程/方法论
+   ============================================================ */
+.rs-alt-banner { border-left: 3px solid var(--hu-po-jin); }
+.rs-alt-desc { font-size: 13px; line-height: 1.75; color: rgba(0,77,77,0.8); margin: 8px 0; }
+.rs-alt-details { margin-top: 4px; }
+.rs-alt-details summary {
+  cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--dai-qing);
+  padding: 8px 12px; background: rgba(0,77,77,0.04); border: 1px solid var(--dan-mo);
+  user-select: none;
+}
+.rs-alt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.rs-alt-col {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px;
+  border: 1px solid var(--dan-mo); background: rgba(0,77,77,0.02);
+}
+.rs-alt-item { font-size: 13px; color: rgba(0,77,77,0.8); }
+.rs-alt-item b { color: var(--dai-qing); }
+
+.rs-facts { display: flex; flex-direction: column; gap: 8px; }
+.rs-fact-row { display: flex; gap: 10px; align-items: flex-start; }
+.rs-fact-label {
+  flex-shrink: 0; width: 68px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; color: rgba(0,77,77,0.5); padding-top: 2px;
+}
+.rs-fact-value { font-size: 13px; line-height: 1.7; color: rgba(0,77,77,0.85); }
+.rs-fact-note { font-size: 12px; line-height: 1.65; color: rgba(0,77,77,0.55); margin: 10px 0 0; }
+
+.rs-continuation {
+  font-size: 12px; color: var(--hu-po-jin-dark);
+  padding: 6px 10px; background: rgba(212,175,55,0.07);
+  border-left: 2px solid var(--hu-po-jin);
+}
+
+.rs-dayun-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.rs-disclosure { background: rgba(0,77,77,0.02); }
+.rs-disclosure-list {
+  margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.8;
+  color: rgba(0,77,77,0.65);
+}
+.rs-disclaimer {
+  margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--dan-mo);
+  font-size: 12px; line-height: 1.7; color: var(--zhu-sha);
+}
+
+@media (max-width: 640px) {
+  .rs-alt-grid { grid-template-columns: 1fr; }
+  .rs-fact-row { flex-direction: column; gap: 2px; }
+}

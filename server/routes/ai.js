@@ -59,9 +59,13 @@ router.post('/chat', async (req, res) => {
       });
     }
 
-    res.json({
-      content: data?.choices?.[0]?.message?.content || '',
-    });
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) {
+      // 上游 200 但无内容（偶发空回复/内容过滤）：显式报错让前端重试，不得静默透传空串
+      console.error('[AI 聊天] 上游 200 但无内容:', JSON.stringify(data).slice(0, 300));
+      return res.status(502).json({ error: 'AI 服务返回了空内容，请点击重试' });
+    }
+    res.json({ content });
   } catch (error) {
     console.error('[AI 聊天]', error);
     res.status(500).json({ error: 'AI 服务调用失败，请稍后重试' });

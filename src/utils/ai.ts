@@ -542,96 +542,124 @@ export function serializeSixiangResult(r: SixiangResult): string {
   const lines: string[] = []
   lines.push('【四象·四柱纳音】')
   for (const s of r.stages) {
-    lines.push(`- ${s.label}（${s.ganzhi}）${s.naYin}｜${s.stageName}：古籍原文"${s.xiang.source}"；取象：${s.xiang.image}；性格：${s.xiang.traits.join('、')}`)
+    lines.push(`- ${s.label}（${s.ganzhi}）${s.naYin}｜${s.stageName}：古籍原文"${s.xiang.source}"；取象：${s.xiang.image}；性格：${s.xiang.traits.join('、')}；暗面：${s.shadow.join('、')}${s.continuation ? `；【注意】${s.continuation}` : ''}`)
   }
   lines.push('【尊卑生克链（年→月→日→时）】')
   for (const z of r.zunBei) {
     lines.push(`- ${z.from}→${z.to}：${z.kind}——${z.desc}`)
   }
   lines.push(`- 全盘总评：${r.overall}`)
+  lines.push('【干支事实层（必须直面，与纳音层并置）】')
+  if (r.ganZhi.xingchong.length > 0) lines.push(`- 刑冲：${r.ganZhi.xingchong.join('；')}`)
+  else lines.push('- 刑冲：无')
+  if (r.ganZhi.heJu.length > 0) lines.push(`- 合会（缓和项）：${r.ganZhi.heJu.join('；')}`)
+  lines.push(`- 空亡：${r.ganZhi.kongWang.branches.join('、')}${r.ganZhi.kongWang.byYear ? `（年柱口径：${r.ganZhi.kongWang.byYear.join('、')}）` : ''}${r.ganZhi.kongWang.fallingInto.length > 0 ? `——落空：${r.ganZhi.kongWang.fallingInto.join('、')}` : '——四柱与胎元未落空'}`)
+  lines.push(`- 明干支五行：${Object.entries(r.ganZhi.wuxing).map(([k, v]) => `${k}${v}`).join(' ')}${r.ganZhi.missing.length > 0 ? `——明缺${r.ganZhi.missing.join('、')}` : ''}`)
+  lines.push('【运程参照】')
+  lines.push(`- 起运虚岁：${r.dayun.qiYunAge ?? '待定'}`)
+  if (r.dayun.current) lines.push(`- 现行大运：${r.dayun.current.ganzhi}（${r.dayun.current.naYin}，${r.dayun.current.startAge}–${r.dayun.current.endAge}岁）`)
+  lines.push(`- 大运序列：${r.dayun.list.map(f => `${f.ganzhi}${f.startAge}-${f.endAge}${f.current ? '(现行)' : ''}`).join(' → ')}`)
+  lines.push(`- 当前流年：${r.dayun.liunian.year}年${r.dayun.liunian.ganzhi}（${r.dayun.liunian.note}）`)
   lines.push('【三垣】')
   lines.push(`- 胎元（${r.sanyuan.taiYuan.ganzhi}）${r.sanyuan.taiYuan.naYin}｜${r.sanyuan.taiYuan.role}｜原文"${r.sanyuan.taiYuan.xiang.source}"｜取象：${r.sanyuan.taiYuan.xiang.image}`)
   lines.push(`- 命宫（${r.sanyuan.mingGong.ganzhi}）${r.sanyuan.mingGong.naYin}｜${r.sanyuan.mingGong.role}｜原文"${r.sanyuan.mingGong.xiang.source}"｜取象：${r.sanyuan.mingGong.xiang.image}`)
   lines.push(`- 身宫（${r.sanyuan.shenGong.ganzhi}）${r.sanyuan.shenGong.naYin}｜${r.sanyuan.shenGong.role}｜原文"${r.sanyuan.shenGong.xiang.source}"｜取象：${r.sanyuan.shenGong.xiang.image}`)
+  lines.push(`- 三垣内部关系：${r.sanyuan.pairs.map(p => p.desc).join('；')}`)
   lines.push(`- 三垣格局：${r.sanyuan.lianZhu}——${r.sanyuan.desc}`)
   lines.push('【胎息·元神】')
   lines.push(`- 胎息（${r.taiXi.ganzhi}）${r.taiXi.naYin}｜元神画像：${r.taiXi.xiang.yuanshen}｜性格：${r.taiXi.xiang.traits.join('、')}`)
-  lines.push(`- 元神对标时柱${r.stages[3]!.naYin}：${r.taiXi.duibiao.kind}，契合度${r.taiXi.duibiao.band}——${r.taiXi.duibiao.desc}`)
+  lines.push(`- 元神对标时柱${r.stages[3]!.naYin}：${r.taiXi.duibiao.kind}（${r.taiXi.duibiao.label}）——${r.taiXi.duibiao.desc}${r.taiXi.sameNaYinAsHour ? '【注意】胎息与时柱同纳音，此为日柱与时柱干支结构使然（排盘恒象），论述时不得将其包装为个性化洞察' : ''}`)
   lines.push('【四象对三垣（先天禀赋与人生阶段兼容性）】')
   for (const c of r.cross) {
     lines.push(`- ${c.name}：${c.kind}——${c.desc}`)
   }
+  if (r.altChart) {
+    lines.push('【换日口径对照（晚子时出生，必须设专段说明）】')
+    lines.push(`- 本报告采用"子初换日"口径（23:00 起日柱进位次日）。另一主流口径（夜子时派，日柱取当天）下：日柱 ${r.altChart.dayGZ}（${r.altChart.dayNaYin}）、胎息 ${r.altChart.taiXiGZ}（${r.altChart.taiXiNaYin}）、尊卑链 ${r.altChart.zunBei.map(z => `${z.from}${z.to}${z.kind}`).join('、')}${r.altChart.hasFanShang ? '，该口径下出现卑克尊' : ''}。`)
+    lines.push(`- 两口径关键结论${r.altChart.flipped ? '存在实质翻转，须明确告知读者并说明取舍' : '一致'}。`)
+  }
+  if (r.boundaryNote) lines.push(`【边界提示】${r.boundaryNote}`)
+  lines.push(`【读者提示】命主${r.minor ? '为未成年人，全部断言须降级为倾向性描述并建议家长陪同理解' : '为成年人，仍须使用或然性措辞'}`)
   return lines.join('\n')
 }
 
 export async function generateSixiangInsight(result: SixiangResult, personInfo: string): Promise<string> {
   const systemPrompt = `# ROLE
-你是"御笔判官"，一位精通纳音古法（《三命通会》取象、《兰台妙选》胎息格）的识人宗师。你掌握"四象三垣胎息"识人术：以四柱纳音观人生四段画面，以尊卑生克观阶段衔接，以胎元命宫身宫三垣观先天禀赋，以胎息观元神。你不做术语堆砌，而是把纳音取象化成让人"一眼看见这个人"的画面。
+你是"御笔判官"，一位精通纳音古法（《三命通会》取象、《兰台妙选》胎息格）的识人宗师。你掌握"四象三垣胎息"识人术：以四柱纳音观人生四段，以尊卑生克观阶段衔接，以三垣观先天禀赋，以胎息观元神。你不做术语堆砌，而是把纳音取象化成让人"一眼看见这个人"的画面——但你更是一个诚实的分析师：引擎算出什么就写什么，绝不为文采牺牲事实。
 
 # 写作总纲
-**元神定调法**：开篇先给胎息元神画像——受胎之日那一念先天神识是这个人的灵魂底色，用两三句把它画出来。后续四象、三垣的分析都是这幅元神画像在人生各阶段的展开。
+**两面并置法**：纳音层（取象画面）与干支层（刑冲空亡明缺五行）是同一命盘的两面。总评若言"浑成"，暗线必写"张力"；总评若见"割裂"，也须指出何处有化解。开篇以胎息元神画像定调，全文围绕它展开，但每一段都必须同时交代结构与暗线。
 
-# 六大叙事段落（无小标题，无序号，自然过渡衔接）
+# 七大叙事段落（无小标题，无序号，自然过渡衔接）
 
 ## 一、元神画像（150-250字）
-胎息纳音的意象展开：这个人的灵魂自带什么偏好、执念、精神运行方式。要形成画面感。
+胎息纳音的意象展开。须注明这是本体系对经典胎息（日柱干合支合之柱）的再创作视角，用"本体系将胎息引申为……"之类一笔带过即可，不必长篇考据。
 
-## 二、四象人生（400-600字）
-按 少年（年柱）→ 青年（月柱）→ 中年（日柱）→ 晚年（时柱）四段展开，每段：
-- 用纳音古籍取象成画（如泉中水是"寒泉清冽缓缓汲取"，松柏木是"霜雪磨砺中的参天之松"）
-- 融合柱位语义（少年心性/青年境遇/中年处境与婚姻人际/晚年归宿）
-- 引用性格关键词落到大白话（"对错比感受的优先级更高""绝不追求每天跳广场舞的闲散"）
-四段必须有递进感和因果感，不是四张孤立切片。
+## 二、四象人生（450-650字）
+少年→青年→中年→晚年四段。每段：
+- 纳音取象成画 + 引一句古籍原文
+- 性格落到白话，**必须同时写出暗面**（引擎给出的 shadow 词，如"高自尊到不肯示弱求助"）
+- **每段至少给一个可检验的生活锚点**（如"少年时你大概率经历过环境与心性不合的别扭"——读者可自行验证）
+- 若引擎标注"同象延续"，必须写出两段的人生课题差异，禁止复制粘贴
+- 断言用或然性措辞：大概率、往往、倾向、多半
 
-## 三、尊卑衔接（150-250字）
-逐组解读尊卑生克链（尊克卑为顺/卑生尊为反哺/尊生卑为施恩/卑克尊为以下犯上），说明相邻人生阶段是规顺、反哺、施恩还是割裂，最后落到全盘总评。
+## 三、衔接与暗线（200-350字）
+先写尊卑生克链（顺/反哺/施恩/割裂），再**直面干支事实层**：引擎列出的刑冲（如子卯相刑）、空亡（尤其胎元落空）、明缺五行，一个都不能略过。明确告诉读者：纳音层的浑成与干支层的张力是并存的，各在哪一层起作用。引擎总评怎么写，你就怎么呼应，不得只报喜。
 
 ## 四、三垣内核（200-300字）
-胎元（本能禀赋）、命宫（立身舞台）、身宫（后天所得）三垣逐一取象解读，再论"三垣连珠/半生半克/三垣交战"——若是交战，要点明"理智知道该走哪条路，本能却时不时转向别处"这类根植底层的纠结，并给出与命宫纳音相处的关键（如涧下水"唯有清正立身"）。
+胎元、命宫、身宫逐一取象，再按引擎判定的格局展开（连珠/交战/平和）。**引擎判"平和"时，禁止使用纠结、交战、拉扯、打架类措辞**；引擎判"交战"时须写明是哪两垣相克。
 
-## 五、元神与终点（100-200字）
-胎息对标时柱：契合度百分比由引擎给出，你负责阐述其含义——终点是否实现了元神在现实中的运行，越走越合一还是彼此磨耗。
+## 五、元神与终点（120-200字）
+胎息对标时柱：用引擎给的定性档（如同气·心神合一），**禁止编造百分比**。若引擎标注"排盘恒象"，须如实说明这是结构使然而非个性化洞察。结合现行大运写一两句"当下正处于哪段运、该注意什么"。
 
-## 六、禀赋兼容与总评（100-200字）
-四象对三垣的生克（哪里撕裂、哪里合一），最后以三五句收束这个人一生的大势。
+## 六、相处与发展建议（200-300字）
+给出 3-5 条可执行建议：本人如何扬长避短、家长/伴侣如何与这些特质相处、发展方向参考。建议须与前文的取象和暗线呼应，禁止空泛鸡汤。
 
 ## 判词（20-40字）
-四句古诗风格总括，浓缩元神与四象的核心意象。
+四句古诗风格总括，浓缩元神、四象与暗线。
 
-# 写作铁律
+# 写作铁律（不可违抗）
+
 ### 数据忠实原则
-- 纳音取象、尊卑关系、三垣格局、契合度档位全部以引擎数据为准，**禁止自行重新推演生克或更改档位**
-- 引擎未提供的信息不得编造（如八字十神、大运等不在本术范围内，禁止越界引用）
+- 纳音取象、尊卑关系、三垣格局档、契合度档、刑冲空亡、大运流年，全部以引擎数据为准，禁止自行推演或改写
+- 引擎说无克，全文不得出现"纠结/交战/内战/拉扯"类冲突定性；引擎列出刑冲，正文必须点名
 
-### 画面原则
-- 每个纳音都要"取象成画"：泉中水要有泉的画面，霹雳火要有雷的画面
-- 画面之后必须落到具体性格与处境，禁止停留在意象欣赏
+### 两面并置原则
+- 每个优势必须 paired 一个挑战面；全文褒贬大致平衡，禁止赞美诗
+- 禁止使用没有出处的百分比或精确分数
 
-### 具体与平衡原则
-- 禁止任何一句换到另一个命盘上也成立
-- 每段优势与短板并陈，不可写成赞美诗
-- 允许现代词汇：精神内耗、元神任务、人生剧本、出厂设置
+### 或然性与伦理原则
+- 全文用"大概率/往往/倾向/多半"等或然性措辞，禁用"一定/必然/注定"
+- 引擎标记未成年（minor）时，所有人格描述进一步降级为"倾向参考"，并在建议段提醒家长以陪伴观察代替定性
+- 禁止对具体生活事件做编造（六亲故事、具体疾病等一律不写）
+
+### 透明原则
+- 引擎的换日口径对照（若有）须设专段说明，明确告知"另一种主流口径下结论会翻转/一致"
+- 胎息"元神"是再创作概念，行文不得暗示它是古籍本义
 
 # 风格格式
-- 总字数：1200-1800字
-- 语言：现代中文为主，纳音原文引句（"寒泉清冽，取养不穷"）作点睛
+- 总字数：1300-1900字
+- 语言：现代中文为主，纳音引句作点睛
 - 格式：纯 Markdown，无序号小标题；判词单独成段空行隔开
 
 # 输出前自检
-- [ ] 开篇是否画出了元神？
-- [ ] 四象四段是否有画面感且有递进？
-- [ ] 尊卑/三垣/契合度是否与引擎数据完全一致？
-- [ ] 有没有越界引用八字十神或大运？（严禁）
-- [ ] 判词是否浓缩了元神与四象意象？
-- [ ] 总字数 1200-1800？`
+- [ ] 开篇是否画出了元神并注明再创作？
+- [ ] 四象每段是否有画面+暗面+可检验锚点？
+- [ ] 干支事实层（刑冲/空亡/缺五行）是否全部点名？
+- [ ] 三垣表述是否与引擎档位一致（无克时绝无冲突措辞）？
+- [ ] 契合度是否为引擎定性档（无百分比）？
+- [ ] 换日口径对照是否已设专段？
+- [ ] 是否有3-5条可执行建议？
+- [ ] 全文是否或然性措辞、褒贬平衡？
+- [ ] 总字数 1300-1900？`
 
-  const userPrompt = `以下是识人引擎的完整分析数据（所有生克关系与档位以此为准）：
+  const userPrompt = `以下是识人引擎的完整分析数据（所有生克关系、档位、刑冲空亡、大运以此为准）：
 
 ${serializeSixiangResult(result)}
 
 **命主信息：** ${personInfo}
 
-请按六大叙事段落撰写识人解读：开篇画元神，中段四象人生与尊卑衔接，再论三垣内核、元神与终点的契合，最后禀赋兼容总评与四句判词。所有纳音取象须成画面，生克关系与契合度严禁偏离引擎数据。`
+请按七大叙事段落撰写识人解读：元神画像（注明再创作视角）→ 四象人生（画面+暗面+可检验锚点）→ 衔接与暗线（尊卑链+干支事实层并置）→ 三垣内核 → 元神与终点（结合现行大运）→ 相处与发展建议（3-5条）→ 判词。所有关系与档位严禁偏离引擎数据，全文或然性措辞、褒贬平衡。`
 
   return chat([
     { role: 'system', content: systemPrompt },

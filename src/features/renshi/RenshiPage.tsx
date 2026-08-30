@@ -99,6 +99,7 @@ export function RenshiPage() {
     try {
       const info = `${person.name}（${person.gender}，${person.birthYear}-${person.birthMonth}-${person.birthDay} ${person.birthHour}:${String(person.birthMinute).padStart(2, '0')}，${person.birthPlace}）`
       const text = await generateSixiangInsight(result, info)
+      if (!text) throw new Error('AI 服务返回了空内容，请点击重试')
       if (seq !== aiSeqRef.current) return
       setAiText(text)
       if (id) await updateRenshiAi(id, text).catch(() => {})
@@ -230,7 +231,21 @@ export function RenshiPage() {
 
           <RenshiReport r={analysis.result} />
 
+          {!aiText && !aiLoading && !aiError && (
+            <div className="flex justify-center">
+              <Button variant="primary" size="lg" onClick={handleRetryAi}>
+                <RefreshCw size={14} style={{ marginRight: 6 }} />御笔判官 · 深度识人解读
+              </Button>
+            </div>
+          )}
           <AiInsightCard insight={aiText} loading={aiLoading} error={aiError} />
+          {aiText && !aiLoading && (
+            <div className="flex justify-center no-print">
+              <Button variant="ghost" size="sm" onClick={handleRetryAi}>
+                <RefreshCw size={13} style={{ marginRight: 6 }} />重新解读
+              </Button>
+            </div>
+          )}
           {aiError && !aiLoading && (
             <div className="flex justify-center">
               <Button variant="secondary" size="sm" onClick={handleRetryAi}>
