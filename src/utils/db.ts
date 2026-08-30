@@ -13,6 +13,7 @@ const STORE_NAME = 'records'
 let _baziApi: any = null; const baziApi = () => { if (!_baziApi) _baziApi = import('../services/baziApi'); return _baziApi }
 let _divApi: any = null; const divApi = () => { if (!_divApi) _divApi = import('../services/divinationApi'); return _divApi }
 let _compatApi: any = null; const compatApi = () => { if (!_compatApi) _compatApi = import('../services/compatApi'); return _compatApi }
+let _renshiApi: any = null; const renshiApi = () => { if (!_renshiApi) _renshiApi = import('../services/renshiApi'); return _renshiApi }
 const DIVINATION_STORE = 'divination_records'
 const COMPAT_STORE = 'compat_records'
 const RENSHI_STORE = 'renshi_records'
@@ -645,6 +646,8 @@ export async function saveRenshiRecord(person: PersonInfo, resultData?: any, aiI
   tx.objectStore(RENSHI_STORE).add(record)
   await waitTx(tx)
   db.close()
+  // 同步到服务端（登录后归 user，未登录归设备；跨设备迁移均可见）
+  renshiApi().then((api: any) => api.saveServerRenshiRecord(record))
   return id
 }
 
@@ -663,6 +666,26 @@ export async function getRenshiRecords(): Promise<RenshiRecord[]> {
   })
   db.close()
   return rows.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+}
+
+/** 获取所有识人记录（本地 + 服务端合并，按 id 去重，服务端优先；创建时间倒序） */
+export async function getRenshiRecordsMerged(): Promise<RenshiRecord[]> {
+  const local = await getRenshiRecords().catch(() => [] as RenshiRecord[])
+  try {
+    const api = await renshiApi()
+    const res = await api.getServerRenshiRecords()
+    const serverRows: RenshiRecord[] = res.records || []
+    const byId = new Map<string, RenshiRecord>()
+    // 服务端优先（AI 补写等字段更新）
+    for (const r of serverRows) {
+      if (!r.person || !r.person.birthYear) continue
+      byId.set(r.id, r)
+    }
+    for (const r of local) if (!byId.has(r.id)) byId.set(r.id, r)
+    return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+  } catch {
+    return local
+  }
 }
 
 /** 按 id 获取单条识人记录 */
@@ -691,6 +714,8 @@ export async function updateRenshiAi(id: string, aiInsight: string): Promise<voi
   if (row) {
     row.aiInsight = aiInsight
     store.put(row)
+    // 同步 AI 解读到服务端（全量 upsert）
+    renshiApi().then((api: any) => api.saveServerRenshiRecord(row)).catch(() => {})
   }
   await waitTx(tx)
   db.close()
@@ -703,4 +728,5 @@ export async function deleteRenshiRecord(id: string): Promise<void> {
   tx.objectStore(RENSHI_STORE).delete(id)
   await waitTx(tx)
   db.close()
+  renshiApi().then((api: any) => api.deleteServerRenshiRecord(id))
 }

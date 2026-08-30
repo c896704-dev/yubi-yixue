@@ -116,6 +116,20 @@ export function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
     CREATE INDEX IF NOT EXISTS idx_compat_user ON compat_records(user_id);
+
+    -- Renshi records (四象三垣胎息识人)
+    CREATE TABLE IF NOT EXISTS renshi_records (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      device_id TEXT,
+      person_data TEXT NOT NULL,
+      result_data TEXT,
+      ai_insight TEXT,
+      label TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_renshi_user ON renshi_records(user_id);
   `);
 
   // Migrate existing tables that may be missing new columns

@@ -16,6 +16,7 @@ import settingsRouter from './routes/settings.js';
 import authRouter from './routes/auth.js';
 import divinationRouter from './routes/divination.js';
 import compatRouter from './routes/compat.js';
+import renshiRouter from './routes/renshi.js';
 import baziRouter from './routes/bazi.js';
 import aiRouter from './routes/ai.js';
 
@@ -69,20 +70,21 @@ app.use('/api/records', recordsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/divination', divinationRouter);
 app.use('/api/compat', compatRouter);
+app.use('/api/renshi', renshiRouter);
 app.use('/api/bazi', baziRouter);
 app.use('/api/ai', aiChatLimiter, aiRouter);
 
 // Migration import (admin-only, import browser IndexedDB data)
 app.post('/api/migrate/import', authMiddleware, async (req, res) => {
   try {
-    const { baziRecords, divinationRecords, compatRecords } = req.body;
+    const { baziRecords, divinationRecords, compatRecords, renshiRecords } = req.body;
 
     if (!req.isAdmin) {
       return res.status(403).json({ error: '无迁移权限，请先登录管理员账号' });
     }
     const adminId = req.userId;
 
-    let imported = { bazi: 0, divination: 0, compat: 0, skipped: 0 };
+    let imported = { bazi: 0, divination: 0, compat: 0, renshi: 0, skipped: 0 };
 
     // Import bazi records
     for (const r of (baziRecords || [])) {
@@ -123,6 +125,19 @@ app.post('/api/migrate/import', authMiddleware, async (req, res) => {
           JSON.stringify(r.result || {}), r.aiInsight || null, r.label || '',
           new Date(r.createdAt || Date.now()).toISOString());
       imported.compat++;
+    }
+
+    // Import renshi records
+    for (const r of (renshiRecords || [])) {
+      if (!r.person || !r.person.birthYear) { imported.skipped++; continue; }
+      const id = r.id || String(Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+      const exists = db.prepare('SELECT id FROM renshi_records WHERE id = ?').get(id);
+      if (exists) { imported.skipped++; continue; }
+      db.prepare(`INSERT INTO renshi_records (id, user_id, person_data, result_data, ai_insight, label, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .run(id, adminId, JSON.stringify(r.person), r.resultData ? JSON.stringify(r.resultData) : null,
+          r.aiInsight || null, r.label || '', new Date(r.createdAt || Date.now()).toISOString());
+      imported.renshi++;
     }
 
     res.json({ success: true, imported });

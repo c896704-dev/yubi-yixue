@@ -52,7 +52,8 @@ router.get('/records', (req, res) => {
 
     if (!canSeeAll(req)) {
       if (req.userId) {
-        sql += ' WHERE user_id = ?';
+        // 登录用户可见自己的记录 + 匿名设备的公共记录（跨设备一致）
+        sql += ' WHERE user_id = ? OR user_id IS NULL';
         params.push(req.userId);
       } else {
         sql += ' WHERE device_id = ?';

@@ -235,6 +235,16 @@ export const NAYIN_XIANG: Record<string, NaYinXiang> = {
   },
 }
 
+/** 纳音名别名归一：lunar-typescript 库输出"沙中金"（水旁），本表用古籍通行写法"砂中金"；
+ *  排盘层 naYin 直查本表前必须先过此函数，否则象意/暗面/标签整体 miss */
+const NAYIN_ALIAS: Record<string, string> = {
+  '沙中金': '砂中金',
+}
+
+export function resolveNaYinName(name: string): string {
+  return NAYIN_ALIAS[name] ?? name
+}
+
 /** 干合表：天干五合化出之干 */
 const GAN_HE: Record<string, string> = {
   '甲': '己', '己': '甲', '乙': '庚', '庚': '乙',

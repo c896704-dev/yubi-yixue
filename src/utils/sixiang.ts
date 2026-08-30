@@ -18,7 +18,7 @@ import { calculateBazi, calculateBigFortunes } from './bazi'
 import { getTaiYuan, getMingGongStem, getChongHeAnalysis } from './chonghe'
 import { getTrueSolarHourBranch } from './solarTime'
 import { getKongWang } from './shensha'
-import { NAYIN_XIANG, NAYIN_SHADOW, getTaiXi, type NaYinXiang } from './nayinXiang'
+import { NAYIN_XIANG, NAYIN_SHADOW, getTaiXi, resolveNaYinName, type NaYinXiang } from './nayinXiang'
 import { generates, controls } from './interaction'
 
 /** 纳音五行 */
@@ -417,18 +417,20 @@ export function analyzeSixiang(person: PersonInfo): SixiangResult {
   // ---- 四象 ----
   const stages: SixiangStage[] = pillars.map((p, i) => {
     const def = STAGE_DEFS[i]!
-    const xiang = NAYIN_XIANG[p.naYin] ?? {
-      name: p.naYin, ganzhi: [p.stem + p.branch], elem: p.stemElement,
-      source: '', image: p.naYin, traits: [], yuanshen: p.naYin,
+    // 库输出纳音名存在用字变体（如"沙中金"），统一归一到本表标准名再查象
+    const naYinStd = resolveNaYinName(p.naYin)
+    const xiang = NAYIN_XIANG[naYinStd] ?? {
+      name: naYinStd, ganzhi: [p.stem + p.branch], elem: p.stemElement,
+      source: '', image: naYinStd, traits: [], yuanshen: naYinStd,
     } as unknown as NaYinXiang
     return {
       label: def.label,
       ganzhi: p.stem + p.branch,
-      naYin: p.naYin,
+      naYin: naYinStd,
       stageName: def.stageName,
       stageDesc: def.stageDesc,
       xiang,
-      shadow: getNaYinShadow(p.naYin),
+      shadow: NAYIN_SHADOW[naYinStd] ?? [],
     }
   })
   // 同象延续提示（差异化生成，防模板复制）

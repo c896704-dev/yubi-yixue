@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { BaziInput } from '../bazi/BaziInput'
 import { AiInsightCard } from '../bazi/BaziReport'
 import { Button } from '../../components/ui/Button'
+import { ChatPanel } from '../../components/ui/ChatPanel'
 import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Download, History, Printer, RefreshCw } from '../../components/ui/Icon'
 import { analyzeSixiang, type SixiangResult } from '../../utils/sixiang'
-import { generateSixiangInsight } from '../../utils/ai'
+import { generateSixiangInsight, buildSixiangQASystemPrompt } from '../../utils/ai'
 import { exportRenshiDocx } from '../../utils/docxExport'
 import {
-  saveRenshiRecord, getRenshiRecords, getRenshiRecordById,
+  saveRenshiRecord, getRenshiRecordsMerged, getRenshiRecordById,
   updateRenshiAi, deleteRenshiRecord, type RenshiRecord,
 } from '../../utils/db'
 import { getAllRecordsMerged, type SavedRecord } from '../../utils/db'
@@ -75,7 +76,7 @@ export function RenshiPage() {
   const aiSeqRef = useRef(0)
 
   const loadRecords = useCallback(() => {
-    getRenshiRecords().then(setRecords).catch(() => setRecords([]))
+    getRenshiRecordsMerged().then(setRecords).catch(() => setRecords([]))
   }, [])
 
   useEffect(() => {
@@ -263,6 +264,18 @@ export function RenshiPage() {
               <Printer size={14} style={{ marginRight: 4 }} />打印 / 存 PDF
             </Button>
           </div>
+
+          <ChatPanel
+            mode="识人问答"
+            systemPrompt={buildSixiangQASystemPrompt(analysis.result)}
+            suggestions={[
+              '这个人能深交吗？要防他什么？',
+              '他最大的毛病是什么？一般在什么场合暴露？',
+              '跟他合伙或共事要注意什么？',
+              '他的感情模式是什么样的？',
+              '什么事绝对不能托付给他？',
+            ]}
+          />
         </>
       )}
     </div>
