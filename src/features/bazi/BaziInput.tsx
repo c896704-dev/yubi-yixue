@@ -12,6 +12,8 @@ interface BaziInputProps {
   loading?: boolean
   /** 提交按钮文案（默认"开始排盘"，供复用方定制） */
   submitLabel?: string
+  /** 外部灌入的初始值（如从历史档案带出）；配合父组件 key 重挂载生效 */
+  initialPerson?: PersonInfo
 }
 
 function PillBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -26,19 +28,21 @@ function PillBtn({ label, active, onClick }: { label: string; active: boolean; o
   )
 }
 
-export function BaziInput({ onSubmit, loading, submitLabel = '开始排盘' }: BaziInputProps) {
-  const [name, setName] = useState('')
-  const [gender, setGender] = useState<'男' | '女'>('男')
-  const [year, setYear] = useState<number | ''>('')
-  const [month, setMonth] = useState<number | ''>('')
-  const [day, setDay] = useState<number | ''>('')
-  const [hour, setHour] = useState<number | ''>('')
-  const [minute, setMinute] = useState<number | ''>(0)
+export function BaziInput({ onSubmit, loading, submitLabel = '开始排盘', initialPerson }: BaziInputProps) {
+  const hasInitial = Boolean(initialPerson)
+  const [name, setName] = useState(initialPerson && initialPerson.name !== '未命名' ? initialPerson.name : '')
+  const [gender, setGender] = useState<'男' | '女'>(initialPerson?.gender ?? '男')
+  const [year, setYear] = useState<number | ''>(initialPerson?.birthYear ?? '')
+  const [month, setMonth] = useState<number | ''>(initialPerson?.birthMonth ?? '')
+  const [day, setDay] = useState<number | ''>(initialPerson?.birthDay ?? '')
+  const [hour, setHour] = useState<number | ''>(initialPerson?.birthHour ?? '')
+  const [minute, setMinute] = useState<number | ''>(initialPerson?.birthMinute ?? 0)
+  // 带出档案经度：落入自定义模式（档案的 birthPlace 无法可靠映射回省市下拉）
   const [province, setProvince] = useState('北京市')
   const [birthPlace, setBirthPlace] = useState('北京城区')
-  const [customPlace, setCustomPlace] = useState('')
-  const [customLng, setCustomLng] = useState('')
-  const [useCustom, setUseCustom] = useState(false)
+  const [customPlace, setCustomPlace] = useState(initialPerson?.birthPlace ?? '')
+  const [customLng, setCustomLng] = useState(initialPerson?.longitude != null ? String(initialPerson.longitude) : '')
+  const [useCustom, setUseCustom] = useState(hasInitial && initialPerson?.longitude != null)
   const [error, setError] = useState('')
 
   // 当前省份的城市列表

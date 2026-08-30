@@ -3,7 +3,7 @@ import { BaziInput } from '../bazi/BaziInput'
 import { AiInsightCard } from '../bazi/BaziReport'
 import { Button } from '../../components/ui/Button'
 import { ToolHeader } from '../../components/layout/ToolHeader'
-import { Download, Printer, RefreshCw } from '../../components/ui/Icon'
+import { Download, History, Printer, RefreshCw } from '../../components/ui/Icon'
 import { analyzeSixiang, type SixiangResult } from '../../utils/sixiang'
 import { generateSixiangInsight } from '../../utils/ai'
 import { exportRenshiDocx } from '../../utils/docxExport'
@@ -11,6 +11,7 @@ import {
   saveRenshiRecord, getRenshiRecords, getRenshiRecordById,
   updateRenshiAi, deleteRenshiRecord, type RenshiRecord,
 } from '../../utils/db'
+import { getAllRecordsMerged, type SavedRecord } from '../../utils/db'
 import type { PersonInfo } from '../../types'
 import { RenshiReport } from './RenshiReport'
 
@@ -65,6 +66,11 @@ export function RenshiPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [exporting, setExporting] = useState(false)
+  // 档案选择（从八字排盘记录带出出生信息）
+  const [baziRecords, setBaziRecords] = useState<SavedRecord[]>([])
+  const [recordId, setRecordId] = useState('')
+  const [initialPerson, setInitialPerson] = useState<PersonInfo | undefined>()
+  const [formKey, setFormKey] = useState(0)
   // AI 请求序号：切换视图/加载历史时作废在途请求，防止旧结果污染当前视图
   const aiSeqRef = useRef(0)
 
@@ -72,7 +78,19 @@ export function RenshiPage() {
     getRenshiRecords().then(setRecords).catch(() => setRecords([]))
   }, [])
 
-  useEffect(() => { loadRecords() }, [loadRecords])
+  useEffect(() => {
+    loadRecords()
+    getAllRecordsMerged().then(setBaziRecords).catch(() => setBaziRecords([]))
+  }, [loadRecords])
+
+  /** 从八字档案带出出生信息：key 重挂载 BaziInput 以灌入表单 */
+  const handleLoadBaziRecord = useCallback((id: string) => {
+    setRecordId(id)
+    const r = baziRecords.find((x) => x.id === id)
+    if (!r) return
+    setInitialPerson(r.person)
+    setFormKey((k) => k + 1)
+  }, [baziRecords])
 
   const fetchAi = useCallback(async (result: SixiangResult, person: PersonInfo, id?: string) => {
     const seq = ++aiSeqRef.current
@@ -162,7 +180,30 @@ export function RenshiPage() {
 
       {!analysis && (
         <>
-          <BaziInput onSubmit={handleAnalyze} submitLabel="开始识人" />
+          <div className="ds-card">
+            <h2 className="ds-card-head"><History size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />选择档案</h2>
+            <div className="ds-select-wrap">
+              <select className="ds-select" value={recordId} onChange={(e) => handleLoadBaziRecord(e.target.value)}>
+                <option value="">— 从八字排盘记录中选择 —</option>
+                {baziRecords.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.label} · {r.person.gender}{r.person.birthYear}年{r.person.birthMonth}月{r.person.birthDay}日
+                  </option>
+                ))}
+              </select>
+              <span className="ds-select-arrow" aria-hidden="true" />
+            </div>
+            {baziRecords.length === 0 ? (
+              <p className="text-xs mt-1.5" style={{ color: 'rgba(0,77,77,0.5)' }}>
+                暂无历史档案，可先在「八字排盘」页排盘生成，或直接在下方填写出生信息。
+              </p>
+            ) : (
+              <p className="text-xs mt-1.5" style={{ color: 'rgba(0,77,77,0.5)' }}>
+                选中后自动带出出生信息与经度，可在下方表单中修改。
+              </p>
+            )}
+          </div>
+          <BaziInput key={formKey} onSubmit={handleAnalyze} submitLabel="开始识人" initialPerson={initialPerson} />
           {records.length > 0 && (
             <RecordList
               records={records}
