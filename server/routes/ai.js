@@ -30,7 +30,9 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '缺少消息内容' });
     }
 
-    const upstream = await fetch(getChatCompletionsUrl(baseUrl), {
+    // 长文防截断：上游 max_tokens 打满（finish_reason=length）时自动续写拼接。
+    // 中文长报告（1400-2000字）接近单轮输出上限，截断时以 assistant 截断稿 + "继续"指令续写，最多 2 轮。
+    const callUpstream = (chatMessages) => fetch(getChatCompletionsUrl(baseUrl), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,32 +40,55 @@ router.post('/chat', async (req, res) => {
       },
       body: JSON.stringify({
         model,
-        messages,
+        messages: chatMessages,
         // 命理解读需稳定输出：默认 0.5，允许前端按场景覆盖
         temperature: typeof temperature === 'number' ? temperature : 0.5,
         max_tokens: 8192,
       }),
     });
 
-    const text = await upstream.text();
-    let data;
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { error: { message: text || 'AI 服务返回非 JSON 响应' } };
+    let chatMessages = messages;
+    let content = '';
+    let lastData = null;
+    for (let round = 0; round < 3; round++) {
+      const upstream = await callUpstream(chatMessages);
+      const text = await upstream.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: { message: text || 'AI 服务返回非 JSON 响应' } };
+      }
+      if (!upstream.ok) {
+        return res.status(upstream.status).json({
+          error: data.error?.message || data.message || `DeepSeek API error ${upstream.status}`,
+        });
+      }
+      lastData = data;
+      const choice = data?.choices?.[0];
+      const piece = choice?.message?.content || '';
+      const finishReason = choice?.finish_reason || '';
+      if (!piece) {
+        // 上游 200 但无内容（偶发空回复/内容过滤）：若前几轮已有内容则用已有成果，否则显式报错
+        if (content) break;
+        console.error('[AI 聊天] 上游 200 但无内容:', JSON.stringify(data).slice(0, 300));
+        return res.status(502).json({ error: 'AI 服务返回了空内容，请点击重试' });
+      }
+      content += piece;
+      if (finishReason !== 'length') break;
+      console.log(`[AI 聊天] 第${round + 1}轮输出被截断（finish_reason=length，已收 ${content.length} 字），自动续写`);
+      chatMessages = [
+        ...messages,
+        { role: 'assistant', content: piece },
+        { role: 'user', content: '你的输出在上一条消息末尾被截断了。请从中断处直接继续写完剩余部分：不要重复已有内容，不要重新开头，保持风格连贯。' },
+      ];
     }
 
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({
-        error: data.error?.message || data.message || `DeepSeek API error ${upstream.status}`,
-      });
-    }
-
-    const content = data?.choices?.[0]?.message?.content;
     if (!content) {
-      // 上游 200 但无内容（偶发空回复/内容过滤）：显式报错让前端重试，不得静默透传空串
-      console.error('[AI 聊天] 上游 200 但无内容:', JSON.stringify(data).slice(0, 300));
       return res.status(502).json({ error: 'AI 服务返回了空内容，请点击重试' });
+    }
+    if (lastData?.usage) {
+      console.log(`[AI 聊天] 完成：输出 ${content.length} 字，usage:`, JSON.stringify(lastData.usage));
     }
     res.json({ content });
   } catch (error) {
