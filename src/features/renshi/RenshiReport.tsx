@@ -217,13 +217,12 @@ function DisclosureFooter({ r }: { r: SixiangResult }) {
   return (
     <div className="ds-card rs-section rs-disclosure">
       <h2 className="ds-card-head"><Feather size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />方法论说明</h2>
-      <ul className="rs-disclosure-list">
-        {r.disclosure.map((d, i) => <li key={i}>{d}</li>)}
-      </ul>
-      <p className="rs-disclaimer">
-        本报告基于传统命理文化的取象类比，属文化视角的人格倾向参考，非科学测评；所有描述均为倾向性推断而非确定性结论，请以审慎态度阅读。
-        {r.minor && ' 命主尚未成年，全部内容仅为倾向参考，建议由监护人陪同理解，切勿以报告定性孩子。'}
-      </p>
+      <details className="rs-disclosure-details">
+        <summary>展开体系起法、口径与引文出处说明（{r.disclosure.length} 条）</summary>
+        <ul className="rs-disclosure-list">
+          {r.disclosure.map((d, i) => <li key={i}>{d}</li>)}
+        </ul>
+      </details>
     </div>
   )
 }

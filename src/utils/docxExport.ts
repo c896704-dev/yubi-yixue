@@ -182,7 +182,7 @@ export async function exportRenshiDocx(r: SixiangResult, aiText: string, person:
   // 方法论与声明
   children.push(heading('十、方法论说明'))
   for (const d of r.disclosure) children.push(body(`· ${d}`, { size: 19, color: '666666' }))
-  children.push(body(`本报告基于传统命理文化的取象类比，属文化视角的人格倾向参考，非科学测评；所有描述均为倾向性推断而非确定性结论。${r.minor ? '命主尚未成年，全部内容仅为倾向参考，建议由监护人陪同理解。' : ''}`, { bold: true, color: ZHU_SHA }))
+  children.push(body('以上方法论说明随报告附列，便于读者核对体系起法与口径。', { size: 19, color: '666666' }))
 
   children.push(new Paragraph({
     alignment: AlignmentType.CENTER, spacing: { before: 300 },

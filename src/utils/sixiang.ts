@@ -205,8 +205,6 @@ export interface SixiangResult {
   boundaryNote: string | null
   /** 方法论披露 */
   disclosure: string[]
-  /** 命主当前为未成年人（措辞降级） */
-  minor: boolean
   summary: string[]
 }
 
@@ -534,7 +532,6 @@ export function analyzeSixiang(person: PersonInfo): SixiangResult {
   ].join('')
 
   // ---- 方法论披露 ----
-  const minor = new Date().getFullYear() - person.birthYear < 18
   const disclosure = [
     '换日口径：子时不分早晚，23:00–01:00 为一个完整子时；23:00 起日柱进位为次日（"子初换日"口径）。晚子时出生者本报告同时给出另一主流口径（夜子时派，日柱取当天）的对照，两种口径在学界均有依据。',
     '真太阳时：已按出生地经度（每差 1° 折 4 分钟）与当日均时差（±14~+16 分钟）校准，时辰判定与日柱换日均以校准后时刻为准。',
@@ -542,6 +539,7 @@ export function analyzeSixiang(person: PersonInfo): SixiangResult {
     '胎息：经典定义为日柱天干五合、地支六合所得之柱（《三命通会》）；「受胎之日那一念先天神识／元神」为本体系对该概念的再创作引申，非古籍原义，特此披露。',
     '契合度：为依纳音生克方向的定性分档，非精确百分比。',
     '引文出处：纳音取象引句出自《三命通会·卷一·论纳音取象》与《五行精纪》，个别为传统释义转写。',
+    '体系总纲：天干为根、地支为命、纳音为身——本术以纳音身相取象为主轴，看的是"这个人一身之象"。',
   ]
 
   // ---- summary ----
@@ -569,7 +567,6 @@ export function analyzeSixiang(person: PersonInfo): SixiangResult {
     altChart,
     boundaryNote,
     disclosure,
-    minor,
     summary,
   }
 }
