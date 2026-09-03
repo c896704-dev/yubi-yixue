@@ -365,18 +365,12 @@ function computeAltChart(
   hourNaYin: string,
   primaryHasFanShang: boolean,
 ): AltChart | null {
-  if (calibratedHour !== 23 && calibratedHour !== 0) return null
+  // 只有晚子时（真太阳时 23:00–23:59）存在换日口径分歧；
+  // 早子时（00:00–00:59）各流派口径一致（日柱归当天），无需对照
+  if (calibratedHour !== 23) return null
   try {
-    let altDayGZ: string
-    if (calibratedHour === 23) {
-      // 真太阳时仍在 23 点段：夜子时派日柱 = 当天（sect=2 默认口径）
-      altDayGZ = Solar.fromYmdHms(solarDate.getYear(), solarDate.getMonth(), solarDate.getDay(), 23, 30, 0)
-        .getLunar().getEightChar().getDay()
-    } else {
-      // 已跨入次日早子时：夜子时派日柱 = 出生历法日（跨日前一天）
-      altDayGZ = Solar.fromYmd(solarDate.getYear(), solarDate.getMonth(), solarDate.getDay()).next(-1)
-        .getLunar().getDayInGanZhi()
-    }
+    const altDayGZ = Solar.fromYmdHms(solarDate.getYear(), solarDate.getMonth(), solarDate.getDay(), 23, 30, 0)
+      .getLunar().getEightChar().getDay()
     const altDayNaYin = SIXTY_JIAZI_NAYIN[altDayGZ] ?? ''
     const altTaiXiGZ = getTaiXi(altDayGZ)
     const altTaiXiNaYin = SIXTY_JIAZI_NAYIN[altTaiXiGZ] ?? ''
