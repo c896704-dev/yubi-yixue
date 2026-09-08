@@ -1785,3 +1785,93 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
   .rs-alt-grid { grid-template-columns: 1fr; }
   .rs-fact-row { flex-direction: column; gap: 2px; }
 }
+
+/* ============================================================
+   识人术 · 人生轨迹板块（与性格区显示隔离；样式独立于 rs-*）
+   ============================================================ */
+.tj-report { display: flex; flex-direction: column; gap: 18px; margin-top: 10px; padding-top: 18px; border-top: 2px solid rgba(0,77,77,0.18); }
+.tj-header { padding: 22px; }
+.tj-lead { font-size: 13px; line-height: 1.8; color: rgba(0,77,77,0.78); }
+.tj-lead strong { color: var(--dai-qing); }
+.tj-qiyun { margin-top: 10px; font-size: 12px; color: rgba(0,77,77,0.55); }
+
+.tj-stages { display: flex; flex-direction: column; gap: 12px; }
+.tj-stage { border: 1px solid rgba(0,77,77,0.14); border-radius: 10px; padding: 12px 14px; background: linear-gradient(180deg, rgba(0,77,77,0.025), transparent); }
+.tj-stage-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.tj-stage-age { font-size: 13px; font-weight: 700; color: var(--dai-qing); letter-spacing: 0.04em; }
+.tj-stage-years { font-size: 11px; color: rgba(0,77,77,0.45); }
+.tj-stage-body { display: flex; gap: 14px; align-items: flex-start; }
+.tj-stage-nayin { display: flex; flex-direction: column; gap: 2px; min-width: 74px; text-align: center; }
+.tj-gz { font-size: 15px; font-weight: 600; color: var(--dai-qing); }
+.tj-nayin { font-size: 16px; font-weight: 700; letter-spacing: 0.06em; }
+.tj-stage-main { flex: 1; min-width: 0; }
+.tj-source { font-size: 12.5px; line-height: 1.7; color: rgba(0,77,77,0.68); font-style: normal; margin-bottom: 4px; }
+.tj-domain { font-size: 12px; line-height: 1.65; color: rgba(0,77,77,0.55); margin-bottom: 4px; }
+.tj-cover { font-size: 12px; line-height: 1.65; color: rgba(0,77,77,0.7); }
+
+.tj-rel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tj-rel-card { border: 1px solid rgba(0,77,77,0.14); border-radius: 10px; padding: 12px 14px; background: linear-gradient(180deg, rgba(0,77,77,0.04), transparent); }
+.tj-rel-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.tj-rel-title { font-size: 14px; font-weight: 700; color: var(--dai-qing); letter-spacing: 0.08em; }
+.tj-hits { margin: 4px 0; padding-left: 16px; font-size: 11.5px; line-height: 1.7; color: var(--zhu-sha); }
+.tj-cross-note { margin-top: 10px; font-size: 11.5px; line-height: 1.7; color: rgba(0,77,77,0.55); }
+
+.tj-facts { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tj-fact { display: flex; gap: 8px; align-items: flex-start; }
+.tj-fact-text { font-size: 12.5px; line-height: 1.65; color: rgba(0,77,77,0.78); min-width: 0; }
+.tj-fact-more { font-size: 11px; color: rgba(0,77,77,0.45); padding-left: 2px; }
+.tj-none { font-size: 12.5px; color: rgba(0,77,77,0.5); margin-top: 8px; font-style: normal; }
+.tj-fact-note { font-size: 11.5px; line-height: 1.7; color: rgba(0,77,77,0.55); margin-bottom: 10px; }
+
+.tj-dayun-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; margin: 12px 0; }
+.tj-dayun-node {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  min-width: 0;
+  border: 1px solid rgba(0,77,77,0.18); border-radius: 10px; padding: 9px 11px;
+  background: rgba(255,255,255,0.55); cursor: pointer; text-align: left; transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.tj-dayun-node:hover { border-color: rgba(156,61,84,0.45); }
+.tj-dayun-node.current { border-color: var(--hu-po-jin); background: rgba(198,164,100,0.08); }
+.tj-dayun-node.selected { box-shadow: 0 0 0 2px rgba(156,61,84,0.35); border-color: var(--zhu-sha); }
+.tj-dayun-age { font-size: 10.5px; color: rgba(0,77,77,0.5); letter-spacing: 0.08em; }
+.tj-dayun-gz { font-size: 17px; font-weight: 700; color: var(--dai-qing); }
+.tj-dayun-nayin { font-size: 11.5px; color: var(--hu-po-jin-dark); }
+.tj-dayun-meta { font-size: 10.5px; color: rgba(0,77,77,0.5); white-space: normal; word-break: keep-all; }
+.tj-dayun-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; min-width: 0; }
+.tj-dayun-chips .ds-chip { white-space: normal; line-height: 1.35; text-align: left; }
+.tj-dayun-heavy { margin-top: 2px; font-size: 10.5px; color: var(--zhu-sha); }
+
+.tj-dy-detail { border: 1px dashed rgba(0,77,77,0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.tj-dy-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 6px; }
+.tj-dy-gz { font-size: 17px; font-weight: 700; color: var(--zhu-sha); }
+.tj-dy-meta { font-size: 11.5px; color: rgba(0,77,77,0.55); }
+.tj-dy-lines { font-size: 12.5px; line-height: 1.8; color: rgba(0,77,77,0.78); margin-bottom: 6px; }
+.tj-dy-lines strong { color: var(--dai-qing); }
+
+.tj-ln-list { margin-top: 6px; }
+.tj-ln-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: var(--hu-po-jin-dark); margin-bottom: 8px; }
+.tj-ln { border: 1px solid rgba(0,77,77,0.13); border-radius: 8px; margin-bottom: 6px; background: rgba(255,255,255,0.5); }
+.tj-ln.hot { border-color: rgba(156,61,84,0.4); }
+.tj-ln.selected { background: rgba(0,77,77,0.03); }
+.tj-ln-row { width: 100%; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px; background: none; border: 0; cursor: pointer; text-align: left; }
+.tj-ln-year { font-size: 14px; font-weight: 700; color: var(--dai-qing); min-width: 44px; }
+.tj-ln-gz { font-size: 13.5px; color: var(--zhu-sha); }
+.tj-ln-age { font-size: 11px; color: rgba(0,77,77,0.45); }
+.tj-ln-sum { flex: 1; min-width: 180px; font-size: 12px; color: rgba(0,77,77,0.65); }
+.tj-ln-detail { padding: 2px 12px 10px; border-top: 1px dashed rgba(0,77,77,0.15); }
+.tj-ln-ten { font-size: 12px; line-height: 1.7; color: rgba(0,77,77,0.7); margin-top: 8px; }
+
+.tj-moments { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tj-moment { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 8px 10px; border-left: 2px solid var(--hu-po-jin); background: rgba(212,175,55,0.06); border-radius: 0 8px 8px 0; }
+.tj-moment b { font-size: 12px; color: var(--dai-qing); white-space: nowrap; }
+.tj-moment span { font-size: 12.5px; color: rgba(0,77,77,0.75); min-width: 0; }
+
+.tj-ai .ds-card-head { margin-bottom: 6px; }
+.tj-ai-sep { font-size: 11.5px; color: rgba(0,77,77,0.5); margin-bottom: 10px; }
+
+@media (max-width: 640px) {
+  .tj-rel-grid { grid-template-columns: 1fr; }
+  .tj-dayun-row { grid-template-columns: repeat(2, 1fr); }
+  .tj-stage-body { flex-direction: column; gap: 6px; }
+  .tj-stage-nayin { flex-direction: row; gap: 8px; align-items: baseline; min-width: 0; text-align: left; }
+}

@@ -133,10 +133,10 @@ app.post('/api/migrate/import', authMiddleware, async (req, res) => {
       const id = r.id || String(Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
       const exists = db.prepare('SELECT id FROM renshi_records WHERE id = ?').get(id);
       if (exists) { imported.skipped++; continue; }
-      db.prepare(`INSERT INTO renshi_records (id, user_id, person_data, result_data, ai_insight, label, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      db.prepare(`INSERT INTO renshi_records (id, user_id, person_data, result_data, ai_insight, trajectory_insight, label, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
         .run(id, adminId, JSON.stringify(r.person), r.resultData ? JSON.stringify(r.resultData) : null,
-          r.aiInsight || null, r.label || '', new Date(r.createdAt || Date.now()).toISOString());
+          r.aiInsight || null, r.trajectoryInsight || null, r.label || '', new Date(r.createdAt || Date.now()).toISOString());
       imported.renshi++;
     }
 

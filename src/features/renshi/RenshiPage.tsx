@@ -6,18 +6,21 @@ import { ChatPanel } from '../../components/ui/ChatPanel'
 import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Download, History, Printer, RefreshCw } from '../../components/ui/Icon'
 import { analyzeSixiang, type SixiangResult } from '../../utils/sixiang'
-import { generateSixiangInsight, buildSixiangQASystemPrompt } from '../../utils/ai'
+import { analyzeTrajectory, type TrajectoryResult } from '../../utils/trajectory'
+import { generateSixiangInsight, generateTrajectoryInsight, buildSixiangQASystemPrompt } from '../../utils/ai'
 import { exportRenshiDocx } from '../../utils/docxExport'
 import {
   saveRenshiRecord, getRenshiRecordsMerged, getRenshiRecordById,
-  updateRenshiAi, deleteRenshiRecord, type RenshiRecord,
+  updateRenshiAi, updateRenshiTrajectoryAi, deleteRenshiRecord, type RenshiRecord,
 } from '../../utils/db'
 import { getAllRecordsMerged, type SavedRecord } from '../../utils/db'
 import type { PersonInfo } from '../../types'
 import { RenshiReport } from './RenshiReport'
+import { TrajectorySection } from './TrajectorySection'
 
 interface Analysis {
   result: SixiangResult
+  traj: TrajectoryResult
   person: PersonInfo
   id?: string
 }
@@ -63,17 +66,23 @@ export function RenshiPage() {
   const [records, setRecords] = useState<RenshiRecord[]>([])
   const [showRecords, setShowRecords] = useState(true)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
+  // —— 识人解读（原有，逻辑零改动）——
   const [aiText, setAiText] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
+  // —— 人生轨迹解读（独立状态机，与原解读并发、互不覆盖）——
+  const [trajText, setTrajText] = useState('')
+  const [trajLoading, setTrajLoading] = useState(false)
+  const [trajError, setTrajError] = useState('')
   const [exporting, setExporting] = useState(false)
   // 档案选择（从八字排盘记录带出出生信息）
   const [baziRecords, setBaziRecords] = useState<SavedRecord[]>([])
   const [recordId, setRecordId] = useState('')
   const [initialPerson, setInitialPerson] = useState<PersonInfo | undefined>()
   const [formKey, setFormKey] = useState(0)
-  // AI 请求序号：切换视图/加载历史时作废在途请求，防止旧结果污染当前视图
+  // AI 请求序号：两条链各自独立，切换视图/加载历史时作废在途请求，防止旧结果污染当前视图
   const aiSeqRef = useRef(0)
+  const trajSeqRef = useRef(0)
 
   const loadRecords = useCallback(() => {
     getRenshiRecordsMerged().then(setRecords).catch(() => setRecords([]))
@@ -93,13 +102,16 @@ export function RenshiPage() {
     setFormKey((k) => k + 1)
   }, [baziRecords])
 
+  const personBrief = useCallback((person: PersonInfo) =>
+    `${person.name}（${person.gender}，${person.birthYear}-${person.birthMonth}-${person.birthDay} ${person.birthHour}:${String(person.birthMinute).padStart(2, '0')}，${person.birthPlace}）`, [])
+
+  /** 识人解读（原链路，不动） */
   const fetchAi = useCallback(async (result: SixiangResult, person: PersonInfo, id?: string) => {
     const seq = ++aiSeqRef.current
     setAiLoading(true)
     setAiError('')
     try {
-      const info = `${person.name}（${person.gender}，${person.birthYear}-${person.birthMonth}-${person.birthDay} ${person.birthHour}:${String(person.birthMinute).padStart(2, '0')}，${person.birthPlace}）`
-      const text = await generateSixiangInsight(result, info)
+      const text = await generateSixiangInsight(result, personBrief(person))
       if (!text) throw new Error('AI 服务返回了空内容，请点击重试')
       if (seq !== aiSeqRef.current) return
       setAiText(text)
@@ -110,10 +122,30 @@ export function RenshiPage() {
     } finally {
       if (seq === aiSeqRef.current) setAiLoading(false)
     }
-  }, [])
+  }, [personBrief])
+
+  /** 人生轨迹解读（独立 prompt / 独立请求 / 独立字段，与 fetchAi 并发） */
+  const fetchTrajectory = useCallback(async (traj: TrajectoryResult, person: PersonInfo, id?: string) => {
+    const seq = ++trajSeqRef.current
+    setTrajLoading(true)
+    setTrajError('')
+    try {
+      const text = await generateTrajectoryInsight(traj, personBrief(person))
+      if (!text) throw new Error('AI 服务返回了空内容，请点击重试')
+      if (seq !== trajSeqRef.current) return
+      setTrajText(text)
+      if (id) await updateRenshiTrajectoryAi(id, text).catch(() => {})
+    } catch (e) {
+      if (seq !== trajSeqRef.current) return
+      setTrajError(e instanceof Error ? e.message : '轨迹解读失败，请稍后重试')
+    } finally {
+      if (seq === trajSeqRef.current) setTrajLoading(false)
+    }
+  }, [personBrief])
 
   const handleAnalyze = useCallback(async (person: PersonInfo) => {
     const result = analyzeSixiang(person)
+    const traj = analyzeTrajectory(person, result)
     let id: string | undefined
     try {
       id = await saveRenshiRecord(person, result)
@@ -122,23 +154,33 @@ export function RenshiPage() {
     }
     setAiText('')
     setAiError('')
-    setAnalysis({ result, person, id })
+    setTrajText('')
+    setTrajError('')
+    setAnalysis({ result, traj, person, id })
     loadRecords()
     window.scrollTo({ top: 0, behavior: 'auto' })
-    fetchAi(result, person, id)
-  }, [fetchAi, loadRecords])
+    // 并发：两条独立 AI 请求，完成顺序不定，各写各的列
+    void fetchAi(result, person, id)
+    void fetchTrajectory(traj, person, id)
+  }, [fetchAi, fetchTrajectory, loadRecords])
 
   const handleLoadRecord = useCallback(async (r: RenshiRecord) => {
     aiSeqRef.current++
+    trajSeqRef.current++
     let result: SixiangResult | null = r.resultData ?? null
     if (!result) {
       try { result = analyzeSixiang(r.person) } catch { result = null }
     }
     if (!result) return
+    let traj: TrajectoryResult | null = null
+    try { traj = analyzeTrajectory(r.person, result) } catch { traj = null }
+    if (!traj) return
     const fresh = r.id ? await getRenshiRecordById(r.id).catch(() => null) : null
     setAiText(fresh?.aiInsight ?? r.aiInsight ?? '')
     setAiError('')
-    setAnalysis({ result, person: r.person, id: r.id })
+    setTrajText(fresh?.trajectoryInsight ?? r.trajectoryInsight ?? '')
+    setTrajError('')
+    setAnalysis({ result, traj, person: r.person, id: r.id })
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
@@ -149,9 +191,12 @@ export function RenshiPage() {
 
   const handleReset = useCallback(() => {
     aiSeqRef.current++
+    trajSeqRef.current++
     setAnalysis(null)
     setAiText('')
     setAiError('')
+    setTrajText('')
+    setTrajError('')
     loadRecords()
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [loadRecords])
@@ -160,15 +205,21 @@ export function RenshiPage() {
     if (!analysis) return
     setExporting(true)
     try {
-      await exportRenshiDocx(analysis.result, aiText, analysis.person)
+      await exportRenshiDocx(analysis.result, aiText, analysis.person, {
+        traj: analysis.traj, trajText,
+      })
     } finally {
       setExporting(false)
     }
-  }, [analysis, aiText])
+  }, [analysis, aiText, trajText])
 
   const handleRetryAi = useCallback(() => {
     if (analysis) fetchAi(analysis.result, analysis.person, analysis.id)
   }, [analysis, fetchAi])
+
+  const handleRetryTraj = useCallback(() => {
+    if (analysis) fetchTrajectory(analysis.traj, analysis.person, analysis.id)
+  }, [analysis, fetchTrajectory])
 
   const p = analysis?.person
 
@@ -255,6 +306,17 @@ export function RenshiPage() {
             </div>
           )}
 
+          {/* 人生轨迹：显示上独立成区，AI 解读为独立输出流（与上方识人解读并发） */}
+          <TrajectorySection
+            person={analysis.person}
+            r={analysis.result}
+            t={analysis.traj}
+            aiText={trajText}
+            aiLoading={trajLoading}
+            aiError={trajError}
+            onGenerate={handleRetryTraj}
+          />
+
           <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新识人</Button>
             <Button variant="primary" loading={exporting} onClick={handleExport}>
@@ -267,12 +329,12 @@ export function RenshiPage() {
 
           <ChatPanel
             mode="识人问答"
-            systemPrompt={buildSixiangQASystemPrompt(analysis.result)}
+            systemPrompt={buildSixiangQASystemPrompt(analysis.result, analysis.traj)}
             suggestions={[
               '这个人能深交吗？要防他什么？',
               '他最大的毛病是什么？一般在什么场合暴露？',
-              '跟他合伙或共事要注意什么？',
               '他的感情模式是什么样的？',
+              '2028年前后他的轨迹有什么要防的？',
               '什么事绝对不能托付给他？',
             ]}
           />

@@ -9,6 +9,7 @@ import {
 } from 'docx'
 import type { PersonInfo } from '../types'
 import type { SixiangResult } from './sixiang'
+import type { TrajectoryResult } from './trajectory'
 
 const DAI_QING = '004D4D'
 const HU_PO = '8C7326'
@@ -87,7 +88,12 @@ function nayinCell(label: string, ganzhi: string, nayin: string): TableCell {
   })
 }
 
-export async function exportRenshiDocx(r: SixiangResult, aiText: string, person: PersonInfo): Promise<void> {
+export async function exportRenshiDocx(
+  r: SixiangResult, aiText: string, person: PersonInfo,
+  opts?: { traj?: TrajectoryResult | null; trajText?: string },
+): Promise<void> {
+  const traj = opts?.traj ?? null
+  const trajText = opts?.trajText ?? ''
   const children: (Paragraph | Table)[] = []
   children.push(new Paragraph({
     alignment: AlignmentType.CENTER, spacing: { after: 80 },
@@ -168,20 +174,43 @@ export async function exportRenshiDocx(r: SixiangResult, aiText: string, person:
     children.push(body(c.desc, { indent: true, size: 19 }))
   }
 
-  // 运程参照
-  children.push(heading('八、运程参照 · 大运与流年'))
-  children.push(body(`起运虚岁：${r.dayun.qiYunAge ?? '待定'}；大运序列：${r.dayun.list.map(f => `${f.ganzhi}（${f.startAge}–${f.endAge}岁${f.current ? '，现行' : ''}）`).join(' → ')}`, { indent: true }))
-  children.push(body(`当前流年 ${r.dayun.liunian.year}（${r.dayun.liunian.ganzhi}）：${r.dayun.liunian.note}`, { indent: true }))
+  // 人生轨迹（可选：仅当传入 traj 时输出；逐年明细不进 Word 防膨胀）
+  if (traj) {
+    children.push(heading('八、人生轨迹 · 限运与大运'))
+    children.push(body(traj.qiYun.note, { indent: true }))
+    for (const s of traj.stages) {
+      const cov = s.dayunCoverage.map(c => `${c.ganzhi}（${c.overlap}）`).join('、') || '未交运（童限）'
+      children.push(body(`${s.label}·${s.stageName}【${s.ageRange}】${s.ganzhi} ${s.naYin}${s.xiang ? `——取象"${s.xiang}"` : ''}；该段行运：${cov}`, { indent: true, size: 19 }))
+    }
+    children.push(body('大运一览：', { bold: true, size: 19 }))
+    for (const d of traj.dayunTracks) {
+      const dd = [d.deDiYear?.label, d.deDiDay ? `日命${d.deDiDay.kind}` : null].filter(Boolean).join('·')
+      children.push(body(`· ${d.ganzhi}运 ${d.startAge}–${d.endAge}虚岁（${d.startYear}–${d.endYear}）：${d.stemTenGod}运，${dd || '—'}，日主行${d.changSheng.stage}（${d.changSheng.luck}）`, { size: 18, indent: true }))
+    }
+    if (traj.keyMoments.length > 0) {
+      children.push(body('重引动节点：', { bold: true, size: 19 }))
+      for (const m of traj.keyMoments.slice(0, 10)) children.push(body(`· ${m.when}：${m.text}`, { size: 18, indent: true }))
+    }
+    if (trajText) {
+      children.push(heading('九、轨迹解盘师 · 人生轨迹解读'))
+      children.push(...mdToParagraphs(trajText))
+    }
+  } else {
+    children.push(heading('八、运程参照 · 大运与流年'))
+    children.push(body(`起运虚岁：${r.dayun.qiYunAge ?? '待定'}；大运序列：${r.dayun.list.map(f => `${f.ganzhi}（${f.startAge}–${f.endAge}岁${f.current ? '，现行' : ''}）`).join(' → ')}`, { indent: true }))
+    children.push(body(`当前流年 ${r.dayun.liunian.year}（${r.dayun.liunian.ganzhi}）：${r.dayun.liunian.note}`, { indent: true }))
+  }
 
   // AI 解读
   if (aiText) {
-    children.push(heading('九、御笔判官 · 识人解读'))
+    children.push(heading(traj ? '十、御笔判官 · 识人解读' : '九、御笔判官 · 识人解读'))
     children.push(...mdToParagraphs(aiText))
   }
 
   // 方法论与声明
-  children.push(heading('十、方法论说明'))
+  children.push(heading(traj ? '十一、方法论说明' : '十、方法论说明'))
   for (const d of r.disclosure) children.push(body(`· ${d}`, { size: 19, color: '666666' }))
+  if (traj) for (const d of traj.disclosure) children.push(body(`· ${d}`, { size: 19, color: '666666' }))
   children.push(body('以上方法论说明随报告附列，便于读者核对体系起法与口径。', { size: 19, color: '666666' }))
 
   children.push(new Paragraph({

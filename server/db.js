@@ -125,6 +125,7 @@ export function initDatabase() {
       person_data TEXT NOT NULL,
       result_data TEXT,
       ai_insight TEXT,
+      trajectory_insight TEXT,
       label TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
@@ -141,6 +142,8 @@ export function initDatabase() {
   addColumnSafely('divination_records', 'label', 'TEXT');
   addColumnSafely('compat_records', 'device_id', 'TEXT');
   addColumnSafely('users', 'role', 'TEXT NOT NULL DEFAULT \'user\'');
+  // 识人：人生轨迹 AI 解读（与 ai_insight 独立列，双 AI 各写各的）
+  addColumnSafely('renshi_records', 'trajectory_insight', 'TEXT');
   // Create indexes after migration (safe for new tables via IF NOT EXISTS, requires column to exist)
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bazi_records_device ON bazi_records(device_id);
            CREATE INDEX IF NOT EXISTS idx_divination_device ON divination_records(device_id);

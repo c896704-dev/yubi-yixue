@@ -9,55 +9,19 @@
 import type { HeavenlyStem, EarthlyBranch } from '../constants'
 import { HEAVENLY_STEMS, EARTHLY_BRANCHES } from '../constants'
 import { getStemPairInteraction, getZiHe } from './interaction'
-
-// ============================================================
-// 地支关系常量
-// ============================================================
-
-const LIU_HE: [EarthlyBranch, EarthlyBranch][] = [
-  ['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], ['巳', '申'], ['午', '未'],
-]
-
-const SAN_HE: EarthlyBranch[][] = [
-  ['申', '子', '辰'], // 水局
-  ['亥', '卯', '未'], // 木局
-  ['寅', '午', '戌'], // 火局
-  ['巳', '酉', '丑'], // 金局
-]
-
-const SAN_HUI: EarthlyBranch[][] = [
-  ['寅', '卯', '辰'], // 东方木
-  ['巳', '午', '未'], // 南方火
-  ['申', '酉', '戌'], // 西方金
-  ['亥', '子', '丑'], // 北方水
-]
-
-const LIU_CHONG: [EarthlyBranch, EarthlyBranch][] = [
-  ['子', '午'], ['丑', '未'], ['寅', '申'], ['卯', '酉'], ['辰', '戌'], ['巳', '亥'],
-]
-
-const LIU_HAI: [EarthlyBranch, EarthlyBranch][] = [
-  ['子', '未'], ['丑', '午'], ['寅', '巳'], ['卯', '辰'], ['申', '亥'], ['酉', '戌'],
-]
-
-// 相刑（典籍正名：寅巳申=无恩之刑"恩生于害、恩将仇报"；丑戌未=恃势之刑"依仗权势"；
-// 子卯=无礼之刑"母仁子惠反相害"；自刑=辰午酉亥）
-const WU_LI_XING: [EarthlyBranch, EarthlyBranch][] = [['子', '卯']]
-const WU_EN_XING: EarthlyBranch[] = ['寅', '巳', '申']
-const CHI_SHI_XING: EarthlyBranch[] = ['丑', '戌', '未']
-const ZI_XING: EarthlyBranch[] = ['辰', '午', '酉', '亥']
-
-// 六破（冲之轻者，关系较浅）：子酉、丑辰、寅亥、卯午、巳申、戌未
-// 其中寅亥、巳申既合又破，合中带破
-const LIU_PO: [EarthlyBranch, EarthlyBranch][] = [
-  ['子', '酉'], ['丑', '辰'], ['寅', '亥'], ['卯', '午'], ['巳', '申'], ['戌', '未'],
-]
+// 关系表单一来源：relation.ts（岁运扫描与本命集合分析共享同一组表）
+import {
+  LIU_HE, SAN_HE, SAN_HUI, LIU_CHONG, LIU_HAI,
+  WU_LI_XING, WU_EN_XING, CHI_SHI_XING, ZI_XING, LIU_PO,
+} from './relation'
 
 // ============================================================
 // 计算结果类型
 // ============================================================
 
 export type PillarName = '年支' | '月支' | '日支' | '时支'
+/** 柱位简称（天干横向作用用） */
+export type PillarName2 = '年柱' | '月柱' | '日柱' | '时柱'
 
 export interface HeResult {
   type: '六合' | '三合' | '三会'
@@ -68,7 +32,7 @@ export interface HeResult {
 }
 
 export interface ChongResult {
-  type: '六冲' | '六害'
+  type: '六冲' | '六害' | '六破'
   branches: [EarthlyBranch, EarthlyBranch]
   positions?: [PillarName, PillarName]
   desc: string
@@ -130,9 +94,6 @@ export interface ZiHeResult {
   direction: '盖头' | '截脚'
   desc: string
 }
-
-/** 柱位简称（天干横向作用用） */
-type PillarName2 = '年柱' | '月柱' | '日柱' | '时柱'
 
 // ============================================================
 // 辅助映射
@@ -278,7 +239,7 @@ function findLiuPo(branches: EarthlyBranch[], bMap: Map<EarthlyBranch, PillarNam
   for (const [a, b] of LIU_PO) {
     if (branches.includes(a) && branches.includes(b)) {
       const pos = getPositions([a, b], bMap) as [PillarName, PillarName]
-      results.push({ type: '六害', branches: [a, b], positions: pos, desc: `${a}${b}相破（冲之轻者，关系较浅）` })
+      results.push({ type: '六破', branches: [a, b], positions: pos, desc: `${a}${b}相破（冲之轻者，关系较浅）` })
     }
   }
   return results
@@ -610,37 +571,6 @@ export function getChongHePersonalityImpact(chongHe: ChongHeResult): string {
   }
 
   return parts.join('；') || '命局地支关系对性格影响不大'
-}
-
-/** 大运与四柱的刑冲合害交互 */
-export function getChongHeFortuneImpact(
-  chongHe: ChongHeResult,
-  fortuneBranch: EarthlyBranch,
-  chongLiuChong: EarthlyBranch[],
-): string {
-  const parts: string[] = []
-
-  // 大运地支与各柱位的关系
-  const pillarBranches: { branch: EarthlyBranch; label: PillarName }[] = []
-  for (const c of chongHe.liuChong) {
-    if (c.positions) {
-      for (let i = 0; i < c.branches.length; i++) {
-        pillarBranches.push({ branch: c.branches[i]!, label: c.positions[i]! })
-      }
-    }
-  }
-  // 检查大运地支与四柱的冲合
-  for (const [a, b] of chongLiuChong) {
-    if ((a === fortuneBranch && pillarBranches.some(p => p.branch === b)) ||
-        (b === fortuneBranch && pillarBranches.some(p => p.branch === a))) {
-      const other = a === fortuneBranch ? b : a
-      const label = pillarBranches.find(p => p.branch === other)?.label || '某柱'
-      parts.push(`大运${fortuneBranch}与${label}${other}六冲，主此十年该柱位领域有变动`)
-    }
-  }
-
-  if (parts.length === 0) parts.push('大运与原局地支关系平和')
-  return parts.join('；')
 }
 
 // ============================================================

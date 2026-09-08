@@ -30,6 +30,9 @@ export interface BaziChart {
 export interface BigFortune {
   startAge: number
   endAge: number
+  /** 起运/末运公历年（lunar-typescript DaYun.getStartYear/getEndYear 直填，人生轨迹引擎锚定用） */
+  startYear?: number
+  endYear?: number
   stem: HeavenlyStem
   branch: EarthlyBranch
   naYin: string

@@ -149,6 +149,8 @@ export function calculateBigFortunes(bazi: BaziChart, person: PersonInfo): BigFo
     fortunes.push({
       startAge,
       endAge,
+      startYear: dy.getStartYear(),
+      endYear: dy.getEndYear(),
       stem,
       branch,
       naYin: SIXTY_JIAZI_NAYIN[ganzhi] ?? '',

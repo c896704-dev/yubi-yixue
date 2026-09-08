@@ -536,6 +536,7 @@ ${context.naja ? `- 纳甲数据：${context.naja}` : ''}
 // ============================================================
 
 import type { SixiangResult } from './sixiang'
+import type { TrajectoryResult } from './trajectory'
 
 /** 将识人引擎结果序列化为 AI 可读的紧凑文本 */
 export function serializeSixiangResult(r: SixiangResult): string {
@@ -673,18 +674,121 @@ ${serializeSixiangResult(result)}
   ])
 }
 
-/** 识人板块 · 悬浮问答系统提示词（基于识人引擎序列化数据） */
-export function buildSixiangQASystemPrompt(result: SixiangResult): string {
+/** 识人板块 · 悬浮问答系统提示词（基于识人引擎序列化数据；可选附带人生轨迹事实） */
+export function buildSixiangQASystemPrompt(result: SixiangResult, trajectory?: TrajectoryResult): string {
   return `你是"御笔判官"，识人板块的 AI 问答助手。用户刚刚生成了一份"四象三垣胎息"识人报告（纳音取象体系），现在想就这个人的具体情况提问。
 
 **识人引擎数据（所有生克关系、档位、刑冲空亡以此为准）：**
 ${serializeSixiangResult(result)}
-
+${trajectory ? `\n**人生轨迹引擎数据（大运/流年/宫位引动以此为准）：**\n${serializeTrajectoryResult(trajectory)}\n` : ''}
 **问答规则：**
 - 用户可能是想了解这个人（第三方），也可能是对照自己——无论哪种，基于上述引擎数据精准回答
 - 优点与毛病并重：回答"这个人怎么样"时必须两面都给，禁止只说好话
 - 性格/行为判断落到具体场景（自私体现在哪、什么话不能跟他说、相处防什么）
 - 用或然性措辞（大概率、往往、倾向），禁止百分比与确定性断言
-- 回答 150-350 字，Markdown 格式；问题超出识人术范畴（如具体流年吉凶、合婚）时礼貌引导回纳音识人主题
-- 引擎数据没有的信息（八字十神、大运细节）不得编造`
+- 谈运程/年份问题时，只引用轨迹引擎已列出的干支作用与年龄区间，断语保持"引动+双向可能"，不下确定性吉凶结论${trajectory ? '（此类问题据实引用上方轨迹数据）' : '（当前未生成轨迹数据，此类问题礼貌说明可切换到"人生轨迹"板块查看）'}
+- 回答 150-350 字，Markdown 格式
+- 引擎数据没有的信息不得编造`
+}
+
+// ============================================================
+// 人生轨迹 · 独立 AI 解读（与原"AI 识人解读"并发、互不覆盖）
+// ============================================================
+
+/** 序列化轨迹引擎结果（只进 top 事实与逐运档案，80 年逐年明细不进 prompt 控体积） */
+export function serializeTrajectoryResult(t: TrajectoryResult, topFactsPerZhu = 5): string {
+  const lines: string[] = []
+  lines.push('【起运与边界】')
+  lines.push(`- ${t.qiYun.note}`)
+  lines.push(`- 查询年：${t.queryYear}（"现行大运"以此为锚，旧记录重算会随年份自然推进）`)
+
+  lines.push('【限运四段（《三命通会》年1-16/月17-32/日33-48/时49+）】')
+  for (const s of t.stages) {
+    const cov = s.dayunCoverage.map(c => `${c.ganzhi}（${c.overlap}）`).join('、') || '无覆盖大运'
+    lines.push(`- ${s.label}·${s.stageName}【${s.ageRange}，约${s.yearRange[0]}-${s.yearRange[1]}年】${s.ganzhi} ${s.naYin}｜取象"${s.xiang}"${s.xi ? `｜原文喜忌：${s.xi}` : ''}｜所主：${s.palaceDomain}｜该段大运：${cov}`)
+  }
+
+  lines.push('【三垣落地（盲派克应+原局实际作用）】')
+  for (const y of t.yuanXiang) {
+    const facts = y.facts.slice(0, topFactsPerZhu).map(f => `${f.kind}(${f.targets.join('/')})`).join('、') || '与原局无显著干支作用'
+    const hits = y.landingHits.length > 0 ? `｜克应命中：${y.landingHits.join('；')}` : ''
+    lines.push(`- ${y.name} ${y.ganzhi}（${y.naYin}）取象"${y.xiang}"${y.xi ? `｜喜：${y.xi}` : ''}｜${y.palaceDomain}｜作用：${facts}${hits}`)
+  }
+
+  lines.push('【胎息·元神（干支与原局实际作用）】')
+  {
+    const tx = t.taiXiZhu
+    const facts = tx.facts.slice(0, topFactsPerZhu + 2).map(f => `- ${f.kind}(${f.targets.join('/')})：${f.desc}`).join('\n') || '- 与原局四柱三垣无显著干支作用（元神安静，一生底色与格局不相打架）'
+    lines.push(`- 胎息 ${tx.ganzhi}（${tx.naYin}）取象"${tx.xiang}"${tx.xi ? `｜喜：${tx.xi}` : ''}`)
+    lines.push(facts)
+  }
+
+  lines.push('【大运全列档案（每步：十神/纳音得地/十二长生/干支形/高权重引动）】')
+  for (const d of t.dayunTracks) {
+    const dd = d.deDiYear ? `年命${d.deDiYear.label}` : ''
+    const dd2 = d.deDiDay ? `${dd ? '·' : ''}日命${d.deDiDay.label}` : ''
+    const hot = d.hotYears.slice(0, 3).map(h => `${h.year}(${h.note})`).join(' ')
+    const top = d.facts.filter(f => f.weight >= 5).slice(0, 3).map(f => `${f.kind}(${f.targets.join('/')})`).join('、') || '平稳少引动'
+    lines.push(`- ${d.ganzhi}运 ${d.startAge}-${d.endAge}虚岁（${d.startYear}-${d.endYear}）${d.isCurrent ? '【现行】' : ''}｜${d.stemTenGod}运·藏干${d.hiddenGods.join('/')}｜${dd}${dd2}｜日主行${d.changSheng.stage}（${d.changSheng.luck}）${d.stemBranchForm ? `｜运柱${d.stemBranchForm}` : ''}｜引动：${top}${hot ? `｜热年：${hot}` : ''}`)
+  }
+
+  lines.push('【关键节点 top（按古籍引动权重排序，逐年明细在 UI，不在本表）】')
+  for (const m of t.keyMoments) {
+    lines.push(`- ${m.when}：${m.text}`)
+  }
+
+  lines.push('【口径与边界（必须在文中体现）】')
+  for (const d of t.disclosure.slice(0, 5)) {
+    lines.push(`- ${d}`)
+  }
+  return lines.join('\n')
+}
+
+/**
+ * 生成"人生轨迹"AI 解读。
+ * 与 generateSixiangInsight 完全独立：不同 prompt、不同消息数组、不同调用；
+ * 两者由页面并发发起，互不读写对方的状态与缓存。
+ */
+export async function generateTrajectoryInsight(result: TrajectoryResult, personInfo: string): Promise<string> {
+  const systemPrompt = `# ROLE
+你是"轨迹解盘师"，精研《三命通会》限运与岁运之法（论大运、总论岁运、释六十甲子性质吉凶）的运程解读者。你只负责一件事：**把引擎算出的干支作用与年龄段，解读成这个人气质沉淀与人生轨迹的叙事**。
+
+# 分工边界（不可越界）
+- 你**不谈人品褒贬**——性格与暗面由另一篇"识人解读"负责，重复展开会互相打架
+- 你只谈：节奏（哪段快哪段慢）、轨迹（气质如何随限运段演化）、引动（岁运作用在传统断语里主什么动向）
+- 引擎给的是"作用关系 + 宫位 + 年龄区间"，你写的是"倾向与节奏"，不是"事件预报"
+
+# 写作铁律（不可违抗）
+1. **术语+宫位事象+年龄三件套**：每个判断必须落"什么作用（伏吟/反吟/天克地冲/三合/半合/岁运并临/空亡/入墓/冲开墓库/藏干透出/得地…）× 哪个宫位（管什么事）× 哪段年月"。例：「25-34岁丙午运冲日支子——日支是婚姻宫与自身，古法谓冲动主变动迁移；此段大概率环境、关系多走动，而非安稳坐地」。
+2. **双向可能，不代下断语**：古籍凡冲伏吟皆须分喜忌定吉凶，引擎不做喜忌判定，所以你写"主变动（是拆是建须合本命格局看）"这类双向表述，禁止"此年必破财"式定论。
+3. **禁编造**：引擎事实表里没有的作用关系、年份、年龄段，一个字不许造；没有作用的运就写"平稳少引动"，平淡也是信息。
+4. **禁百分比与精确事件**：不写"80%会离婚"、不写"2028年结婚"；写倾向与窗口。
+5. **恒象与口径如实带出**：起运误差、童限不叠大运、流年以立春附近为界、十二长生阴干为弱信号——相关处一句话带到即可，不堆砌。
+6. **或然措辞贯穿**：大概率、往往、倾向、古法谓、传统上认为。
+7. 不要写"今年是X年"之类以查询年为当下的表述——报告可能被不同年份阅读。
+
+# 叙事结构（无小标题、自然过渡，总 1100-1600 字）
+一、**总论节奏**（100-160字）：限运四段的纳音取象连读成一条"根苗华果"的生命线，点出全盘引动最密与最平的大运段。
+二、**四段轨迹**（每段150-220字）：少年/青年/中年/晚年——该柱纳音取象（引引擎原文）× 该段覆盖大运的得地/失地 × 段内关键引动，写"这段人怎么长、往哪儿走"。
+三、**关键运程节点**（200-320字）：从引擎 top 节点挑 3-5 个展开，每个必须点名术语、宫位、年龄区间、传统主什么动向（双向）。
+四、**元神与禀赋×阶段**（120-200字）：胎息干支与原局的实际作用——元神安静就写安静，被引动被伏吟就写明落在哪个宫位、传统如何解读；胎元命宫身宫的克应命中（空亡/受冲/遇合）逐垣交代，一句"禀赋如何嵌入人生阶段"。
+五、**收官判词**（20-40字）：四句古诗风格，一句写根、一句写运、一句藏机锋（轨迹的暗礁），一句收束。
+
+# 风格
+- 现代中文为主，术语首次出现带一句白话（"伏吟（干支重逢）"）
+- 纯 Markdown，无序号小标题；判词单独成段空行隔开
+- 古籍引语宁缺毋滥，引擎没给的原文不许脑补书名`
+
+  const userPrompt = `以下是人生轨迹引擎的完整结构化数据（所有作用关系、年龄区间、档位以此为准，严禁自行推演干支关系）：
+
+${serializeTrajectoryResult(result)}
+
+**命主资料：** ${personInfo}
+
+请按五段叙事撰写人生轨迹解读。记住：你只解节奏与轨迹，不评人品；每个判断都要挂"术语+宫位+年龄区间"，冲合伏吟保留双向可能，引擎没给的一律不编。`
+
+  return chat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ])
 }

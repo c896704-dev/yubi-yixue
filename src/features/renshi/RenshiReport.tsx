@@ -1,5 +1,5 @@
-import { AlertCircle, BookOpen, Compass, Feather, Quote, Sparkles, Star, User } from '../../components/ui/Icon'
-import type { SixiangResult, SixiangStage, YuanInfo, ZunBeiPair, CrossPair } from '../../utils/sixiang'
+import { AlertCircle, BookOpen, Feather, Quote, Sparkles, Star } from '../../components/ui/Icon'
+import type { SixiangResult, SixiangStage, YuanInfo, ZunBeiPair } from '../../utils/sixiang'
 
 /** 尊卑关系徽记配色 */
 const ZUN_BEI_TONE: Record<string, { chip: string; text: string }> = {
@@ -98,20 +98,6 @@ function YuanCard({ y }: { y: YuanInfo }) {
   )
 }
 
-/** 四象对三垣行 */
-function CrossRow({ c }: { c: CrossPair }) {
-  const good = c.kind !== '相克'
-  return (
-    <div className="rs-cross-row">
-      <span className={`ds-chip ${good ? 'ds-chip-ji' : 'ds-chip-xiong'}`} style={{ flexShrink: 0 }}>{c.kind}</span>
-      <div className="min-w-0">
-        <div className="rs-cross-name">{c.name}</div>
-        <div className="rs-cross-desc">{c.desc}</div>
-      </div>
-    </div>
-  )
-}
-
 /** 晚子时换日口径对照（F-1：口径披露 + 双盘） */
 function AltChartBanner({ r }: { r: SixiangResult }) {
   if (!r.altChart) return null
@@ -187,31 +173,6 @@ function GanZhiFacts({ r }: { r: SixiangResult }) {
   )
 }
 
-/** 运程参照（F-6：大运 + 流年） */
-function DayunSection({ r }: { r: SixiangResult }) {
-  const d = r.dayun
-  return (
-    <div className="ds-card rs-section">
-      <h2 className="ds-card-head"><Compass size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />运程参照 · 大运与流年</h2>
-      <p className="rs-fact-note" style={{ marginTop: 0 }}>
-        四柱是静态底盘，人生阶段的起伏由大运流年驱动——四段断言须结合现行运程阅读。
-        {d.qiYunAge != null && `本命起运虚岁 ${d.qiYunAge}。`}
-      </p>
-      <div className="rs-dayun-list">
-        {d.list.map((f) => (
-          <span key={f.startAge} className={`ds-chip ${f.current ? 'ds-chip-ji' : 'ds-chip-zhong'}`}>
-            {f.ganzhi} <b className="font-serif" style={{ fontSize: 11 }}>{f.startAge}–{f.endAge}岁</b>{f.current ? ' · 现行' : ''}
-          </span>
-        ))}
-      </div>
-      <p className="rs-fact-value" style={{ marginTop: 10 }}>
-        当前流年 <b className="font-serif">{d.liunian.year}</b>（{d.liunian.ganzhi}）：{d.liunian.note}。
-        {d.current && `现行 ${d.current.ganzhi}（${d.current.naYin}）大运。`}
-      </p>
-    </div>
-  )
-}
-
 /** 方法论披露 + 免责声明（F-11 / F-9） */
 function DisclosureFooter({ r }: { r: SixiangResult }) {
   return (
@@ -269,37 +230,7 @@ export function RenshiReport({ r }: { r: SixiangResult }) {
         </div>
       </div>
 
-      {/* 胎息元神 */}
-      <div className="ds-card rs-section">
-        <h2 className="ds-card-head"><User size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />胎息 · 元神画像</h2>
-        <p className="rs-fact-note" style={{ marginTop: 0 }}>
-          「受胎之日那一念先天神识」为本体系对经典胎息（日柱干合支合之柱，《三命通会》）的再创作引申，非古籍原义。
-        </p>
-        <div className="rs-taixi">
-          <div className="rs-taixi-head">
-            <span className="rs-taixi-gz font-serif">{r.taiXi.ganzhi}</span>
-            <span className="rs-taixi-nayin rs-gold">{r.taiXi.naYin}</span>
-            <span className="ds-chip ds-chip-gold">对标时柱 · {r.stages[3]!.naYin}</span>
-            <span className={`ds-chip ${r.taiXi.duibiao.kind === '卑克尊' ? 'ds-chip-xiong' : 'ds-chip-ji'}`}>{r.taiXi.duibiao.label}</span>
-          </div>
-          <p className="rs-taixi-yuanshen font-serif">“{r.taiXi.xiang.yuanshen}”</p>
-          <p className="rs-taixi-desc">
-            {r.taiXi.duibiao.desc}
-            {r.taiXi.sameNaYinAsHour && '（另注：胎息与时柱同纳音，此为日柱与时柱干支结构的恒象，非个性化推断。）'}
-          </p>
-        </div>
-      </div>
-
-      {/* 四象对三垣 */}
-      <div className="ds-card rs-section">
-        <h2 className="ds-card-head"><Sparkles size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />四象对三垣 · 禀赋兼容</h2>
-        <div className="rs-cross-list">
-          {r.cross.map((c) => <CrossRow key={c.name} c={c} />)}
-        </div>
-      </div>
-
-      {/* 运程参照 */}
-      <DayunSection r={r} />
+      {/* 运程与胎息/四象对三垣的详细展开已移入「人生轨迹」板块（见 TrajectorySection） */}
 
       {/* 方法论披露 */}
       <DisclosureFooter r={r} />

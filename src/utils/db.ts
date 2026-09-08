@@ -596,7 +596,9 @@ export interface RenshiRecord {
   createdAt: number
   label: string
   aiInsight?: string | null
-  resultData?: any // SixiangResult（结构化，JSON 可序列化）
+  /** 人生轨迹 AI 解读（独立字段，与 aiInsight 并发写入互不覆盖） */
+  trajectoryInsight?: string | null
+  resultData?: any // SixiangResult（结构化，JSON 可序列化；轨迹派生数据刻意不落库，打开时现场重算）
 }
 
 /** 保存/更新识人记录（同命同时间去重） */
@@ -630,6 +632,8 @@ export async function saveRenshiRecord(person: PersonInfo, resultData?: any, aiI
     tx.objectStore(RENSHI_STORE).put(existing)
     await waitTx(tx)
     db.close()
+    // 重排同一人：把最新 person/resultData 同步服务端（AI 字段由服务端 COALESCE 保护不被清）
+    renshiApi().then((api: any) => api.saveServerRenshiRecord(existing)).catch(() => {})
     return existing.id
   }
 
@@ -639,6 +643,7 @@ export async function saveRenshiRecord(person: PersonInfo, resultData?: any, aiI
     createdAt: Date.now(),
     label: makeLabel(person),
     aiInsight: aiInsight || null,
+    trajectoryInsight: null,
     resultData: resultData || null,
   }
   id = record.id
@@ -668,18 +673,29 @@ export async function getRenshiRecords(): Promise<RenshiRecord[]> {
   return rows.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
 }
 
-/** 获取所有识人记录（本地 + 服务端合并，按 id 去重，服务端优先；创建时间倒序） */
+/** 获取所有识人记录（本地 + 服务端合并，按 id 去重；AI 文本字段按"非空优先"逐字段合并） */
 export async function getRenshiRecordsMerged(): Promise<RenshiRecord[]> {
   const local = await getRenshiRecords().catch(() => [] as RenshiRecord[])
   try {
     const api = await renshiApi()
     const res = await api.getServerRenshiRecords()
     const serverRows: RenshiRecord[] = res.records || []
+    const localById = new Map(local.map(r => [r.id, r]))
     const byId = new Map<string, RenshiRecord>()
-    // 服务端优先（AI 补写等字段更新）
     for (const r of serverRows) {
       if (!r.person || !r.person.birthYear) continue
-      byId.set(r.id, r)
+      const l = localById.get(r.id)
+      if (l) {
+        // 逐字段合并：某侧 AI 文本缺失时取另一侧（防止旧服务端行把本地新写的轨迹解读抹掉）
+        byId.set(r.id, {
+          ...r,
+          aiInsight: r.aiInsight ?? l.aiInsight ?? null,
+          trajectoryInsight: r.trajectoryInsight ?? l.trajectoryInsight ?? null,
+          resultData: r.resultData ?? l.resultData ?? null,
+        })
+      } else {
+        byId.set(r.id, r)
+      }
     }
     for (const r of local) if (!byId.has(r.id)) byId.set(r.id, r)
     return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
@@ -701,7 +717,7 @@ export async function getRenshiRecordById(id: string): Promise<RenshiRecord | nu
   return row ?? null
 }
 
-/** 补写识人记录的 AI 解读 */
+/** 补写识人记录的 AI 解读（本地整行读改写放同一 readwrite 事务内；服务端走 PATCH 单字段，避免与轨迹写互相覆盖） */
 export async function updateRenshiAi(id: string, aiInsight: string): Promise<void> {
   const db = await openDB()
   const tx = db.transaction(RENSHI_STORE, 'readwrite')
@@ -713,12 +729,34 @@ export async function updateRenshiAi(id: string, aiInsight: string): Promise<voi
   })
   if (row) {
     row.aiInsight = aiInsight
-    store.put(row)
-    // 同步 AI 解读到服务端（全量 upsert）
-    renshiApi().then((api: any) => api.saveServerRenshiRecord(row)).catch(() => {})
+    store.put(row) // 与 get 同事务，读改写原子
   }
   await waitTx(tx)
   db.close()
+  if (row) {
+    renshiApi().then((api: any) => api.patchServerRenshiAi(id, 'aiInsight', aiInsight)).catch(() => {})
+  }
+}
+
+/** 补写识人记录的"人生轨迹"AI 解读（与 updateRenshiAi 各写各的列，并发安全） */
+export async function updateRenshiTrajectoryAi(id: string, text: string): Promise<void> {
+  const db = await openDB()
+  const tx = db.transaction(RENSHI_STORE, 'readwrite')
+  const store = tx.objectStore(RENSHI_STORE)
+  const row: RenshiRecord | undefined = await new Promise((resolve, reject) => {
+    const req = store.get(id)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+  if (row) {
+    row.trajectoryInsight = text
+    store.put(row)
+  }
+  await waitTx(tx)
+  db.close()
+  if (row) {
+    renshiApi().then((api: any) => api.patchServerRenshiAi(id, 'trajectoryInsight', text)).catch(() => {})
+  }
 }
 
 /** 删除识人记录 */
