@@ -943,7 +943,8 @@ export function renderEnhancedCompatibilityReport(result: CompatibilityResult): 
   const breakdown = result.scoreBreakdown || computeScoreBreakdown(male, female, scores)
   const fortune = result.fortuneSync
 
-  let md = `# ⚖️ 龙凤合鸣：${male.person.name} & ${female.person.name} 深度合盘报告\n\n`
+  // 标题由外层卡片给出（「合盘详细报告」），此处不再重复一级标题
+  let md = ''
 
   // ========== 1. 双方命盘概览 ==========
   md += '## 一、双方命盘概览\n\n'
@@ -1099,35 +1100,22 @@ export function renderEnhancedCompatibilityReport(result: CompatibilityResult): 
   // ========== 7. 大运同步分析 ==========
   md += '## 七、大运同步分析\n\n'
   if (fortune) {
-    md += `**当前同步性：** ${fortune.currentSync}\n\n`
-    md += `**下一大运：** ${fortune.nextFortuneSync}\n\n`
+    // fortune.description 已包含「当前大运：…。下一大运：…」两句，
+    // 此处不再单列，避免同章内逐字重复
     md += `${fortune.description}\n\n`
   } else {
     md += '大运同步数据待计算。\n\n'
   }
 
-  // ========== 8. 能量磁场看板 + 判官终裁 ==========
-  md += '## 八、能量磁场看板 & 判官终裁\n\n'
+  // ========== 8. 判官终裁 ==========
+  md += '## 八、判官终裁\n\n'
 
-  // 评分明细
-  md += '### 📊 合盘评分明细\n\n'
-  const starAttraction = scores.attraction >= 80 ? '⭐⭐⭐⭐⭐' : scores.attraction >= 65 ? '⭐⭐⭐⭐' : scores.attraction >= 50 ? '⭐⭐⭐' : '⭐⭐'
-  const starStability = scores.stability >= 80 ? '⭐⭐⭐⭐⭐' : scores.stability >= 65 ? '⭐⭐⭐⭐' : scores.stability >= 50 ? '⭐⭐⭐' : '⭐⭐'
-  const starComplement = scores.complement >= 80 ? '⭐⭐⭐⭐⭐' : scores.complement >= 65 ? '⭐⭐⭐⭐' : scores.complement >= 50 ? '⭐⭐⭐' : '⭐⭐'
-
-  md += '| 维度 | 评分 | 方法论 |\n|:---|:---|:---|\n'
-  md += `| **天干吸引力** | ${starAttraction} ${scores.attraction}分 | ${breakdown?.attraction?.methodology || '—'} |\n`
-  md += `| **地支稳定性** | ${starStability} ${scores.stability}分 | ${breakdown?.stability?.methodology || '—'} |\n`
-  md += `| **五行互补性** | ${starComplement} ${scores.complement}分 | ${breakdown?.complement?.methodology || '—'} |\n`
-  md += `| **综合评分** | **${scores.total}分** | 三维度等权平均 |\n\n`
-
-  // 优势/软肋
-  md += '### ✅ 核心优势\n\n'
-  for (const adv of result.advantages) md += `- ${adv}\n`
-  md += '\n'
-  md += '### ⚠️ 需关注的点\n\n'
-  for (const w of result.weaknesses) md += `- ${w}\n`
-  md += '\n'
+  // 评分口径：数值、星级、优势/软肋均已由上方评分卡呈现，此处只保留卡片没有的方法论说明
+  md += '### 📊 评分口径\n\n'
+  md += `- **天干吸引力**：${breakdown?.attraction?.methodology || '—'}\n`
+  md += `- **地支稳定性**：${breakdown?.stability?.methodology || '—'}\n`
+  md += `- **五行互补性**：${breakdown?.complement?.methodology || '—'}\n`
+  md += `- **综合评分**：三维度等权平均\n\n`
 
   // 判官终裁
   md += '### ⚖️ 判官终裁\n\n'

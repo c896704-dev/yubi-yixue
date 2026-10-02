@@ -12,6 +12,7 @@ import { DualInput } from './DualInput'
 import { CompatScore } from './CompatScore'
 import { CompatReport } from './CompatReport'
 import { BaziChart } from '../../components/viz/BaziChart'
+import { AiInsightCard } from '../bazi/BaziReport'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
 
@@ -142,7 +143,7 @@ export default function CompatPage() {
       {result && (
         <>
           <CompatScore result={result} />
-          {report && <CompatReport reportMarkdown={report} aiInsight={aiInsight} aiLoading={aiLoading} aiError={aiError} />}
+          {report && <CompatReport reportMarkdown={report} />}
 
           {result1 && result2 && (
             <div className="section">
@@ -152,6 +153,17 @@ export default function CompatPage() {
                 <div className="ds-card"><BaziChart bazi={result2.bazi} person={result2.person} /></div>
               </div>
             </div>
+          )}
+
+          {/* AI 合盘解读：置于报告末尾作为「延伸段」，引擎结论先行、模型叙事随后 */}
+          {(aiInsight || aiLoading || aiError) && (
+            <AiInsightCard
+              insight={aiInsight ?? null}
+              loading={aiLoading}
+              error={aiError}
+              title="AI 合盘解读"
+              collapsible
+            />
           )}
 
           <div className="actions">

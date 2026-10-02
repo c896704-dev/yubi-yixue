@@ -34,6 +34,7 @@ export function evalTiYongComprehensive(
     basic: rel, level: jx.level, desc: jx.desc,
     monthly: `体${tiWx}${tiState}(${tiS}分) vs 用${yongWx}${yongState}(${yongS}分)`,
     ratio, correction,
-    verdict: `${rel}（${jx.level}）—— ${jx.desc}。${correction}。`,
+    // verdict 不再附加 correction：它紧随其后的「力量对比」一行已给出同一句结论
+    verdict: `${rel}（${jx.level}）—— ${jx.desc}。`,
   }
 }

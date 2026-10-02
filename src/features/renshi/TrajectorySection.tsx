@@ -295,9 +295,9 @@ export function TrajectorySection({ person, r, t, aiText, aiLoading, aiError, on
             </Button>
           )}
         </div>
-        <p className="tj-ai-sep">此解读与上方"深度识人解读"各走独立请求：那篇评人品，这篇只解节奏与节点。未生成时上方解读不受影响。</p>
+        <p className="tj-ai-sep">本文只解读人生节奏与关键节点，与上方人品性格解读互不覆盖。</p>
         {aiText || aiLoading || aiError
-          ? <AiInsightCard insight={aiText} loading={aiLoading} error={aiError} />
+          ? <AiInsightCard insight={aiText} loading={aiLoading} error={aiError} title={null} id="ai-trajectory" collapsible />
           : <p className="tj-none">（尚未生成。点击右上角按钮，基于上方引擎事实撰写 1100-1600 字轨迹解读。）</p>}
       </div>
 

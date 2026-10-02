@@ -27,13 +27,18 @@ function OverviewBoard({ r }: { r: SixiangResult }) {
             <span className="rs-board-nayin rs-gold">{s.naYin}</span>
           </div>
         ))}
-        {[r.sanyuan.taiYuan, r.sanyuan.mingGong, r.sanyuan.shenGong].map((y) => (
-          <div key={y.name} className="rs-board-cell rs-board-yuan">
-            <span className="rs-board-label">三垣 · {y.name}</span>
-            <span className="rs-board-ganzhi">{y.ganzhi}</span>
-            <span className="rs-board-nayin rs-gold">{y.naYin}</span>
-          </div>
-        ))}
+        {[r.sanyuan.taiYuan, r.sanyuan.mingGong, r.sanyuan.shenGong].map((y) => {
+          // 三垣与本命某柱同干支同纳音时标注来源，避免读者以为是两套数据（胎元常与年柱同）
+          const sameAs = r.stages.find((s) => s.ganzhi === y.ganzhi && s.naYin === y.naYin)
+          return (
+            <div key={y.name} className="rs-board-cell rs-board-yuan">
+              <span className="rs-board-label">三垣 · {y.name}</span>
+              <span className="rs-board-ganzhi">{y.ganzhi}</span>
+              <span className="rs-board-nayin rs-gold">{y.naYin}</span>
+              {sameAs && <span className="rs-board-same">同{sameAs.label}</span>}
+            </div>
+          )
+        })}
         <div className="rs-board-cell rs-board-taixi">
           <span className="rs-board-label">胎息 · 元神</span>
           <span className="rs-board-ganzhi">{r.taiXi.ganzhi}</span>

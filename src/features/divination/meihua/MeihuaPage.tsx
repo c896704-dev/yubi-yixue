@@ -11,6 +11,7 @@ import { meihuaNumberCast, meihuaCurrentTimeCast, meihuaTextCast } from '../util
 import { generateMeihuaInterpretation, buildDivinationQASystemPrompt } from '../../../utils/ai'
 import { saveDivinationRecord } from '../../../utils/db'
 import { ChatPanel } from '../../../components/ui/ChatPanel'
+import { AiBody } from '../../../components/ui/AiBody'
 import { evalTiYongComprehensive } from '../../../utils/tiyong'
 import { computeYingQiMeihua } from '../../../utils/yingqi'
 import { getDuanYu } from '../../../utils/duanyu'
@@ -59,8 +60,8 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
   // 文字模式
   const [textInput, setTextInput] = useState('')
 
-  /** 梅花易数代码层分析 */
-  const buildMeihuaCodeAnalysis = (r: MeihuaResult) => {
+  /** 梅花易数代码层分析。opts.forAI=true 时保留完整表述，作为喂给 AI 的上下文 */
+  const buildMeihuaCodeAnalysis = (r: MeihuaResult, opts?: { forAI?: boolean }) => {
     const tiyong = evalTiYongComprehensive(
       r.tiYong.tiElement, r.tiYong.yongElement,
       r.seasonalStrength.tiState, r.seasonalStrength.yongState,
@@ -69,15 +70,17 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
       r.tiYong.tiElement, r.tiYong.yongElement,
       r.tiYong.ti.number, r.tiYong.yong.number, r.changingYao,
     )
-    return `**体用综合评估：** ${tiyong.verdict}
 
-**力量对比：** ${tiyong.monthly}，${tiyong.correction}
+    const parts = [
+      `**体用综合评估：** ${tiyong.verdict}`,
+      `**力量对比：** ${tiyong.monthly}，${tiyong.correction}`,
+      `**一体百用：** ${r.tiBaiYong.summary}`,
+    ]
+    // 应期：页面下方有结构化「应期推算（卦气法 + 卦数法）」块呈现同一结论，正文版不再重复；AI 版需要这段
+    if (opts?.forAI) parts.push(`**应期推算：** ${yingqi.map((y) => y.timeWindow).join('；')}`)
+    parts.push(`**卦气旺衰：** ${r.seasonalStrength.summary}`)
 
-**一体百用：** ${r.tiBaiYong.summary}
-
-**应期推算：** ${yingqi.map(y=>y.timeWindow).join('；')}
-
-**卦气旺衰：** ${r.seasonalStrength.summary}`
+    return parts.join('\n\n')
   }
 
   const meihuaAnalysis = useMemo(() => {
@@ -106,7 +109,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
 
     // 第二步：请求 AI，完成后更新记录
     try {
-      const ma = buildMeihuaCodeAnalysis(r)
+      const ma = buildMeihuaCodeAnalysis(r, { forAI: true })
       const text = await generateMeihuaInterpretation(r, q, omen, ma)
       setInterpretation(text)
       await saveDivinationRecord({ ...record, aiInterpretation: text })
@@ -258,10 +261,10 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
           </div>
         </Card>
 
-        {/* 代码分析与应期推算 */}
-        <Card title="代码分析与应期推算">
+        {/* 卦理分析与应期推算 */}
+        <Card title="卦理分析与应期推算">
           {meihuaAnalysis && (
-            <div className="text-sm leading-relaxed p-4 rounded-lg mb-3"
+            <div className="report text-sm leading-relaxed p-4 rounded-lg mb-3"
               style={{ color: 'var(--fg)', backgroundColor: 'var(--bg)' }}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{meihuaAnalysis}</ReactMarkdown>
             </div>
@@ -279,62 +282,51 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
           {!meihuaAnalysis && !result.yingQi && <p className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</p>}
         </Card>
 
-        {/* AI 解读 */}
-        <Card title="AI 解读">
-          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
-            所问之事：{question || '（未填写）'}
-          </div>
-
-          {/* F-3: 起卦过程 */}
-          {result.calcProcess && (
-            <div className="text-xs leading-relaxed p-3 rounded-lg mb-3 whitespace-pre-line"
-              style={{ color: 'rgba(0,77,77,0.55)', backgroundColor: 'var(--bg)' }}>
-              <span className="font-semibold" style={{ color: 'var(--fg)' }}>起卦过程：</span>
-              {result.calcProcess}
-            </div>
-          )}
-
-          {interpreting && <Loading text="卦象推演中..." />}
-
-          {interpretError && (
-            <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--negative-bg)', color: 'var(--danger)' }}>
-              {interpretError}
-              <Button variant="clear" size="sm" onClick={() => result && autoInterpret(result, question)} className="ml-2">重试</Button>
-            </div>
-          )}
-
-          {interpretation && (
-            <div className="report">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{interpretation}</ReactMarkdown>
-            </div>
-          )}
-
-          {!interpreting && !interpretError && !interpretation && (
-            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
-          )}
-        </Card>
-
         {/* 卦辞释义 */}
         <Card title="卦辞释义">
           <p className="text-sm leading-relaxed mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.originalHexagram.judgment}</p>
           <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--fg)' }}>{result.originalHexagram.meaning}</p>
           <div style={{ borderTop: '1px solid var(--border)' }} className="pt-3">
-            <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>互卦 · {result.huHexagram.name}</p>
-            <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--fg)' }}>{result.huHexagram.meaning}</p>
-            <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>变卦 · {result.changedHexagram.name}</p>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.changedHexagram.meaning}</p>
-            {result.cuoHexagram && (
-              <>
-                <p className="text-xs mb-1 mt-3" style={{ color: 'rgba(0,77,77,0.55)' }}>错卦 · {result.cuoHexagram.name}</p>
-                <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--fg)' }}>{result.cuoHexagram.meaning}</p>
-              </>
-            )}
-            {result.zongHexagram && (
-              <>
-                <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>综卦 · {result.zongHexagram.name}</p>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.zongHexagram.meaning}</p>
-              </>
-            )}
+            {(() => {
+              // 同一卦可能兼任多个角色（互卦与变卦同为「天风姤」很常见），释义只渲染一次，标签合并显示
+              type Entry = { name: string; meaning: string; labels: string[] }
+              const seen = new Map<string, Entry>()
+              seen.set(result.originalHexagram.name, {
+                name: result.originalHexagram.name,
+                meaning: result.originalHexagram.meaning,
+                labels: [],
+              })
+              const list: Entry[] = []
+              const add = (label: string, hex?: { name: string; meaning: string } | null) => {
+                if (!hex) return
+                const exist = seen.get(hex.name)
+                if (exist) { exist.labels.push(label); return }
+                const entry: Entry = { name: hex.name, meaning: hex.meaning, labels: [label] }
+                seen.set(hex.name, entry)
+                list.push(entry)
+              }
+              add('互卦', result.huHexagram)
+              add('变卦', result.changedHexagram)
+              add('错卦', result.cuoHexagram)
+              add('综卦', result.zongHexagram)
+
+              const sameAsOriginal = seen.get(result.originalHexagram.name)!.labels
+              return (
+                <>
+                  {list.map((h, i) => (
+                    <div key={h.name} className={i > 0 ? 'mt-3' : ''}>
+                      <p className="text-xs mb-1" style={{ color: 'rgba(0,77,77,0.55)' }}>{h.labels.join(' / ')} · {h.name}</p>
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{h.meaning}</p>
+                    </div>
+                  ))}
+                  {sameAsOriginal.length > 0 && (
+                    <p className="text-xs mt-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
+                      {sameAsOriginal.join(' / ')} · {result.originalHexagram.name}（与本卦同，释义见上方）
+                    </p>
+                  )}
+                </>
+              )
+            })()}
           </div>
         </Card>
 
@@ -405,6 +397,37 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
             </Card>
           )
         })()}
+
+        {/* AI 解读：后置为「延伸段」——卦象、卦辞、传统断语等引擎结论先行，模型叙事随后 */}
+        <Card title="AI 解读">
+          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
+            所问之事：{question || '（未填写）'}
+          </div>
+
+          {/* F-3: 起卦过程 */}
+          {result.calcProcess && (
+            <div className="text-xs leading-relaxed p-3 rounded-lg mb-3 whitespace-pre-line"
+              style={{ color: 'rgba(0,77,77,0.55)', backgroundColor: 'var(--bg)' }}>
+              <span className="font-semibold" style={{ color: 'var(--fg)' }}>起卦过程：</span>
+              {result.calcProcess}
+            </div>
+          )}
+
+          {interpreting && <Loading text="卦象推演中..." />}
+
+          {interpretError && (
+            <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--negative-bg)', color: 'var(--danger)' }}>
+              {interpretError}
+              <Button variant="clear" size="sm" onClick={() => result && autoInterpret(result, question)} className="ml-2">重试</Button>
+            </div>
+          )}
+
+          {interpretation && <AiBody text={interpretation} collapsible />}
+
+          {!interpreting && !interpretError && !interpretation && (
+            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
+          )}
+        </Card>
 
         <div className="flex justify-center">
           <Button variant="mist" onClick={() => window.print()}>打印报告</Button>

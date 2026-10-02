@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { Card } from '../../components/ui/Card'
 import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
+import { AiBody } from '../../components/ui/AiBody'
 import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
@@ -384,10 +383,11 @@ const SECTION_NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '�
 export function BaziReport({ markdown, sections, result, fortuneTimeline }: BaziReportProps) {
   // 新式：sections 驱动（含折叠/目录），旧式 markdown 兜底
   if (sections && result) {
-    // 深度报告拥有独立编号：此处从“一”开始，附录A保持附录编号
+    // 页级「一 乾坤定盘」已占用「一」，深度报告顺延为 二…八。
+    // 序号只在此处产生：正文 Markdown 标题已不再自带序号，避免卡头与正文各说一套（旧版差 1）。
     const displaySections = sections.map((s, i) => ({
       ...s,
-      num: s.id === 'appearance' ? s.num : (SECTION_NUMS[i] || String(i + 1)),
+      num: s.id === 'appearance' ? s.num : (SECTION_NUMS[i + 1] || String(i + 2)),
     }))
 
     return (
@@ -430,19 +430,28 @@ interface AiInsightCardProps {
   insight: string | null
   loading?: boolean
   error?: string | null
+  /** 卡片标题。默认「AI 总评」；传 null 表示不渲染标题（外层卡片已给出标题时用） */
+  title?: string | null
+  /** 锚点 id，便于目录/外链直达 */
+  id?: string
+  /** 标题右侧操作位（如「重新解读」），由调用方传入，避免按钮游离在卡片之外 */
+  action?: React.ReactNode
+  /** 是否提供手动折叠（默认展开，折叠只是给读者的出口；打印时强制全展开） */
+  collapsible?: boolean
 }
 
-export function AiInsightCard({ insight, loading, error }: AiInsightCardProps) {
+export function AiInsightCard({ insight, loading, error, title = 'AI 总评', id, action, collapsible }: AiInsightCardProps) {
   return (
-    <div className="ai-insight">
-      <h3 className="ai-insight-title">AI 总评</h3>
-      {loading && <Loading text="AI 正在分析中..." />}
-      {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
-      {insight && (
-        <div className="report">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
+    <div className="ai-insight" id={id}>
+      {(title || action) && (
+        <div className="ai-insight-head">
+          {title ? <h3 className="ai-insight-title">{title}</h3> : <span />}
+          {action}
         </div>
       )}
+      {loading && <Loading text="AI 正在分析中..." />}
+      {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {insight && <AiBody text={insight} collapsible={collapsible} />}
     </div>
   )
 }

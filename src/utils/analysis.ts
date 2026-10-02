@@ -264,7 +264,7 @@ function renderPaipanDisclaimer(person: PersonInfo, bazi: BaziChart): string {
 export function renderFundamentalReport(result: AnalysisResult): string {
   const { bazi, person, fiveElementDistribution, bodyStrength, geJu, warnings, favorableElements, unfavorableElements } = result
 
-  let md = '## 一、乾坤定盘 (Fundamental Analysis)\n\n'
+  let md = '## 乾坤定盘 (Fundamental Analysis)\n\n'
 
   // 警示录
   if (warnings.length > 0) {
@@ -371,7 +371,7 @@ function getWangXiangDesc(dayMaster: HeavenlyStem, monthBranch: EarthlyBranch): 
 export function renderLifeStagesReport(result: AnalysisResult): string {
   const { bazi, bigFortunes, person, currentFortune } = result
 
-  let md = '## 七、运程长卷 (Life Stages)\n\n'
+  let md = '## 运程长卷 (Life Stages)\n\n'
 
   // 起运年龄说明
   const firstFortune = bigFortunes?.[0]
@@ -444,7 +444,7 @@ function describeFortune(fortune: BigFortune, bazi: BaziChart, favorable: FiveEl
 export function renderRiskReport(result: AnalysisResult): string {
   const { bazi, fiveElementDistribution, bodyStrength } = result
 
-  let md = '## 八、判官直言 (Risk Warning)\n\n'
+  let md = '## 判官直言 (Risk Warning)\n\n'
 
   // 判官批语：综合命局风险（性格/健康细节见对应章节，此处只给总纲）
   md += '> **判官总批：** 此局日主' + bodyStrength + '，'

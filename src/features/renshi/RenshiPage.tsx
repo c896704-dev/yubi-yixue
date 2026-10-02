@@ -283,30 +283,7 @@ export function RenshiPage() {
 
           <RenshiReport r={analysis.result} />
 
-          {!aiText && !aiLoading && !aiError && (
-            <div className="flex justify-center">
-              <Button variant="primary" size="lg" onClick={handleRetryAi}>
-                <RefreshCw size={14} style={{ marginRight: 6 }} />御笔判官 · 深度识人解读
-              </Button>
-            </div>
-          )}
-          <AiInsightCard insight={aiText} loading={aiLoading} error={aiError} />
-          {aiText && !aiLoading && (
-            <div className="flex justify-center no-print">
-              <Button variant="ghost" size="sm" onClick={handleRetryAi}>
-                <RefreshCw size={13} style={{ marginRight: 6 }} />重新解读
-              </Button>
-            </div>
-          )}
-          {aiError && !aiLoading && (
-            <div className="flex justify-center">
-              <Button variant="secondary" size="sm" onClick={handleRetryAi}>
-                <RefreshCw size={13} style={{ marginRight: 6 }} />重试解读
-              </Button>
-            </div>
-          )}
-
-          {/* 人生轨迹：显示上独立成区，AI 解读为独立输出流（与上方识人解读并发） */}
+          {/* 人生轨迹：显示上独立成区，AI 解读为独立输出流（与下方识人解读并发） */}
           <TrajectorySection
             person={analysis.person}
             r={analysis.result}
@@ -316,6 +293,35 @@ export function RenshiPage() {
             aiError={trajError}
             onGenerate={handleRetryTraj}
           />
+
+          {/* 识人 AI 解读：后置为「延伸段」——四象、三垣、轨迹等引擎结论先行，模型叙事随后 */}
+          {!aiText && !aiLoading && !aiError && (
+            <div className="flex justify-center">
+              <Button variant="primary" size="lg" onClick={handleRetryAi}>
+                <RefreshCw size={14} style={{ marginRight: 6 }} />御笔判官 · 深度识人解读
+              </Button>
+            </div>
+          )}
+          <AiInsightCard
+            insight={aiText}
+            loading={aiLoading}
+            error={aiError}
+            title="深度识人解读"
+            id="ai-renshi"
+            collapsible
+            action={aiText && !aiLoading ? (
+              <Button variant="ghost" size="sm" onClick={handleRetryAi} className="no-print">
+                <RefreshCw size={13} style={{ marginRight: 6 }} />重新解读
+              </Button>
+            ) : null}
+          />
+          {aiError && !aiLoading && (
+            <div className="flex justify-center">
+              <Button variant="secondary" size="sm" onClick={handleRetryAi}>
+                <RefreshCw size={13} style={{ marginRight: 6 }} />重试解读
+              </Button>
+            </div>
+          )}
 
           <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新识人</Button>

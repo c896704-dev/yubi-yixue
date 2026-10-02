@@ -10,6 +10,7 @@ import { coinShake, numberCast, randomCast, buildCoinResult } from '../utils/liu
 import { generateLiuyaoInterpretation, buildDivinationQASystemPrompt } from '../../../utils/ai'
 import { saveDivinationRecord } from '../../../utils/db'
 import { ChatPanel } from '../../../components/ui/ChatPanel'
+import { AiBody } from '../../../components/ui/AiBody'
 import { determineLiuyaoYongShen } from '../utils/liuyao-yongshen'
 import { analyzeSiShen } from '../../../utils/sishen'
 import { analyzeMoonDayStrength } from '../../../utils/strength'
@@ -59,8 +60,8 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
   const [num3, setNum3] = useState('')
   const [activeLiuyaoHex, setActiveLiuyaoHex] = useState('original')
 
-  /** 构建六爻代码层分析 */
-  const buildLiuyaoCodeAnalysis = (r: LiuyaoResult, q: string): string | null => {
+  /** 构建六爻代码层分析。opts.forAI=true 时保留完整表述，作为喂给 AI 的上下文 */
+  const buildLiuyaoCodeAnalysis = (r: LiuyaoResult, q: string, opts?: { forAI?: boolean }): string | null => {
     const naja = r.naja
     if (!naja) return null
     const lines = naja.lines
@@ -78,22 +79,21 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
     // 应期
     const yq = computeYingQiLiuyao(ys.primary.line.wuxing!, naja.isStatic, naja.monthWuxing)
 
-    return `**用神定位：** ${ys.info}
+    const parts = [`**用神定位：** ${ys.info}`]
 
-**四神体系：** ${sishen.summary}
+    // 四神体系：summary 是下方三条 info 的散文版，正文里二选一即可；AI 版保留散文以便理解
+    if (opts?.forAI) parts.push(`**四神体系：** ${sishen.summary}`)
+    parts.push([sishen.yuan.info, sishen.ji.info, sishen.chou.info].map((s) => `- ${s}`).join('\n'))
 
-- ${sishen.yuan.info}
-- ${sishen.ji.info}
-- ${sishen.chou.info}
+    parts.push(`**月日旺衰：** ${str.summary}`)
+    parts.push([str.yong.month, str.yong.day].map((s) => `- ${s}`).join('\n'))
 
-**月日旺衰：** ${str.summary}
+    // 应期：页面下方有结构化「应期推算」块逐条呈现同一结论，正文版不再重复；AI 版需要这段
+    if (opts?.forAI) parts.push(`**应期推算：** ${yq.map((y) => y.timeWindow).join('；')}`)
 
-- ${str.yong.month}
-- ${str.yong.day}
+    parts.push(`**卦局：** ${naja.isLiuChong ? '六冲卦' : '非六冲卦'}，${naja.isStatic ? '静卦' : '有动爻'}，${naja.palaceName}宫${naja.palaceElement}`)
 
-**应期推算：** ${yq.map(y=>y.timeWindow).join('；')}
-
-**卦局：** ${naja.isLiuChong?'六冲卦':'非六冲卦'}，${naja.isStatic?'静卦':'有动爻'}，${naja.palaceName}宫${naja.palaceElement}`
+    return parts.join('\n\n')
   }
 
   // Derived analysis text — used both in UI and AI prompt
@@ -124,7 +124,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
 
     // 第三步：请求 AI，完成后更新记录
     try {
-      const codeAnalysis = buildLiuyaoCodeAnalysis(r, q)
+      const codeAnalysis = buildLiuyaoCodeAnalysis(r, q, { forAI: true })
       const text = await generateLiuyaoInterpretation(r, q, undefined, codeAnalysis)
       setInterpretation(text)
       // 用 AI 解读更新已保存的记录
@@ -325,10 +325,10 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
           )}
         </Card>
 
-        {/* 代码分析与应期推算 */}
-        <Card title="代码分析与应期推算">
+        {/* 卦理分析与应期推算 */}
+        <Card title="卦理分析与应期推算">
           {analysisText && (
-            <div className="text-sm leading-relaxed p-4 rounded-lg mb-3"
+            <div className="report text-sm leading-relaxed p-4 rounded-lg mb-3"
               style={{ color: 'var(--fg)', backgroundColor: 'var(--bg)' }}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysisText}</ReactMarkdown>
             </div>
@@ -355,33 +355,6 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
         </Card>
 
         {/* AI 解读 */}
-        <Card title="AI 解读">
-          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
-            所问之事：{question || '（未填写）'}
-          </div>
-
-          {interpreting && <Loading text="卦象推演中..." />}
-
-          {interpretError && (
-            <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--negative-bg)', color: 'var(--danger)' }}>
-              {interpretError}
-              <Button variant="clear" size="sm" onClick={handleReinterpret} className="ml-2">
-                重试
-              </Button>
-            </div>
-          )}
-
-          {interpretation && (
-            <div className="report">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{interpretation}</ReactMarkdown>
-            </div>
-          )}
-
-          {!interpreting && !interpretError && !interpretation && (
-            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
-          )}
-        </Card>
-
         {/* 卦辞释义 */}
         <Card title="卦辞释义">
           <p className="text-sm leading-relaxed mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.originalHexagram.judgment}</p>
@@ -447,6 +420,30 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
             </Card>
           )
         })()}
+
+        {/* AI 解读：后置为「延伸段」——卦象、卦辞、传统断语等引擎结论先行，模型叙事随后 */}
+        <Card title="AI 解读">
+          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
+            所问之事：{question || '（未填写）'}
+          </div>
+
+          {interpreting && <Loading text="卦象推演中..." />}
+
+          {interpretError && (
+            <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--negative-bg)', color: 'var(--danger)' }}>
+              {interpretError}
+              <Button variant="clear" size="sm" onClick={handleReinterpret} className="ml-2">
+                重试
+              </Button>
+            </div>
+          )}
+
+          {interpretation && <AiBody text={interpretation} collapsible />}
+
+          {!interpreting && !interpretError && !interpretation && (
+            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
+          )}
+        </Card>
 
         <div className="flex justify-center">
           <Button variant="mist" onClick={() => window.print()}>打印报告</Button>

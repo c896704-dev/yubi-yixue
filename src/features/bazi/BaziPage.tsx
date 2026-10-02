@@ -173,7 +173,7 @@ export default function BaziPage() {
             </div>
           )}
           {/* AI 总评（紧随定盘之后） */}
-          <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} />
+          <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} collapsible />
           {/* 深度报告（内部从一编号）+ 附录A；运程长卷内嵌时间轴 */}
           <BaziReport
             sections={reportSections.slice(1)}

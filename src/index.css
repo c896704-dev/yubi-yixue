@@ -1168,7 +1168,30 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   padding: 28px;
+  scroll-margin-top: 84px; /* 与 .report-section 一致：锚点跳转不被顶部导航遮挡 */
 }
+.ai-insight-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.ai-insight-head .ai-insight-title { margin-bottom: 0; }
+
+/* AI 正文折叠：默认展开，仅提供手动收起；打印时强制全展开 */
+.ai-body.is-collapsed { max-height: 140px; overflow: hidden; position: relative; }
+.ai-body.is-collapsed::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px;
+  background: linear-gradient(180deg, transparent, #fff);
+  pointer-events: none;
+}
+.ai-toggle {
+  display: block; margin: 14px auto 0;
+  padding: 6px 18px; font-size: 13px; cursor: pointer;
+  color: var(--dai-qing); background: #fff;
+  border: 1px solid var(--dan-mo); border-radius: 99px;
+  transition: all 0.15s;
+}
+.ai-toggle:hover { border-color: rgba(212, 175, 55, 0.5); background: rgba(212, 175, 55, 0.08); }
 .ai-insight-title {
   font-family: var(--font-serif);
   font-size: 17px; font-weight: 700;
@@ -1600,7 +1623,10 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 /* 打印 */
 @media print {
   html, body { background: #fff !important; color: #000 !important; font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .site-topnav, .site-dock, .ds-fab, .ds-chat-panel, .tool-back, .actions button, .report-toc, .report-section-toggle, .fold-trigger { display: none !important; }
+  .site-topnav, .site-dock, .ds-fab, .ds-chat-panel, .tool-back, .actions button, .report-toc, .report-section-toggle, .fold-trigger, .ai-toggle { display: none !important; }
+  /* AI 正文若被手动收起，打印时必须还原全文 */
+  .ai-body.is-collapsed { max-height: none !important; overflow: visible !important; }
+  .ai-body.is-collapsed::after { display: none !important; }
   .report-section-body { display: block !important; }
   .report-section { break-inside: avoid; box-shadow: none !important; }
   .pillar-table-wrap, .ft2-days, .ft2-year-nodes { overflow: visible; }
@@ -1677,6 +1703,13 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 .rs-board-yuan { background: linear-gradient(180deg, rgba(0,77,77,0.04), transparent); }
 .rs-board-taixi { background: linear-gradient(180deg, rgba(156,61,84,0.05), transparent); }
 .rs-board-label { font-size: 10px; letter-spacing: 0.12em; color: rgba(0,77,77,0.5); }
+/* 三垣与本命某柱同值时标注来源（如「同 年柱」），避免读者把同一条数据当成两套 */
+.rs-board-same {
+  font-size: 10px; letter-spacing: 0.06em;
+  color: rgba(0,77,77,0.45);
+  border: 1px solid var(--dan-mo); border-radius: 99px;
+  padding: 1px 7px; margin-top: 2px;
+}
 .rs-board-ganzhi { font-size: 16px; font-weight: 600; color: var(--dai-qing); }
 .rs-board-nayin { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
 
