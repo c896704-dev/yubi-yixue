@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card } from '../../components/ui/Card'
 import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
 import { AiBody } from '../../components/ui/AiBody'
+import type { NavChapter } from '../../components/ui/ReportNav'
 import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
@@ -380,30 +381,39 @@ export function FortuneTimelineV2({ result }: { result: AnalysisResult }) {
 
 const SECTION_NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
 
+/**
+ * 章节序号的**唯一**产生点（正文 Markdown 标题已不再自带序号）。
+ * @param indexInFullList 在完整章节表（含页级「乾坤定盘」）中的下标
+ */
+function chapterNum(indexInFullList: number, id: string, fallback: string): string {
+  if (id === 'appearance') return fallback
+  return SECTION_NUMS[indexInFullList] || String(indexInFullList + 1)
+}
+
+/**
+ * 生成完整章节导航列表（含页级「乾坤定盘」）。
+ * 传入 `buildReportSections()` 的完整结果；深度报告渲染时用 `slice(1)` 后的下标 +1 对齐。
+ */
+export function buildChapterList(sections: ReportSection[]): NavChapter[] {
+  return sections.map((s, i) => ({
+    id: `section-${s.id}`,
+    num: chapterNum(i, s.id, s.num),
+    title: s.title,
+  }))
+}
+
 export function BaziReport({ markdown, sections, result, fortuneTimeline }: BaziReportProps) {
-  // 新式：sections 驱动（含折叠/目录），旧式 markdown 兜底
+  // 新式：sections 驱动（含折叠），旧式 markdown 兜底
   if (sections && result) {
-    // 页级「一 乾坤定盘」已占用「一」，深度报告顺延为 二…八。
-    // 序号只在此处产生：正文 Markdown 标题已不再自带序号，避免卡头与正文各说一套（旧版差 1）。
+    // 传入的是 slice(1) 后的列表，故下标 +1 才能与完整章节表对齐
     const displaySections = sections.map((s, i) => ({
       ...s,
-      num: s.id === 'appearance' ? s.num : (SECTION_NUMS[i + 1] || String(i + 2)),
+      num: chapterNum(i + 1, s.id, s.num),
     }))
 
     return (
       <Card title="深度分析报告">
         <div className="report">
-          {/* 目录导航（静态定位，不悬浮遮挡正文） */}
-          <nav className="report-toc" aria-label="报告目录">
-            {displaySections.map((s) => (
-              <a key={s.id} href={`#section-${s.id}`} className="report-toc-item">
-                <span className="report-toc-num">{s.num}</span>
-                <span className="report-toc-icon">{s.icon}</span>
-                <span>{s.title}</span>
-              </a>
-            ))}
-          </nav>
-
           {displaySections.map((s, i) => (
             <ReportSectionCard key={s.id} section={s} result={result} index={i}>
               {/* 事业前程：推荐发展城市地图 */}
@@ -443,12 +453,14 @@ interface AiInsightCardProps {
 export function AiInsightCard({ insight, loading, error, title = 'AI 总评', id, action, collapsible }: AiInsightCardProps) {
   return (
     <div className="ai-insight" id={id}>
-      {(title || action) && (
-        <div className="ai-insight-head">
-          {title ? <h3 className="ai-insight-title">{title}</h3> : <span />}
-          {action}
+      {/* 固定副标题：让读者一眼分清「引擎结论」与「模型叙事」。属组件固定文案，非 AI 输出 */}
+      <div className="ai-insight-head">
+        <div className="ai-insight-heading">
+          {title && <h3 className="ai-insight-title">{title}</h3>}
+          <span className="ai-insight-note">AI 生成 · 仅供参考</span>
         </div>
-      )}
+        {action}
+      </div>
       {loading && <Loading text="AI 正在分析中..." />}
       {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
       {insight && <AiBody text={insight} collapsible={collapsible} />}

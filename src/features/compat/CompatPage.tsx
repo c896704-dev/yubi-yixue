@@ -13,6 +13,7 @@ import { CompatScore } from './CompatScore'
 import { CompatReport } from './CompatReport'
 import { BaziChart } from '../../components/viz/BaziChart'
 import { AiInsightCard } from '../bazi/BaziReport'
+import { AutoReportNav } from '../../components/ui/AutoReportNav'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
 
@@ -143,6 +144,9 @@ export default function CompatPage() {
       {result && (
         <>
           <CompatScore result={result} />
+          {/* 章节导航：8 章 ~7.7 屏，无导航只能一路滚到底 */}
+          {report && <AutoReportNav containerIds={['compat-report']} skip="^评分口径$" />}
+
           {report && <CompatReport reportMarkdown={report} />}
 
           {result1 && result2 && (

@@ -11,8 +11,10 @@ interface CompatReportProps {
  */
 export function CompatReport({ reportMarkdown }: CompatReportProps) {
   return (
-    <Card title="合盘详细报告">
-      <div className="report"><ReportMarkdown>{reportMarkdown}</ReportMarkdown></div>
-    </Card>
+    <div id="compat-report">
+      <Card title="合盘详细报告">
+        <div className="report"><ReportMarkdown>{reportMarkdown}</ReportMarkdown></div>
+      </Card>
+    </div>
   )
 }

@@ -195,7 +195,7 @@ function DisclosureFooter({ r }: { r: SixiangResult }) {
 
 export function RenshiReport({ r }: { r: SixiangResult }) {
   return (
-    <div className="rs-report">
+    <div className="rs-report" id="renshi-report">
       <AltChartBanner r={r} />
       <OverviewBoard r={r} />
 

@@ -168,7 +168,7 @@ export function TrajectorySection({ person, r, t, aiText, aiLoading, aiError, on
   const dy = t.dayunTracks[selDy] ?? null
 
   return (
-    <section className="tj-report" aria-label="人生轨迹">
+    <section className="tj-report" id="renshi-traj" aria-label="人生轨迹">
       <div className="tj-header ds-card">
         <h2 className="ds-card-head"><Compass size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />人生轨迹 · 限运与大运流年</h2>
         <p className="tj-lead">

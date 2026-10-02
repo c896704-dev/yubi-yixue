@@ -10,8 +10,9 @@ import { BaziInput } from './BaziInput'
 import { BaziResult } from './BaziResult'
 import {
   BaziReport, AiInsightCard, ElementBars, PillarTable,
-  ShenShaGrid, YongShenBadges, FortuneTimelineV2,
+  ShenShaGrid, YongShenBadges, FortuneTimelineV2, buildChapterList,
 } from './BaziReport'
+import { ReportNav } from '../../components/ui/ReportNav'
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -80,6 +81,7 @@ export default function BaziPage() {
   }, [result, aiInsight, authToken])
 
   const reportSections = useMemo(() => buildReportSections(), [])
+  const navChapters = useMemo(() => buildChapterList(reportSections), [reportSections])
 
   const handleAnalyze = useCallback(async (person: PersonInfo) => {
     const res = await analyze(person)
@@ -143,6 +145,39 @@ export default function BaziPage() {
             <span className="person-info-sep">|</span>
             <span>{result.person.birthPlace}</span>
           </div>
+
+          {/* 首屏结论：把最关键的几项事实提到第一屏。
+              数据全部取自 result 既有字段，不新增任何文案生成。 */}
+          <div className="verdict-strip">
+            <div className="verdict-item">
+              <span className="verdict-label">日主</span>
+              <span className="verdict-value">{result.bazi.dayMaster}（{result.bazi.dayMasterElement}）</span>
+            </div>
+            <div className="verdict-item">
+              <span className="verdict-label">身强身弱</span>
+              <span className="verdict-value">{result.bodyStrength}</span>
+            </div>
+            <div className="verdict-item">
+              <span className="verdict-label">格局</span>
+              <span className="verdict-value">{result.geJu}</span>
+            </div>
+            <div className="verdict-item">
+              <span className="verdict-label">喜用神</span>
+              <span className="verdict-value fav">{result.favorableElements.join('、') || '—'}</span>
+            </div>
+            {result.currentFortune && (
+              <div className="verdict-item">
+                <span className="verdict-label">当前大运</span>
+                <span className="verdict-value">
+                  {result.currentFortune.stem}{result.currentFortune.branch}
+                  <span className="verdict-sub">（{result.currentFortune.tenGod}）</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* 章节导航：吸顶，长报告随时可跳章 */}
+          <ReportNav chapters={navChapters} />
 
           {/* 命盘基础信息：字段为行、四柱为列的纵向大表 */}
           <Card title="命盘基础信息">

@@ -3,6 +3,7 @@ import { BaziInput } from '../bazi/BaziInput'
 import { AiInsightCard } from '../bazi/BaziReport'
 import { Button } from '../../components/ui/Button'
 import { ChatPanel } from '../../components/ui/ChatPanel'
+import { AutoReportNav } from '../../components/ui/AutoReportNav'
 import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Download, History, Printer, RefreshCw } from '../../components/ui/Icon'
 import { analyzeSixiang, type SixiangResult } from '../../utils/sixiang'
@@ -280,6 +281,12 @@ export function RenshiPage() {
             <span className="person-info-sep">|</span>
             <span>{p.birthPlace}</span>
           </div>
+
+          {/* 章节导航：四象 + 人生轨迹两份报告共 ~14 屏，合并成一条目录 */}
+          <AutoReportNav
+            containerIds={['renshi-report', 'renshi-traj']}
+            skip="方法论说明|轨迹口径说明"
+          />
 
           <RenshiReport r={analysis.result} />
 
