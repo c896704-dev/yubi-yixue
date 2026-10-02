@@ -1,0 +1,205 @@
+/* ═══════════════════════════════════════════════════════════════
+   报告级样式 —— 正文排版 / 章节卡 / AI 容器 / 章节导航 / 指标条 / 结论条
+   ═══════════════════════════════════════════════════════════════
+   从 index.css 抽出（P2-1 Batch 0）。本文件只放**报告呈现层**的类；
+   板块专有样式（.pillar-table / .ft2- / .rs- / .tj- / .ss- / .element- 等）
+   仍留在 index.css 或各 feature 内。
+   由 main.tsx 在 index.css **之后**引入，保证层叠顺序与抽取前一致。
+   ═══════════════════════════════════════════════════════════════ */
+
+.report {
+  font-size: 15px; line-height: 1.85;
+  color: var(--dai-qing);
+  overflow-wrap: break-word; word-break: break-word;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.report :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: 44em; }
+.report h1 { font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 700; margin: 36px 0 14px; color: var(--dai-qing-dark); letter-spacing: 0.02em; }
+.report h2 { font-family: var(--font-serif); font-size: clamp(1.1rem, 2.5vw, 1.3rem); font-weight: 700; margin: 28px 0 10px; color: var(--dai-qing-dark); padding-bottom: 8px; border-bottom: 1px solid rgba(212, 175, 55, 0.35); scroll-margin-top: 120px; }
+.report h3 { font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; margin: 20px 0 8px; color: var(--dai-qing-dark); }
+.report h4 { font-size: 14px; font-weight: 700; margin: 14px 0 8px; }
+.report p { margin: 8px 0; }
+.report ul, .report ol { margin: 8px 0; padding-left: 22px; }
+.report li { margin: 4px 0; }
+.report hr { margin: 24px 0; border: none; height: 1px; background: var(--dan-mo); }
+.report a { color: var(--dai-qing); }
+.report img { max-width: 100%; border-radius: 10px; margin: 14px 0; }
+.report pre {
+  padding: 14px; border-radius: 10px; font-size: 12px;
+  overflow-x: auto;
+  background: var(--xuan-zhi-dark);
+  border: 1px solid var(--dan-mo);
+  font-family: var(--font-mono);
+}
+.report code { padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: var(--font-mono); background: rgba(212, 175, 55, 0.14); color: var(--hu-po-jin-dark); }
+.report pre code { background: transparent; color: inherit; padding: 0; }
+.report table {
+  width: 100%;
+  border-collapse: separate; border-spacing: 0;
+  margin: 14px 0;
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid var(--dan-mo);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.report thead { background: linear-gradient(180deg, rgba(212, 175, 55, 0.14), rgba(212, 175, 55, 0.04)); }
+.report th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--dai-qing); border-bottom: 1px solid rgba(212, 175, 55, 0.3); white-space: nowrap; }
+.report td { padding: 9px 12px; border-bottom: 1px solid var(--dan-mo); color: var(--dai-qing); }
+.report tbody tr:last-child td { border-bottom: none; }
+.report tbody tr:nth-child(even) { background: rgba(0, 77, 77, 0.02); }
+.report tbody tr:hover { background: rgba(212, 175, 55, 0.06); }
+.report blockquote {
+  border-left: 3px solid var(--dai-qing);
+  padding: 10px 14px; margin: 14px 0;
+  background: rgba(var(--rgb-ink), 0.04);
+  border-radius: 0 10px 10px 0;
+  font-size: 13px;
+}
+.report blockquote.md-judge {
+  border-left-color: var(--hu-po-jin);
+  background: rgba(212, 175, 55, 0.06);
+}
+.ai-insight {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 28px;
+  scroll-margin-top: 120px; /* 与 .report-section 一致：顶部导航 + 吸顶章节条 */
+}
+.ai-insight-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.ai-insight-head .ai-insight-title { margin-bottom: 0; }
+.ai-insight-heading { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ai-insight-note { font-size: 11px; letter-spacing: 0.08em; color: rgba(0, 77, 77, 0.45); }
+.ai-body.is-collapsed { max-height: 140px; overflow: hidden; position: relative; }
+.ai-body.is-collapsed::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px;
+  background: linear-gradient(180deg, transparent, #fff);
+  pointer-events: none;
+}
+.ai-toggle {
+  display: block; margin: 14px auto 0;
+  padding: 6px 18px; font-size: 13px; cursor: pointer;
+  color: var(--dai-qing); background: #fff;
+  border: 1px solid var(--dan-mo); border-radius: 99px;
+  transition: all 0.15s;
+}
+.ai-toggle:hover { border-color: rgba(212, 175, 55, 0.5); background: rgba(212, 175, 55, 0.08); }
+.ai-insight-title {
+  font-family: var(--font-serif);
+  font-size: 17px; font-weight: 700;
+  color: var(--dai-qing);
+  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 10px;
+}
+.ai-insight-title::before { content: ""; width: 20px; height: 2px; background: var(--hu-po-jin); border-radius: 2px; }
+.bar-track { flex: 1; min-width: 0; height: 12px; border-radius: 99px; background: rgba(var(--rgb-ink), 0.08); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+.bar-value { width: 44px; text-align: right; flex-shrink: 0; font-size: 12px; color: rgba(var(--rgb-ink), 0.6); }
+.metric-row { display: flex; align-items: center; gap: 12px; }
+.verdict-strip {
+  display: flex; flex-wrap: wrap; gap: 1px;
+  background: var(--dan-mo);
+  border: 1px solid var(--dan-mo);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.verdict-item {
+  flex: 1 1 132px; min-width: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 16px;
+  background: #fff;
+}
+.verdict-label { font-size: 11px; letter-spacing: 0.1em; color: rgba(0, 77, 77, 0.5); }
+.verdict-value {
+  font-family: var(--font-serif);
+  font-size: 17px; font-weight: 700; line-height: 1.25;
+  color: var(--dai-qing-dark);
+  overflow-wrap: break-word;
+}
+.verdict-value.fav { color: var(--hu-po-jin-dark); }
+.verdict-sub { font-size: 12px; font-weight: 400; color: rgba(0, 77, 77, 0.55); }
+.report-section {
+  position: relative;
+  scroll-margin-top: 120px; /* 顶部导航(60) + 吸顶章节条(46) + 余量，保证跳转落点不被遮挡 */
+  margin: 20px 0;
+  background: #fff;
+  border: 1px solid var(--dan-mo);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.report-section-header {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  padding: 16px 22px;
+  cursor: pointer;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.07), transparent);
+  border: none; font-family: inherit; text-align: left;
+  transition: background 0.2s;
+}
+.report-section-header:hover { background: rgba(212, 175, 55, 0.12); }
+.report-section-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 28px; padding: 0 6px;
+  border-radius: 8px;
+  font-family: var(--font-serif); font-size: 13px; font-weight: 700;
+  color: var(--dai-qing-dark);
+  background: linear-gradient(135deg, var(--hu-po-jin-light), var(--hu-po-jin));
+  box-shadow: inset 0 0 0 1px rgba(0, 51, 51, 0.12), 0 1px 3px rgba(184, 150, 15, 0.35);
+}
+.report-section-icon { font-size: 16px; color: rgba(var(--rgb-ink), 0.6); }
+.report-section-title { flex: 1; font-family: var(--font-serif); font-size: 16px; font-weight: 700; color: var(--dai-qing); letter-spacing: 0.03em; }
+.report-section-toggle { font-size: 14px; color: rgba(var(--rgb-ink), 0.5); transition: transform 0.2s; }
+.report-section-toggle.open { transform: rotate(180deg); }
+.report-section-body { padding: 16px 22px 22px; border-top: 1px solid var(--dan-mo); }
+.report-nav {
+  position: sticky; top: 60px; z-index: 30;
+  background: rgba(251, 250, 245, 0.96);
+  border: 1px solid var(--dan-mo);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 51, 51, 0.06);
+}
+.report-nav-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 44px; padding: 10px 14px;
+  background: transparent; border: none; cursor: pointer;
+  font-family: inherit; font-size: 13px; color: var(--dai-qing); text-align: left;
+}
+.report-nav-current { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.report-nav-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.report-nav-num { font-weight: 700; color: var(--hu-po-jin-dark); flex-shrink: 0; }
+.report-nav-caret { font-size: 12px; color: rgba(0, 77, 77, 0.5); white-space: nowrap; flex-shrink: 0; }
+.report-nav-list { display: none; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; }
+.report-nav.is-open .report-nav-list { display: flex; }
+.report-nav-item {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; border-radius: 99px;
+  font-size: 12px; text-decoration: none;
+  color: var(--dai-qing); background: #fff; border: 1px solid var(--dan-mo);
+  transition: all 0.15s;
+}
+.report-nav-item:hover { border-color: rgba(212, 175, 55, 0.5); background: rgba(212, 175, 55, 0.08); }
+.report-nav-item.is-active { border-color: var(--hu-po-jin); background: rgba(212, 175, 55, 0.12); font-weight: 600; }
+
+/* ── 打印：报告级规则 ─────────────────────────────── */
+@media print {
+  .ai-body.is-collapsed { max-height: none !important; overflow: visible !important; }
+  .ai-body.is-collapsed::after { display: none !important; }
+  .report-section-body { display: block !important; }
+  .report-section { break-inside: avoid; box-shadow: none !important; }
+}
+
+/* ── 报告统一渲染器外壳（P2-1 Batch 0 骨架，尚未接入页面） ───── */
+.report-view { display: flex; flex-direction: column; gap: 18px; }
+.report-view-subtitle { margin: 0 0 12px; font-size: 13px; color: rgba(0, 77, 77, 0.55); }

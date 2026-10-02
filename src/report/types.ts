@@ -1,0 +1,120 @@
+import type { ReactNode } from 'react'
+import type { PersonInfo } from '../types'
+
+/**
+ * 报告章节模型 —— 全站报告的唯一结构契约。
+ *
+ * 解决的问题（见《P2-1 报告骨架标准化方案》§0）：
+ *  - 根因 A：此前没有「报告」这个对象，四个板块各写一套章节拼装，目录只能反过来扫 DOM
+ *  - 根因 B：显示文本与 AI 输入是同一个字符串，导致"改显示必动 AI"
+ *  - 根因 C：「AI 正文不可改」只是文档里的一张表，没有类型约束
+ *
+ * 设计要点：
+ *  1) 章节是**数据**，不是 JSX 结构。顺序 = 数组顺序。
+ *  2) `body` 与 `aiContext` **彻底分离**：前者给读者看，后者喂给模型，各自演进。
+ *  3) `kind: 'ai'` 让"AI 生成"成为类型事实，而不是靠人记的白名单。
+ *  4) 序号由呈现层派生（见 deriveChapterNums），章节数据里**不含序号**。
+ */
+
+/** 章节性质。决定呈现层的默认处理方式。 */
+export type ChapterKind =
+  /** 引擎结论：模板生成，可自由改写 */
+  | 'engine'
+  /** AI 生成：正文一字不可改，只允许调整承载（容器/位置/折叠） */
+  | 'ai'
+  /** 纯数据展示：表格 / 图表 / 时间轴 */
+  | 'data'
+
+/**
+ * AI 章节的运行时内容。
+ *
+ * AI 正文来自异步请求，属于页面状态而非报告结构，因此不放进 `ReportSpec`，
+ * 而是按 `chapter.id` 由 `ReportContext.ai` 在渲染时提供。
+ * 这样 ReportView 能对所有 `kind:'ai'` 章节统一施加 AI 承载（标题/标识/折叠/锚点），
+ * 页面只需把文本塞进来。
+ */
+export interface AiSlot {
+  text: string | null
+  loading?: boolean
+  error?: string | null
+  /** 标题右侧操作位（如「重新解读」） */
+  action?: ReactNode
+}
+
+/** 构造与渲染期上下文。各板块用泛型收窄 `result` 的具体类型。 */
+export interface ReportContext<R = unknown> {
+  result: R
+  person?: PersonInfo
+  /** AI 章节内容，键为 chapter.id */
+  ai?: Record<string, AiSlot>
+}
+
+/** 章节正文。string 视为 Markdown；函数形式用于需要 JSX 的板块（识人、算卦）。 */
+export type ChapterBody<R = unknown> =
+  | string
+  | ((ctx: ReportContext<R>) => ReactNode)
+
+export interface ReportChapter<R = unknown> {
+  /** 锚点 id，全局唯一。呈现层统一据此生成跳转与 scroll-margin */
+  id: string
+  /** 章节标题，**不含序号** —— 序号是呈现层的事 */
+  title: string
+  kind: ChapterKind
+
+  /** 章节正文 */
+  body: ChapterBody<R>
+  /** 附挂在正文之后的额外内容（如八字的事业地图、运程时间轴） */
+  aside?: (ctx: ReportContext<R>) => ReactNode
+
+  /**
+   * 喂给 AI 的上下文。**与 body 完全独立**。
+   *
+   * 迁移纪律（方案 §4.2）：从旧实现搬家时，本字段必须与被替换的字符串**逐字相同**，
+   * 否则 AI 输出会漂移且无法归因。显示侧可以自由精简，AI 侧不受影响。
+   */
+  aiContext?: string
+
+  /** 附录：不占用正文章节号，单独编为「附录A/附录B…」 */
+  appendix?: boolean
+  collapsible?: boolean
+  defaultOpen?: boolean
+}
+
+export interface ReportSpec<R = unknown> {
+  /** 用于打印页眉与 Word 导出标题 */
+  title: string
+  subtitle?: string
+  chapters: ReportChapter<R>[]
+}
+
+const CN_NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
+  '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十']
+
+/**
+ * 派生章节序号 —— **全站序号的唯一产生点**。
+ *
+ * 正文按非附录章节的顺序编为 一/二/三…；附录单独编为 附录A/附录B…
+ * 返回数组与传入的 chapters 一一对应。
+ */
+export function deriveChapterNums<R = unknown>(chapters: ReportChapter<R>[]): string[] {
+  let main = 0
+  let appendix = 0
+  return chapters.map((c) => {
+    if (c.appendix) {
+      const letter = String.fromCharCode(65 + appendix) // 附录A、附录B…
+      appendix += 1
+      return `附录${letter}`
+    }
+    const n = CN_NUMS[main] ?? String(main + 1)
+    main += 1
+    return n
+  })
+}
+
+/** 汇总一份报告要喂给 AI 的全部上下文（按章节顺序，跳过未提供 aiContext 的章节）。 */
+export function collectAiContext<R = unknown>(spec: ReportSpec<R>): string {
+  return spec.chapters
+    .map((c) => c.aiContext)
+    .filter((s): s is string => Boolean(s && s.trim()))
+    .join('\n\n')
+}

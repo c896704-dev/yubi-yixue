@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Card } from '../../components/ui/Card'
-import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
-import { AiBody } from '../../components/ui/AiBody'
-import { BarTrack } from '../../components/ui/BarTrack'
-import type { NavChapter } from '../../components/ui/ReportNav'
+import { ReportMarkdown } from '../../report/ReportMarkdown'
+import { AiBody } from '../../report/AiBody'
+import { BarTrack } from '../../report/BarTrack'
+import type { NavChapter } from '../../report/ReportNav'
 import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
@@ -435,37 +435,5 @@ export function BaziReport({ markdown, sections, result, fortuneTimeline }: Bazi
         <ReportMarkdown>{markdown ?? ''}</ReportMarkdown>
       </div>
     </Card>
-  )
-}
-
-interface AiInsightCardProps {
-  insight: string | null
-  loading?: boolean
-  error?: string | null
-  /** 卡片标题。默认「AI 总评」；传 null 表示不渲染标题（外层卡片已给出标题时用） */
-  title?: string | null
-  /** 锚点 id，便于目录/外链直达 */
-  id?: string
-  /** 标题右侧操作位（如「重新解读」），由调用方传入，避免按钮游离在卡片之外 */
-  action?: React.ReactNode
-  /** 是否提供手动折叠（默认展开，折叠只是给读者的出口；打印时强制全展开） */
-  collapsible?: boolean
-}
-
-export function AiInsightCard({ insight, loading, error, title = 'AI 总评', id, action, collapsible }: AiInsightCardProps) {
-  return (
-    <div className="ai-insight" id={id}>
-      {/* 固定副标题：让读者一眼分清「引擎结论」与「模型叙事」。属组件固定文案，非 AI 输出 */}
-      <div className="ai-insight-head">
-        <div className="ai-insight-heading">
-          {title && <h3 className="ai-insight-title">{title}</h3>}
-          <span className="ai-insight-note">AI 生成 · 仅供参考</span>
-        </div>
-        {action}
-      </div>
-      {loading && <Loading text="AI 正在分析中..." />}
-      {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
-      {insight && <AiBody text={insight} collapsible={collapsible} />}
-    </div>
   )
 }

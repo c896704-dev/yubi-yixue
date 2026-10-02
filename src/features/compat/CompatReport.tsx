@@ -1,5 +1,5 @@
 import { Card } from '../../components/ui/Card'
-import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
+import { ReportMarkdown } from '../../report/ReportMarkdown'
 
 interface CompatReportProps {
   reportMarkdown: string

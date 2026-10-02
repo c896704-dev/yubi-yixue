@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AlertCircle, BookOpen, Compass, Feather, Quote, RefreshCw, Sparkles, Star, User } from '../../components/ui/Icon'
-import { AiInsightCard } from '../bazi/BaziReport'
+import { AiInsightCard } from '../../report/AiInsightCard'
 import { Button } from '../../components/ui/Button'
 import type { PersonInfo } from '../../types'
 import type { SixiangResult } from '../../utils/sixiang'

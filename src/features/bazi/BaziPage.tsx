@@ -9,14 +9,15 @@ import {
 import { BaziInput } from './BaziInput'
 import { BaziResult } from './BaziResult'
 import {
-  BaziReport, AiInsightCard, ElementBars, PillarTable,
+  BaziReport, ElementBars, PillarTable,
   ShenShaGrid, YongShenBadges, FortuneTimelineV2, buildChapterList,
 } from './BaziReport'
-import { ReportNav } from '../../components/ui/ReportNav'
+import { AiInsightCard } from '../../report/AiInsightCard'
+import { ReportNav } from '../../report/ReportNav'
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
+import { ReportMarkdown } from '../../report/ReportMarkdown'
 import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Orbit } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'

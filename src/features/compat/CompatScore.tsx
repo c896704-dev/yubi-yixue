@@ -1,7 +1,7 @@
 import type { CompatibilityResult } from '../../types'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
-import { BarTrack } from '../../components/ui/BarTrack'
+import { BarTrack } from '../../report/BarTrack'
 
 interface CompatScoreProps {
   result: CompatibilityResult
