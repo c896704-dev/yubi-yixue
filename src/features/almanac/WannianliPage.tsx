@@ -83,24 +83,22 @@ export function WannianliPage() {
         {/* 日历 */}
         <Card title="万年历">
           {/* 年月切换 */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div className="cal-toolbar">
             <button
-              className="px-3 py-1.5 rounded-lg text-sm cursor-pointer"
+              className="cal-nav-btn"
               style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
               onClick={() => changeMonth(-1)}
             >‹ 上月</button>
-            <div className="flex items-center gap-2" style={{ flex: '0 0 auto' }}>
+            <div className="cal-selects">
               <select
-                className="ds-select"
-                style={{ width: 120 }}
+                className="ds-select cal-year"
                 value={year}
                 onChange={(e) => { setYear(Number(e.target.value)); setSelected(null) }}
               >
                 {yearOptions.map((y) => <option key={y} value={y}>{y}年</option>)}
               </select>
               <select
-                className="ds-select"
-                style={{ width: 92 }}
+                className="ds-select cal-month"
                 value={month}
                 onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}
               >
@@ -108,12 +106,12 @@ export function WannianliPage() {
               </select>
             </div>
             <button
-              className="px-3 py-1.5 rounded-lg text-sm cursor-pointer"
+              className="cal-nav-btn"
               style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
               onClick={() => changeMonth(1)}
             >下月 ›</button>
             <button
-              className="px-3 py-1.5 rounded-lg text-sm ml-auto cursor-pointer"
+              className="cal-today-btn"
               style={{ backgroundColor: 'var(--primary)', color: '#fbfaf5' }}
               onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); setSelected(null) }}
             >回到今天</button>

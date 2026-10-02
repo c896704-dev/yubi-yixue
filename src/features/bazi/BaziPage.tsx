@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import type { PersonInfo } from '../../types'
 import { useBazi } from '../../hooks/useBazi'
 import { getAllRecordsMerged, deleteRecord, getRecordById, type SavedRecord } from '../../utils/db'
@@ -17,6 +15,7 @@ import {
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
 import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Orbit } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
@@ -163,9 +162,7 @@ export default function BaziPage() {
               </div>
               <div className="report-section-body">
                 <div className="report">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {reportSections[0].render(result)}
-                  </ReactMarkdown>
+                  <ReportMarkdown>{reportSections[0].render(result)}</ReportMarkdown>
                 </div>
                 <ElementBars result={result} />
                 <h4 className="comp-subtitle">用神体系</h4>

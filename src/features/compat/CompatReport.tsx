@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Card } from '../../components/ui/Card'
+import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
 import { Loading } from '../../components/ui/Loading'
 
 interface CompatReportProps {
@@ -24,7 +25,7 @@ export function CompatReport({ reportMarkdown, aiInsight, aiLoading, aiError }: 
         </div>
       ) : null}
       <Card title="合盘详细报告">
-        <div className="report"><ReactMarkdown remarkPlugins={[remarkGfm]}>{reportMarkdown}</ReactMarkdown></div>
+        <div className="report"><ReportMarkdown>{reportMarkdown}</ReportMarkdown></div>
       </Card>
     </div>
   )

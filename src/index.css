@@ -173,12 +173,16 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes dot-bounce { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+/* 仅淡入、不带 transform：.fade-in 包裹整个 Tab 内容，若终帧保留 transform，
+   会成为 position:fixed 后代的包含块，导致 .ds-fab / .ds-chat-panel 不再相对视口定位
+   （表现为浮动助手被钉在文档末尾，必须滚到底才能看到）。此处不能用 fade-up。 */
+@keyframes fade-in-plain { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scale-in { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes dock-sheet-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes ink-spread { 0% { transform: scale(0.2); opacity: 0.7; filter: blur(8px); } 100% { transform: scale(1); opacity: 0; filter: blur(0); } }
 @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
 
-.fade-in { animation: fade-up 0.5s var(--ease-out) forwards; }
+.fade-in { animation: fade-in-plain 0.5s var(--ease-out) forwards; }
 
 /* ── 特效类（showcase 原版） ──────────────────────────── */
 .gold-foil-text {
@@ -1093,11 +1097,14 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 
 /* markdown 内容 */
 .report {
-  font-size: 14px; line-height: 1.8;
+  font-size: 15px; line-height: 1.85;
   color: var(--dai-qing);
   overflow-wrap: break-word; word-break: break-word;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
+/* 中文长文可读性：限制单行字数。仅在文字块上生效，表格 / 图形 / 时间轴 / 目录不受影响。
+   不限制 .report 容器本身——BaziReport 里 .report 是章节卡片的布局容器，压窄它会让卡片整体变窄。 */
+.report :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: 44em; }
 .report h1 { font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 700; margin: 36px 0 14px; color: var(--dai-qing-dark); letter-spacing: 0.02em; }
 .report h2 { font-family: var(--font-serif); font-size: clamp(1.1rem, 2.5vw, 1.3rem); font-weight: 700; margin: 28px 0 10px; color: var(--dai-qing-dark); padding-bottom: 8px; border-bottom: 1px solid rgba(212, 175, 55, 0.35); }
 .report h3 { font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; margin: 20px 0 8px; color: var(--dai-qing-dark); }
@@ -1143,8 +1150,11 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
   border-radius: 0 10px 10px 0;
   font-size: 13px;
 }
-.report blockquote:has(strong:first-child:contains("判官")),
-.report blockquote:has(strong:first-child:contains("批语")) {
+/* 「判官批语」类引用块：由 ReportMarkdown 按内容首词加 .md-judge 类。
+   注意：旧实现写作 blockquote:has(strong:first-child:contains("判官"))，
+   :contains() 是 jQuery 扩展而非合法 CSS，浏览器解析时把整条规则丢弃（从未生效）。
+   CSS 无法按文本选择元素，因此改由渲染层打标、CSS 命中。 */
+.report blockquote.md-judge {
   border-left-color: var(--hu-po-jin);
   background: rgba(212, 175, 55, 0.06);
 }
@@ -1455,6 +1465,41 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 .dict-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .dict-name { font-family: var(--font-serif); font-size: 16px; font-weight: 700; color: var(--dai-qing); }
 .dict-desc { font-size: 13px; line-height: 1.7; color: rgba(var(--rgb-ink), 0.65); }
+/* 神煞词典折叠（默认收起：词典与用户本次命盘无关，展开时占页面近半高度） */
+.dict-fold { border-top: 1px solid var(--dan-mo); padding-top: 14px; }
+.dict-fold-summary {
+  cursor: pointer; list-style: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 4px 0;
+  font-size: 13px; font-weight: 600; color: var(--dai-qing);
+}
+.dict-fold-summary::-webkit-details-marker { display: none; }
+.dict-fold-summary::before {
+  content: "▸"; color: var(--hu-po-jin-dark); transition: transform 0.2s;
+  display: inline-block;
+}
+.dict-fold[open] > .dict-fold-summary::before { transform: rotate(90deg); }
+.dict-fold[open] > .dict-fold-summary { margin-bottom: 18px; }
+.dict-fold-summary:hover { color: var(--hu-po-jin-dark); }
+
+/* 万年历年月工具条：桌面单行；窄屏让「回到今天」独占一行，消除参差换行 */
+.cal-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.cal-toolbar .cal-nav-btn,
+.cal-toolbar .cal-today-btn {
+  padding: 6px 12px; border-radius: 10px; font-size: 14px; cursor: pointer;
+  white-space: nowrap;
+}
+.cal-toolbar .cal-selects { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.cal-toolbar .cal-year { width: 120px; }
+.cal-toolbar .cal-month { width: 92px; }
+.cal-toolbar .cal-today-btn { margin-left: auto; }
+@media (max-width: 520px) {
+  .cal-toolbar { gap: 6px; }
+  .cal-toolbar .cal-selects { flex: 1 1 auto; min-width: 0; }
+  .cal-toolbar .cal-year,
+  .cal-toolbar .cal-month { width: auto; flex: 1 1 0; min-width: 0; }
+  .cal-toolbar .cal-today-btn { flex: 1 1 100%; margin-left: 0; }
+}
 
 /* 聊天浮钮/面板（BaziChat 与 ChatPanel 共用语言） */
 .ds-fab {

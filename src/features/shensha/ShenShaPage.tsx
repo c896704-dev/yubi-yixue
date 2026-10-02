@@ -224,42 +224,47 @@ export function ShenShaPage() {
         </div>
       </div>
 
-      {/* 词典 */}
+      {/* 词典（默认收起：与本次命盘无关，占页面高度近半） */}
       <div className="site-section-tight">
-        <div className="sec-head" style={{ marginBottom: 24 }}>
+        <div className="sec-head" style={{ marginBottom: 12 }}>
           <div className="sec-eyebrow">SHENSHA DICTIONARY</div>
           <h2 className="sec-title" style={{ fontSize: '1.4rem' }}>神煞词典</h2>
         </div>
-        <div className="flex justify-center mb-6">
-          <div style={{ position: 'relative', width: '100%', maxWidth: 420 }}>
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(0,77,77,0.4)' }}>
-              <Search size={15} />
-            </span>
-            <input
-              className="ds-field"
-              style={{ paddingLeft: 36 }}
-              placeholder="搜索神煞名称或释义…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+        <details className="dict-fold">
+          <summary className="dict-fold-summary">
+            展开词典（{DICT.length} 条）· 可搜索名称或释义
+          </summary>
+          <div className="flex justify-center mb-6">
+            <div style={{ position: 'relative', width: '100%', maxWidth: 420 }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(0,77,77,0.4)' }}>
+                <Search size={15} />
+              </span>
+              <input
+                className="ds-field"
+                style={{ paddingLeft: 36 }}
+                placeholder="搜索神煞名称或释义…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-        <div className="dict-grid">
-          {dictFiltered.map((d) => (
-            <div key={d.name} className="dict-card">
-              <div className="dict-head">
-                <span className="dict-name">{d.name}</span>
-                <span className={`ds-chip ${typeChip(d.type)}`}>{d.type}</span>
+          <div className="dict-grid">
+            {dictFiltered.map((d) => (
+              <div key={d.name} className="dict-card">
+                <div className="dict-head">
+                  <span className="dict-name">{d.name}</span>
+                  <span className={`ds-chip ${typeChip(d.type)}`}>{d.type}</span>
+                </div>
+                <p className="dict-desc">{d.desc}</p>
               </div>
-              <p className="dict-desc">{d.desc}</p>
-            </div>
-          ))}
-          {dictFiltered.length === 0 && (
-            <div className="col-span-full text-center py-10" style={{ color: 'rgba(0,77,77,0.5)' }}>
-              未找到「{query}」相关神煞
-            </div>
-          )}
-        </div>
+            ))}
+            {dictFiltered.length === 0 && (
+              <div className="col-span-full text-center py-10" style={{ color: 'rgba(0,77,77,0.5)' }}>
+                未找到「{query}」相关神煞
+              </div>
+            )}
+          </div>
+        </details>
       </div>
     </div>
   )

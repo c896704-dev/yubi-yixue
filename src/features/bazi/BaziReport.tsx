@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Card } from '../../components/ui/Card'
+import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
 import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
@@ -65,7 +66,7 @@ function ReportSectionCard({ section, result, index, children }: {
       </button>
       {open && (
         <div className="report-section-body">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{md}</ReactMarkdown>
+          <ReportMarkdown>{md}</ReportMarkdown>
           {children}
         </div>
       )}
@@ -419,7 +420,7 @@ export function BaziReport({ markdown, sections, result, fortuneTimeline }: Bazi
   return (
     <Card title="深度分析报告">
       <div className="report">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+        <ReportMarkdown>{markdown ?? ''}</ReportMarkdown>
       </div>
     </Card>
   )
