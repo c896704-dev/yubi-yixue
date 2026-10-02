@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef, type CSSProperties }
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Loading } from '../../../components/ui/Loading'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { ReportMarkdown } from '../../../components/ui/ReportMarkdown'
 import { HexagramDisplay } from '../HexagramDisplay'
 import { elementColors } from '../utils/trigrams'
 import type { MeihuaResult, DivinationRecord } from '../types'
@@ -266,7 +265,7 @@ export function MeihuaPage({ onBack, viewingRecord }: MeihuaPageProps) {
           {meihuaAnalysis && (
             <div className="report text-sm leading-relaxed p-4 rounded-lg mb-3"
               style={{ color: 'var(--fg)', backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{meihuaAnalysis}</ReactMarkdown>
+              <ReportMarkdown>{meihuaAnalysis}</ReportMarkdown>
             </div>
           )}
           {result.yingQi && (

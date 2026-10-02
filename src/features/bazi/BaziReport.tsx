@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card } from '../../components/ui/Card'
 import { ReportMarkdown } from '../../components/ui/ReportMarkdown'
 import { AiBody } from '../../components/ui/AiBody'
+import { BarTrack } from '../../components/ui/BarTrack'
 import type { NavChapter } from '../../components/ui/ReportNav'
 import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
@@ -82,16 +83,17 @@ export function ElementBars({ result }: { result: AnalysisResult }) {
     <div className="element-bars">
       {(['木', '火', '土', '金', '水'] as const).map((el) => {
         const val = dist[el] || 0
-        const pct = Math.max(4, Math.round((val / maxVal) * 100))
         const isFav = result.favorableElements.includes(el)
         const isUnfav = result.unfavorableElements.includes(el)
         return (
           <div key={el} className="element-bar-row">
             <span className="element-bar-label" style={{ color: ELEM_COLORS[el] }}>{el}</span>
-            <div className="element-bar-track">
-              <div className="element-bar-fill" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${ELEM_COLORS[el]}cc, ${ELEM_COLORS[el]})` }} />
-            </div>
-            <span className="element-bar-value">{val.toFixed(1)}</span>
+            <BarTrack
+              value={val}
+              max={maxVal}
+              color={`linear-gradient(90deg, ${ELEM_COLORS[el]}cc, ${ELEM_COLORS[el]})`}
+              display={val.toFixed(1)}
+            />
             <span className={`element-bar-tag ${isFav ? 'fav' : isUnfav ? 'unfav' : ''}`}>
               {isFav ? '喜' : isUnfav ? '忌' : ''}
             </span>

@@ -1,6 +1,7 @@
 import type { CompatibilityResult } from '../../types'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
+import { BarTrack } from '../../components/ui/BarTrack'
 
 interface CompatScoreProps {
   result: CompatibilityResult
@@ -46,11 +47,8 @@ export function CompatScore({ result }: CompatScoreProps) {
               <span className="font-[family-name:var(--font-title)] text-sm" style={{ color: 'var(--fg)' }}>{s.label}</span>
               <span className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>{s.desc}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, s.score))}%`, backgroundColor: scoreBarColor(s.score) }} />
-              </div>
-              <span className="font-bold text-sm w-8 text-right" style={{ color: 'var(--fg)' }}>{Math.round(s.score)}</span>
+            <div className="metric-row">
+              <BarTrack value={s.score} color={scoreBarColor(s.score)} />
             </div>
           </div>
         ))}
@@ -70,8 +68,12 @@ export function CompatScore({ result }: CompatScoreProps) {
           </div>
         )}
         {warnings && warnings.length > 0 && (
-          <div className="p-4 rounded-lg" style={{ border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)', backgroundColor: 'color-mix(in srgb, var(--danger) 8%, transparent)' }}>
-            {warnings.map((w, i) => <p key={i} className="m-0 text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{w}</p>)}
+          // 与原「挑战」chip 列表之间需要明确分隔：两者紧邻时会被读成同一个列表（审计 P-14）
+          <div>
+            <h3 className="font-[family-name:var(--font-title)] text-base font-semibold mb-2" style={{ color: 'var(--hu-po-jin-dark)' }}>需要留意</h3>
+            <div className="p-4 rounded-lg flex flex-col gap-2" style={{ border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)', backgroundColor: 'color-mix(in srgb, var(--danger) 8%, transparent)' }}>
+              {warnings.map((w, i) => <p key={i} className="m-0 text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{w}</p>)}
+            </div>
           </div>
         )}
       </div>

@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Loading } from '../../../components/ui/Loading'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { ReportMarkdown } from '../../../components/ui/ReportMarkdown'
 import { HexagramDisplay } from '../HexagramDisplay'
 import type { LiuyaoResult, YaoLine, DivinationRecord } from '../types'
 import { coinShake, numberCast, randomCast, buildCoinResult } from '../utils/liuyao'
@@ -330,7 +329,7 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
           {analysisText && (
             <div className="report text-sm leading-relaxed p-4 rounded-lg mb-3"
               style={{ color: 'var(--fg)', backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysisText}</ReactMarkdown>
+              <ReportMarkdown>{analysisText}</ReportMarkdown>
             </div>
           )}
           {result.naja && (() => {

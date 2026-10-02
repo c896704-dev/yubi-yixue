@@ -131,6 +131,12 @@ export default function CompatPage() {
             <DualInput label="女方" records={records} onSubmit={handleAnalyze2} loading={analyzing2} analyzed={!!result2} person={person2} />
           </div>
 
+          {/* 口径说明：全站统一按真太阳时定盘 */}
+          <p className="caliber-note">
+            出生地用于真太阳时校准；本平台各板块统一按真太阳时定盘。改动出生地或经度会改变排盘结果，
+            <b>历史记录保留生成时的结果，不受影响。</b>
+          </p>
+
           {result1 && result2 && !loading && (
             <div style={{ textAlign: 'center' }}>
               <Button size="lg" onClick={handleCompat}>开始合盘分析</Button>

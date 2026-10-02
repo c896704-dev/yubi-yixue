@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { DateTimePicker } from '../../components/form/DateTimePicker'
 import { CITY_LONGITUDES } from '../../utils/solarTime'
+import { PROVINCE_CITIES } from '../../utils/cityData'
 
 interface DualInputProps {
   label: string
@@ -23,10 +24,24 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
   const [day, setDay] = useState<number | ''>('')
   const [hour, setHour] = useState<number | ''>('')
   const [minute, setMinute] = useState<number | ''>(0)
-  const [birthPlace, setBirthPlace] = useState('北京')
+  // 出生地：与八字页一致，支持省市选择或自定义经度（真太阳时校准需要精确经度）
+  const [province, setProvince] = useState('北京市')
+  const [birthPlace, setBirthPlace] = useState('北京城区')
+  const [customPlace, setCustomPlace] = useState('')
+  const [customLng, setCustomLng] = useState('')
+  const [useCustom, setUseCustom] = useState(false)
   const [error, setError] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
+
+  const currentProvince = PROVINCE_CITIES.find(p => p.name === province) || PROVINCE_CITIES[0]
+  const citiesOfProvince = currentProvince?.cities || []
+
+  const handleProvinceChange = (p: string) => {
+    setProvince(p)
+    const prov = PROVINCE_CITIES.find(x => x.name === p)
+    if (prov && prov.cities.length > 0) setBirthPlace(prov.cities[0].name)
+  }
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -47,6 +62,12 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
     setHour(r.person.birthHour)
     setMinute(r.person.birthMinute ?? 0)
     setBirthPlace(r.person.birthPlace)
+    // 档案里的出生地无法可靠映射回省市下拉，落到自定义经度模式，保留原始经度与地点名
+    if (r.person.longitude != null) {
+      setUseCustom(true)
+      setCustomPlace(r.person.birthPlace)
+      setCustomLng(String(r.person.longitude))
+    }
     setPickerOpen(false)
     onSubmit(r.person)
   }
@@ -54,9 +75,23 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (year === '' || month === '' || day === '' || hour === '') { setError('请填写完整的出生信息'); return }
+    let longitude: number
+    if (useCustom) {
+      const lng = parseFloat(customLng)
+      if (isNaN(lng) || lng < -180 || lng > 180) { setError('请输入有效的经度（-180 ~ 180）'); return }
+      longitude = lng
+    } else {
+      const cityLng = citiesOfProvince.find(c => c.name === birthPlace)?.lng
+      longitude = cityLng ?? CITY_LONGITUDES[birthPlace] ?? currentProvince?.cities[0]?.lng ?? 116.4
+    }
     setError('')
-    const longitude = CITY_LONGITUDES[birthPlace] ?? 116.4
-    onSubmit({ name: name || label, gender, birthYear: year as number, birthMonth: month as number, birthDay: day as number, birthHour: hour as number, birthMinute: minute === '' ? 0 : minute, birthPlace, longitude })
+    onSubmit({
+      name: name || label, gender,
+      birthYear: year as number, birthMonth: month as number, birthDay: day as number,
+      birthHour: hour as number, birthMinute: minute === '' ? 0 : minute,
+      birthPlace: useCustom ? (customPlace || '自定义位置') : `${province}·${birthPlace}`,
+      longitude,
+    })
   }
 
   if (analyzed && person) {
@@ -130,9 +165,33 @@ export function DualInput({ label, records, onSubmit, loading, analyzed, person 
           onHourChange={setHour} onMinuteChange={setMinute} />
         <div>
           <span className="ds-label">出生地</span>
-          <select className="ds-select" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} style={{ marginTop: 4 }}>
-            {['北京', '上海', '广州', '深圳', '成都', '杭州', '南京', '武汉', '重庆'].map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="ds-segmented" style={{ marginTop: 4, marginBottom: 8 }}>
+            {([{ k: false, t: '省市选择' }, { k: true, t: '自定义经度' }] as const).map(({ k, t }) => (
+              <button key={t} type="button" onClick={() => setUseCustom(k)}
+                className={`ds-seg-item ${useCustom === k ? 'active' : ''}`}>{t}</button>
+            ))}
+          </div>
+          {useCustom ? (
+            <div className="flex gap-2">
+              <Input value={customPlace} onChange={(e) => setCustomPlace(e.target.value)} placeholder="地点名（选填）" className="flex-1" />
+              <Input value={customLng} onChange={(e) => setCustomLng(e.target.value)} placeholder="经度，如 116.4" className="flex-1" />
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <div className="ds-select-wrap flex-1">
+                <select className="ds-select" value={province} onChange={(e) => handleProvinceChange(e.target.value)}>
+                  {PROVINCE_CITIES.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
+                </select>
+                <span className="ds-select-arrow" aria-hidden="true" />
+              </div>
+              <div className="ds-select-wrap flex-1">
+                <select className="ds-select" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)}>
+                  {citiesOfProvince.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </select>
+                <span className="ds-select-arrow" aria-hidden="true" />
+              </div>
+            </div>
+          )}
         </div>
         {error && <span className="ds-field-error">{error}</span>}
         <Button type="submit" loading={loading} size="sm">开始分析</Button>

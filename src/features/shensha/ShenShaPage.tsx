@@ -4,6 +4,8 @@ import { DateTimePicker } from '../../components/form/DateTimePicker'
 import { Search, Star, History, Clock } from '../../components/ui/Icon'
 import { calculateShenSha, type ShenShaDetail } from '../../utils/shensha'
 import { getSizhu } from '../../utils/ganzhi'
+import { toTrueSolarTime, CITY_LONGITUDES } from '../../utils/solarTime'
+import { PROVINCE_CITIES } from '../../utils/cityData'
 import { getAllRecordsMerged, type SavedRecord } from '../../utils/db'
 
 /** 神煞词典（与引擎神煞集一致，简明释义） */
@@ -42,6 +44,13 @@ export function ShenShaPage() {
   const [hour, setHour] = useState<number | ''>('')
   const [minute, setMinute] = useState<number | ''>(0)
   const [query, setQuery] = useState('')
+  // 出生地 → 经度：真太阳时校准必需，与八字页/合婚同一套经度数据。
+  // 本页原先不做校准，导致同一命主的四柱在板块间不一致（审计 P-28）。
+  const [province, setProvince] = useState('北京市')
+  const [birthPlace, setBirthPlace] = useState('北京城区')
+  const [customPlace, setCustomPlace] = useState('')
+  const [customLng, setCustomLng] = useState('116.4')
+  const [useCustomLng, setUseCustomLng] = useState(false)
 
   useEffect(() => {
     getAllRecordsMerged().then(setRecords).catch(() => setRecords([]))
@@ -57,12 +66,52 @@ export function ShenShaPage() {
     setDay(r.person.birthDay)
     setHour(r.person.birthHour)
     setMinute(r.person.birthMinute ?? 0)
+    // 档案里的出生地无法可靠映射回省市下拉，落到自定义经度模式，保留原始经度与地点名，
+    // 保证与本页四柱、与八字页口径一致（本页原先不做真太阳时校准，见审计 P-28）
+    if (r.person.longitude != null) {
+      setUseCustomLng(true)
+      setCustomPlace(r.person.birthPlace)
+      setCustomLng(String(r.person.longitude))
+    }
   }, [records])
+
+  const currentProvince = PROVINCE_CITIES.find(p => p.name === province) || PROVINCE_CITIES[0]
+  const citiesOfProvince = currentProvince?.cities || []
+
+  const handleProvinceChange = (p: string) => {
+    setProvince(p)
+    const prov = PROVINCE_CITIES.find(x => x.name === p)
+    if (prov && prov.cities.length > 0) setBirthPlace(prov.cities[0].name)
+  }
+
+  /** 出生地 → 经度（自定义模式下取输入值），供真太阳时校准使用 */
+  const longitude = useMemo(() => {
+    if (useCustomLng) {
+      const v = parseFloat(customLng)
+      return isNaN(v) ? 116.4 : v
+    }
+    const cityLng = citiesOfProvince.find(c => c.name === birthPlace)?.lng
+    return cityLng ?? CITY_LONGITUDES[birthPlace] ?? currentProvince?.cities[0]?.lng ?? 116.4
+  }, [useCustomLng, customLng, citiesOfProvince, birthPlace, currentProvince])
+
+  /** 校准后的出生日期时间；输入不完整时返回 null */
+  const calTime = useMemo(() => {
+    if (year === '' || month === '' || day === '' || hour === '') return null
+    const { hour: trueHour, minute: trueMinute, dayOffset } = toTrueSolarTime(
+      hour, minute === '' ? 0 : minute, longitude, year, month, day,
+    )
+    const dt = new Date(year, month - 1, day)
+    dt.setDate(dt.getDate() + dayOffset)
+    return {
+      y: dt.getFullYear(), mo: dt.getMonth() + 1, d: dt.getDate(), h: trueHour,
+      trueHour, trueMinute, dayOffset,
+    }
+  }, [year, month, day, hour, minute, longitude])
 
   /** 出生信息 → 四柱 → 神煞 */
   const result = useMemo(() => {
-    if (year === '' || month === '' || day === '' || hour === '') return null
-    const sz = getSizhu(year, month, day, hour)
+    if (!calTime) return null
+    const sz = getSizhu(calTime.y, calTime.mo, calTime.d, calTime.h)
     const y = sz.year
     const m = sz.month
     const d = sz.day
@@ -76,13 +125,13 @@ export function ShenShaPage() {
     } catch {
       return null
     }
-  }, [year, month, day, hour])
+  }, [calTime])
 
   /** 四柱展示（从出生时间推算） */
   const sizhu = useMemo(() => {
-    if (year === '' || month === '' || day === '' || hour === '') return null
-    return getSizhu(year, month, day, hour)
-  }, [year, month, day, hour])
+    if (!calTime) return null
+    return getSizhu(calTime.y, calTime.mo, calTime.d, calTime.h)
+  }, [calTime])
 
   const byPillar = useMemo(() => {
     if (!result) return [] as { pillar: string; items: ShenShaDetail[] }[]
@@ -154,6 +203,56 @@ export function ShenShaPage() {
                 onYearChange={setYear} onMonthChange={setMonth} onDayChange={setDay}
                 onHourChange={setHour} onMinuteChange={setMinute}
               />
+            </div>
+
+            {/* 出生地：真太阳时校准必需（与八字页同一套经度数据） */}
+            <div style={{ borderTop: '1px solid var(--dan-mo)', paddingTop: 14 }}>
+              <span className="ds-label">出生地（用于真太阳时校准）</span>
+              <div className="ds-segmented" style={{ marginTop: 6, marginBottom: 8 }}>
+                {([{ k: false, t: '省市选择' }, { k: true, t: '自定义经度' }] as const).map(({ k, t }) => (
+                  <button key={t} type="button" onClick={() => setUseCustomLng(k)}
+                    className={`ds-seg-item ${useCustomLng === k ? 'active' : ''}`}>{t}</button>
+                ))}
+              </div>
+              {useCustomLng ? (
+                <div className="flex gap-2">
+                  <input
+                    className="ds-field flex-1"
+                    value={customPlace}
+                    onChange={(e) => setCustomPlace(e.target.value)}
+                    placeholder="地点名（选填）"
+                  />
+                  <input
+                    className="ds-field flex-1"
+                    type="number"
+                    step="0.1"
+                    value={customLng}
+                    onChange={(e) => setCustomLng(e.target.value)}
+                    placeholder="经度，如 116.4"
+                  />
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="ds-select-wrap flex-1">
+                    <select className="ds-select" value={province} onChange={(e) => handleProvinceChange(e.target.value)}>
+                      {PROVINCE_CITIES.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
+                    </select>
+                    <span className="ds-select-arrow" aria-hidden="true" />
+                  </div>
+                  <div className="ds-select-wrap flex-1">
+                    <select className="ds-select" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)}>
+                      {citiesOfProvince.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                    <span className="ds-select-arrow" aria-hidden="true" />
+                  </div>
+                </div>
+              )}
+              {calTime && (
+                <p className="caliber-note" style={{ marginTop: 10 }}>
+                  真太阳时 <b>{String(calTime.trueHour).padStart(2, '0')}:{String(calTime.trueMinute).padStart(2, '0')}</b>
+                  （经度 {longitude.toFixed(1)}°E{calTime.dayOffset !== 0 ? '，已跨日' : ''}）；时柱按校准后时间取。
+                </p>
+              )}
             </div>
 
             {/* 四柱预览 */}

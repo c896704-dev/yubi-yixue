@@ -1275,6 +1275,23 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 .ss-pillar-tag { font-style: normal; font-size: 10px; opacity: 0.65; }
 
 /* 五行能量条 */
+/* 指标条基元：八字五行能量与合婚三维评分共用（见 components/ui/BarTrack.tsx）。
+   只统一「条」的视觉，两处的行布局各自保留。 */
+.bar-track { flex: 1; min-width: 0; height: 12px; border-radius: 99px; background: rgba(var(--rgb-ink), 0.08); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+.bar-value { width: 44px; text-align: right; flex-shrink: 0; font-size: 12px; color: rgba(var(--rgb-ink), 0.6); }
+.metric-row { display: flex; align-items: center; gap: 12px; }
+/* 口径说明：告诉用户输入如何影响结果、历史记录是否受影响 */
+.caliber-note {
+  margin: 0; padding: 10px 14px;
+  font-size: 12px; line-height: 1.7;
+  color: rgba(0, 77, 77, 0.55);
+  background: rgba(0, 77, 77, 0.03);
+  border-left: 2px solid var(--dan-mo);
+  border-radius: 0 8px 8px 0;
+}
+.caliber-note b { color: var(--dai-qing); font-weight: 600; }
+
 .element-bars {
   display: flex; flex-direction: column; gap: 10px;
   margin: 14px 0;
