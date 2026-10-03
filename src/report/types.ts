@@ -54,23 +54,36 @@ export type ChapterBody<R = unknown> =
   | string
   | ((ctx: ReportContext<R>) => ReactNode)
 
-export interface ReportChapter<R = unknown> {
+interface ChapterBase<R> {
   /** 锚点 id，全局唯一。呈现层统一据此生成跳转与 scroll-margin */
   id: string
-  /** 章节标题，**不含序号** —— 序号是呈现层的事 */
-  title: string
-  kind: ChapterKind
+  /**
+   * 章节标题，**不含序号** —— 序号是呈现层的事。
+   * 需要带运行时数字时（如「取前 N 条」）用函数形式，避免标题与实际渲染内容不符。
+   */
+  title: string | ((ctx: ReportContext<R>) => string)
 
-  /** 章节正文 */
-  body: ChapterBody<R>
   /** 附挂在正文之后的额外内容（如八字的事业地图、运程时间轴） */
   aside?: (ctx: ReportContext<R>) => ReactNode
+
+  /** 章节头图标（渲染在序号之后、标题之前） */
+  icon?: ReactNode
+
+  /**
+   * 章节头右侧的附加内容（状态徽章等，如「两口径结论存在实质翻转」）。
+   * 语义上属于章节头的状态提示，不应塞进正文。
+   */
+  headerExtra?: (ctx: ReportContext<R>) => ReactNode
+
+  /** 给章节卡附加的变体类名（如 rs-alt-banner 提供金色左边框强调） */
+  variant?: string
 
   /**
    * 喂给 AI 的上下文。**与 body 完全独立**。
    *
    * 迁移纪律（方案 §4.2）：从旧实现搬家时，本字段必须与被替换的字符串**逐字相同**，
    * 否则 AI 输出会漂移且无法归因。显示侧可以自由精简，AI 侧不受影响。
+   * 若 AI 输入本就取自引擎对象（如识人），则**不需要**本字段。
    */
   aiContext?: string
 
@@ -78,7 +91,35 @@ export interface ReportChapter<R = unknown> {
   appendix?: boolean
   collapsible?: boolean
   defaultOpen?: boolean
+  /**
+   * 可见性谓词。返回 false 时整章（含卡头与序号）都不出现——
+   * 用于只在特定条件下存在的章节（如晚子时才有的换日口径披露、有节点时才出的重引动一览）。
+   * 注意：**不是**用来隐藏内容的开关，条件不满足时应视为"本章不存在"。
+   */
+  when?: (ctx: ReportContext<R>) => boolean
 }
+
+/** 引擎 / 数据章节：正文由本 spec 提供 */
+export interface ContentChapter<R> extends ChapterBase<R> {
+  kind: 'engine' | 'data'
+  body: ChapterBody<R>
+}
+
+/**
+ * AI 章节：**不允许写 body**。
+ *
+ * 这是「AI 正文不可改」从文档约定升级为**类型约束**的地方（方案根因 C）——
+ * 想往 spec 里塞一段 AI 文案会直接编译不过，而不是靠人记得查白名单。
+ * 正文由 `ReportContext.ai[chapter.id]` 在运行时提供，呈现层统一套用 AI 承载。
+ */
+export interface AiChapter<R> extends ChapterBase<R> {
+  kind: 'ai'
+  body?: never
+  /** AI 卡上方的补充说明（组件固定文案，非 AI 输出） */
+  note?: string
+}
+
+export type ReportChapter<R = unknown> = ContentChapter<R> | AiChapter<R>
 
 export interface ReportSpec<R = unknown> {
   /** 用于打印页眉与 Word 导出标题 */
@@ -96,10 +137,23 @@ const CN_NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', 
  * 正文按非附录章节的顺序编为 一/二/三…；附录单独编为 附录A/附录B…
  * 返回数组与传入的 chapters 一一对应。
  */
+/**
+ * 派生章节序号 —— **全站序号的唯一产生点**。
+ *
+ * 规则（与 P1-1 建立的「卡头 = 导航 编号一致」不变式绑定）：
+ *  - 正文（`kind: 'engine' | 'data'`）按顺序编为 一/二/三…
+ *  - `appendix` 单独编为 附录A/附录B…
+ *  - `kind: 'ai'` **不占号**，返回空串。原因：AI 卡按设计不显示序号（八字/合婚/识人
+ *    三处共用同一承载），若导航给它编号，就会出现"导航说十二、卡上没有十二"的错位。
+ *    语义上也自洽：序号只给可核查的引擎结论，AI 是延伸段。
+ *
+ * 返回数组与传入的 chapters 一一对应。
+ */
 export function deriveChapterNums<R = unknown>(chapters: ReportChapter<R>[]): string[] {
   let main = 0
   let appendix = 0
   return chapters.map((c) => {
+    if (c.kind === 'ai') return ''
     if (c.appendix) {
       const letter = String.fromCharCode(65 + appendix) // 附录A、附录B…
       appendix += 1

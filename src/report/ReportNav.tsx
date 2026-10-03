@@ -49,7 +49,8 @@ export function ReportNav({ chapters }: { chapters: NavChapter[] }) {
         aria-expanded={open}
       >
         <span className="report-nav-current">
-          <span className="report-nav-num">{active.num}</span>
+          {/* AI 章节不占正文序号，此时不渲染序号位（见 deriveChapterNums 规则） */}
+          {active.num && <span className="report-nav-num">{active.num}</span>}
           <span className="report-nav-title">{active.title}</span>
         </span>
         <span className="report-nav-caret">{open ? '收起' : `目录 · 共 ${chapters.length} 章`}</span>
@@ -74,7 +75,7 @@ export function ReportNav({ chapters }: { chapters: NavChapter[] }) {
               setOpen(false)
             }}
           >
-            <span className="report-nav-num">{c.num}</span>
+            {c.num && <span className="report-nav-num">{c.num}</span>}
             {c.title}
           </a>
         ))}

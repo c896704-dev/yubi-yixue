@@ -1550,7 +1550,6 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
    四象三垣胎息 · 识人术
    ============================================================ */
 
-.rs-report { display: flex; flex-direction: column; gap: 18px; }
 .rs-section { padding: 22px; }
 
 /* 八信息总览盘 */
@@ -1668,7 +1667,6 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 /* 打印 */
 @media print {
   .rs-export, .no-print { display: none !important; }
-  .rs-report { gap: 12px; }
   .rs-board-cell, .rs-stage, .rs-yuan-card, .rs-overall {
     background: #fff !important; border-color: #ccc !important;
   }
@@ -1728,7 +1726,6 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 /* ============================================================
    识人术 · 人生轨迹板块（与性格区显示隔离；样式独立于 rs-*）
    ============================================================ */
-.tj-report { display: flex; flex-direction: column; gap: 18px; margin-top: 10px; padding-top: 18px; border-top: 2px solid rgba(0,77,77,0.18); }
 .tj-header { padding: 22px; }
 .tj-lead { font-size: 13px; line-height: 1.8; color: rgba(0,77,77,0.78); }
 .tj-lead strong { color: var(--dai-qing); }

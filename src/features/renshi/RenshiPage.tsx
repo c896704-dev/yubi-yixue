@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BaziInput } from '../bazi/BaziInput'
-import { AiInsightCard } from '../../report/AiInsightCard'
 import { Button } from '../../components/ui/Button'
+import { ReportView } from '../../report/ReportView'
+import { RENSHI_SPEC } from './renshiSpec'
 import { ChatPanel } from '../../components/ui/ChatPanel'
-import { AutoReportNav } from '../../report/AutoReportNav'
 import { ToolHeader } from '../../components/layout/ToolHeader'
 import { Download, History, Printer, RefreshCw } from '../../components/ui/Icon'
 import { analyzeSixiang, type SixiangResult } from '../../utils/sixiang'
@@ -16,8 +16,6 @@ import {
 } from '../../utils/db'
 import { getAllRecordsMerged, type SavedRecord } from '../../utils/db'
 import type { PersonInfo } from '../../types'
-import { RenshiReport } from './RenshiReport'
-import { TrajectorySection } from './TrajectorySection'
 
 interface Analysis {
   result: SixiangResult
@@ -282,53 +280,47 @@ export function RenshiPage() {
             <span>{p.birthPlace}</span>
           </div>
 
-          {/* 章节导航：四象 + 人生轨迹两份报告共 ~14 屏，合并成一条目录 */}
-          <AutoReportNav
-            containerIds={['renshi-report', 'renshi-traj']}
-            skip="方法论说明|轨迹口径说明"
+          {/*
+            报告结构由 RENSHI_SPEC 描述，序号/锚点/目录/折叠/AI 承载全部由 ReportView 统一处理。
+            页面只负责把运行时数据（引擎结果 + 两条 AI 链的文本）塞进 ctx。
+            AI 正文一字未改：识人的 AI 输入取自引擎对象，与报告串无关，故无 aiContext。
+          */}
+          <ReportView
+            spec={RENSHI_SPEC}
+            ctx={{
+              result: { person: analysis.person, r: analysis.result, t: analysis.traj },
+              ai: {
+                'ai-renshi': {
+                  text: aiText,
+                  loading: aiLoading,
+                  error: aiError,
+                  // 三个按钮（首次生成 / 重新解读 / 重试）收敛为卡头一个，行为不变
+                  action: !aiLoading ? (
+                    <Button
+                      variant={aiText ? 'ghost' : 'primary'}
+                      size="sm"
+                      onClick={handleRetryAi}
+                      className="no-print"
+                    >
+                      <RefreshCw size={13} style={{ marginRight: 6 }} />
+                      {aiError ? '重试解读' : aiText ? '重新解读' : '生成解读'}
+                    </Button>
+                  ) : null,
+                },
+                'ai-trajectory': {
+                  text: trajText,
+                  loading: trajLoading,
+                  error: trajError,
+                  action: !trajLoading ? (
+                    <Button variant="ghost" size="sm" onClick={handleRetryTraj} className="no-print">
+                      <RefreshCw size={13} style={{ marginRight: 6 }} />
+                      {trajText ? '重新生成轨迹解读' : '生成轨迹解读'}
+                    </Button>
+                  ) : null,
+                },
+              },
+            }}
           />
-
-          <RenshiReport r={analysis.result} />
-
-          {/* 人生轨迹：显示上独立成区，AI 解读为独立输出流（与下方识人解读并发） */}
-          <TrajectorySection
-            person={analysis.person}
-            r={analysis.result}
-            t={analysis.traj}
-            aiText={trajText}
-            aiLoading={trajLoading}
-            aiError={trajError}
-            onGenerate={handleRetryTraj}
-          />
-
-          {/* 识人 AI 解读：后置为「延伸段」——四象、三垣、轨迹等引擎结论先行，模型叙事随后 */}
-          {!aiText && !aiLoading && !aiError && (
-            <div className="flex justify-center">
-              <Button variant="primary" size="lg" onClick={handleRetryAi}>
-                <RefreshCw size={14} style={{ marginRight: 6 }} />御笔判官 · 深度识人解读
-              </Button>
-            </div>
-          )}
-          <AiInsightCard
-            insight={aiText}
-            loading={aiLoading}
-            error={aiError}
-            title="深度识人解读"
-            id="ai-renshi"
-            collapsible
-            action={aiText && !aiLoading ? (
-              <Button variant="ghost" size="sm" onClick={handleRetryAi} className="no-print">
-                <RefreshCw size={13} style={{ marginRight: 6 }} />重新解读
-              </Button>
-            ) : null}
-          />
-          {aiError && !aiLoading && (
-            <div className="flex justify-center">
-              <Button variant="secondary" size="sm" onClick={handleRetryAi}>
-                <RefreshCw size={13} style={{ marginRight: 6 }} />重试解读
-              </Button>
-            </div>
-          )}
 
           <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新识人</Button>

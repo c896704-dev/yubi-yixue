@@ -1,13 +1,14 @@
 /**
- * 人生轨迹板块（识人页内独立区域）
+ * 人生轨迹板块的各章节组件
  *
  * 与上方"人品性格"报告显示隔离：只谈节奏、引动与年龄窗口，不评人品。
- * 数据全部来自 trajectory 引擎（代码为辅），AI 解读为独立输出流（页面注入 props）。
+ * 数据全部来自 trajectory 引擎（代码为辅）。
+ *
+ * 本文件只提供**章节片段**（各自接收最小 props）；章节顺序、序号、锚点、目录
+ * 与 AI 承载由 renshiSpec.tsx 描述、ReportView 统一处理。
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { AlertCircle, BookOpen, Compass, Feather, Quote, RefreshCw, Sparkles, Star, User } from '../../components/ui/Icon'
-import { AiInsightCard } from '../../report/AiInsightCard'
-import { Button } from '../../components/ui/Button'
+import { Quote } from '../../components/ui/Icon'
 import type { PersonInfo } from '../../types'
 import type { SixiangResult } from '../../utils/sixiang'
 import { buildLiunianTracks, type DayunTrack, type LiunianTrack, type TrajectoryResult } from '../../utils/trajectory'
@@ -152,7 +153,87 @@ export interface TrajectorySectionProps {
   onGenerate: () => void
 }
 
-export function TrajectorySection({ person, r, t, aiText, aiLoading, aiError, onGenerate }: TrajectorySectionProps) {
+/** 人生轨迹 · 头部（限运与大运流年总述） */
+export function TrajectoryHeader({ t }: { t: TrajectoryResult }) {
+  return (
+    <>
+    <p className="tj-lead">
+      与上方人品性格分析分轨：这里只读<strong>节奏与轨迹</strong>——《三命通会》限运四段（年1-16为根、月17-32为苗、日33-48为花、时49后为果）定四段主题，
+      大运逐年定引动。所有干支作用由引擎按古法算出，点选任一步大运可展开该运十年逐年详情。
+    </p>
+    <p className="tj-qiyun">{t.qiYun.note}</p>
+    </>
+  )
+}
+
+/** 限运四段 · 人生节奏 */
+export function LimitStages({ t }: { t: TrajectoryResult }) {
+  return (
+  <>
+  <div className="tj-stages">
+    {t.stages.map((s, i) => <StageCardTj key={s.label} s={s} first={i === 0} />)}
+  </div>
+  </>
+  )
+}
+
+/** 三垣落地 · 禀赋嵌入轨迹 */
+export function SanYuanLanding({ r, t }: { r: SixiangResult; t: TrajectoryResult }) {
+  return (
+  <>
+  <div className="tj-rel-grid">
+    {t.yuanXiang.map(y => (
+      <RelationCard
+        key={y.name}
+        title={`${y.name} ${y.ganzhi}`}
+        ganzhi={y.ganzhi}
+        naYin={y.naYin}
+        xiang={y.xiang}
+        xi={y.xi}
+        domain={y.role}
+        facts={y.facts}
+        extra={y.landingHits.length > 0
+          ? <ul className="tj-hits">{y.landingHits.map(h => <li key={h}>{h}</li>)}</ul>
+          : undefined}
+      />
+    ))}
+  </div>
+  <p className="tj-cross-note">
+    禀赋与阶段的对应（盲派规矩：三垣不与四柱论五行生克，此处只列实际干支作用）：胎元贴年柱看根基、命宫贴日柱看立身、身宫贴月与时看果实。
+    {r.cross.length > 0 && ` 主引擎并置档：${r.cross.map(c => `${c.name.split('对')[0]}↔${c.name.split('对')[1]}${c.kind}`).join('；')}。`}
+  </p>
+  </>
+  )
+}
+
+/** 胎息 · 元神如何落在盘上 */
+export function TaiXiLanding({ r, t }: { r: SixiangResult; t: TrajectoryResult }) {
+  return (
+  <>
+  <p className="tj-fact-note" style={{ marginTop: 0 }}>
+    「受胎之日那一念先天神识」为本体系对经典胎息（日柱干合支合之柱，《三命通会》）的再创作引申，非古籍原义。此卡不再给空泛档位，直接列元神干支与原局四柱三垣的实际作用。
+  </p>
+  <div className="tj-rel-grid">
+    <RelationCard
+      title={`胎息 ${t.taiXiZhu.ganzhi}`}
+      ganzhi={t.taiXiZhu.ganzhi}
+      naYin={t.taiXiZhu.naYin}
+      xiang={t.taiXiZhu.xiang}
+      xi={t.taiXiZhu.xi}
+      domain={`元神对标时柱（人生终点气质）· ${r.stages[3]!.naYin} · ${r.taiXi.duibiao.label}`}
+      facts={t.taiXiZhu.facts}
+      extra={r.taiXi.sameNaYinAsHour
+        ? <p className="tj-domain">（注：胎息与时柱同纳音，为日时干支结构恒象，非个性化推断）</p>
+        : undefined}
+    />
+  </div>
+  </>
+  )
+}
+
+/** 大运 × 流年 · 逐步可选（选中状态由本组件自持） */
+export function DayunExplorer({ person, r, t }: { person: PersonInfo; r: SixiangResult; t: TrajectoryResult }) {
+
   const [selDy, setSelDy] = useState<number>(() => {
     const i = t.dayunTracks.findIndex(d => d.isCurrent)
     return i >= 0 ? i : 0
@@ -168,149 +249,69 @@ export function TrajectorySection({ person, r, t, aiText, aiLoading, aiError, on
   const dy = t.dayunTracks[selDy] ?? null
 
   return (
-    <section className="tj-report" id="renshi-traj" aria-label="人生轨迹">
-      <div className="tj-header ds-card">
-        <h2 className="ds-card-head"><Compass size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />人生轨迹 · 限运与大运流年</h2>
-        <p className="tj-lead">
-          与上方人品性格分析分轨：这里只读<strong>节奏与轨迹</strong>——《三命通会》限运四段（年1-16为根、月17-32为苗、日33-48为花、时49后为果）定四段主题，
-          大运逐年定引动。所有干支作用由引擎按古法算出，点选任一步大运可展开该运十年逐年详情。
-        </p>
-        <p className="tj-qiyun">{t.qiYun.note}</p>
+  <>
+  <p className="tj-fact-note" style={{ marginTop: 0 }}>
+    点选任一步大运查看该运十年流年。断语口径为"术语 + 宫位事象 + 年龄区间"，古籍凡冲伏皆须合喜忌定方向——引擎只列作用，不代下吉凶。
+  </p>
+  <div className="tj-dayun-row" role="tablist">
+    {t.dayunTracks.map(d => (
+      <DayunItem key={d.index} d={d} selected={d.index === selDy} onSelect={() => setSelDy(d.index)} />
+    ))}
+  </div>
+
+  {dy && (
+    <div className="tj-dy-detail">
+      <div className="tj-dy-head">
+        <span className="tj-dy-gz font-serif">{dy.ganzhi}运</span>
+        <span className="tj-dy-meta">{dy.startAge}–{dy.endAge}虚岁 · 约{dy.startYear}–{dy.endYear}年{dy.isCurrent ? ' · 现行' : ''}</span>
       </div>
+      <p className="tj-dy-lines">
+        {dy.stemTenGod}运，运支藏干 {dy.hiddenGods.join('、')}。
+        {dy.deDiYear && `以年命论：${dy.deDiYear.desc}。`}
+        {dy.deDiDay && `以日柱身命论：${dy.deDiDay.label}。`}
+        日主行{dy.changSheng.stage}——{dy.changSheng.luck}。
+        {dy.stemBranchForm && `运柱${dy.stemBranchForm}。`}
+      </p>
+      <FactList facts={dy.facts} max={6} />
+    </div>
+  )}
 
-      {/* 限运四段（人格演化轴） */}
-      <div className="ds-card rs-section">
-        <h2 className="ds-card-head"><BookOpen size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />限运四段 · 人生节奏</h2>
-        <div className="tj-stages">
-          {t.stages.map((s, i) => <StageCardTj key={s.label} s={s} first={i === 0} />)}
-        </div>
-      </div>
+  {liunian.length > 0 && (
+    <div className="tj-ln-list">
+      <div className="tj-ln-title">该运十年逐年（点开看全量作用）</div>
+      {liunian.map(y => (
+        <LiunianCard key={y.year} y={y} selected={selYear === y.year} onSelect={() => setSelYear(selYear === y.year ? null : y.year)} />
+      ))}
+    </div>
+  )}
+  </>
+  )
+}
 
-      {/* 三垣落地 */}
-      <div className="ds-card rs-section">
-        <h2 className="ds-card-head"><Star size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />三垣落地 · 禀赋嵌入轨迹</h2>
-        <div className="tj-rel-grid">
-          {t.yuanXiang.map(y => (
-            <RelationCard
-              key={y.name}
-              title={`${y.name} ${y.ganzhi}`}
-              ganzhi={y.ganzhi}
-              naYin={y.naYin}
-              xiang={y.xiang}
-              xi={y.xi}
-              domain={y.role}
-              facts={y.facts}
-              extra={y.landingHits.length > 0
-                ? <ul className="tj-hits">{y.landingHits.map(h => <li key={h}>{h}</li>)}</ul>
-                : undefined}
-            />
-          ))}
-        </div>
-        <p className="tj-cross-note">
-          禀赋与阶段的对应（盲派规矩：三垣不与四柱论五行生克，此处只列实际干支作用）：胎元贴年柱看根基、命宫贴日柱看立身、身宫贴月与时看果实。
-          {r.cross.length > 0 && ` 主引擎并置档：${r.cross.map(c => `${c.name.split('对')[0]}↔${c.name.split('对')[1]}${c.kind}`).join('；')}。`}
-        </p>
-      </div>
+/** 一生重引动节点（引擎按古籍权重取前 N；为空时不渲染） */
+export function KeyMoments({ t }: { t: TrajectoryResult }) {
+  if (t.keyMoments.length === 0) return null
+  return (
+    <>
+    <ul className="tj-moments">
+      {t.keyMoments.slice(0, 15).map((m, i) => (
+        <li key={i} className="tj-moment"><b>{m.when}</b><span>{m.text}</span></li>
+      ))}
+    </ul>
+    </>
+  )
+}
 
-      {/* 胎息·元神（实作） */}
-      <div className="ds-card rs-section">
-        <h2 className="ds-card-head"><User size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />胎息 · 元神如何落在盘上</h2>
-        <p className="tj-fact-note" style={{ marginTop: 0 }}>
-          「受胎之日那一念先天神识」为本体系对经典胎息（日柱干合支合之柱，《三命通会》）的再创作引申，非古籍原义。此卡不再给空泛档位，直接列元神干支与原局四柱三垣的实际作用。
-        </p>
-        <div className="tj-rel-grid">
-          <RelationCard
-            title={`胎息 ${t.taiXiZhu.ganzhi}`}
-            ganzhi={t.taiXiZhu.ganzhi}
-            naYin={t.taiXiZhu.naYin}
-            xiang={t.taiXiZhu.xiang}
-            xi={t.taiXiZhu.xi}
-            domain={`元神对标时柱（人生终点气质）· ${r.stages[3]!.naYin} · ${r.taiXi.duibiao.label}`}
-            facts={t.taiXiZhu.facts}
-            extra={r.taiXi.sameNaYinAsHour
-              ? <p className="tj-domain">（注：胎息与时柱同纳音，为日时干支结构恒象，非个性化推断）</p>
-              : undefined}
-          />
-        </div>
-      </div>
-
-      {/* 大运轴：全列可选 */}
-      <div className="ds-card rs-section">
-        <h2 className="ds-card-head"><Sparkles size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />大运 × 流年 · 逐步可选</h2>
-        <p className="tj-fact-note" style={{ marginTop: 0 }}>
-          点选任一步大运查看该运十年流年。断语口径为"术语 + 宫位事象 + 年龄区间"，古籍凡冲伏皆须合喜忌定方向——引擎只列作用，不代下吉凶。
-        </p>
-        <div className="tj-dayun-row" role="tablist">
-          {t.dayunTracks.map(d => (
-            <DayunItem key={d.index} d={d} selected={d.index === selDy} onSelect={() => setSelDy(d.index)} />
-          ))}
-        </div>
-
-        {dy && (
-          <div className="tj-dy-detail">
-            <div className="tj-dy-head">
-              <span className="tj-dy-gz font-serif">{dy.ganzhi}运</span>
-              <span className="tj-dy-meta">{dy.startAge}–{dy.endAge}虚岁 · 约{dy.startYear}–{dy.endYear}年{dy.isCurrent ? ' · 现行' : ''}</span>
-            </div>
-            <p className="tj-dy-lines">
-              {dy.stemTenGod}运，运支藏干 {dy.hiddenGods.join('、')}。
-              {dy.deDiYear && `以年命论：${dy.deDiYear.desc}。`}
-              {dy.deDiDay && `以日柱身命论：${dy.deDiDay.label}。`}
-              日主行{dy.changSheng.stage}——{dy.changSheng.luck}。
-              {dy.stemBranchForm && `运柱${dy.stemBranchForm}。`}
-            </p>
-            <FactList facts={dy.facts} max={6} />
-          </div>
-        )}
-
-        {liunian.length > 0 && (
-          <div className="tj-ln-list">
-            <div className="tj-ln-title">该运十年逐年（点开看全量作用）</div>
-            {liunian.map(y => (
-              <LiunianCard key={y.year} y={y} selected={selYear === y.year} onSelect={() => setSelYear(selYear === y.year ? null : y.year)} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 关键节点一览 */}
-      {t.keyMoments.length > 0 && (
-        <div className="ds-card rs-section">
-          <h2 className="ds-card-head"><AlertCircle size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />一生重引动节点（引擎按古籍权重取前 {t.keyMoments.length}）</h2>
-          <ul className="tj-moments">
-            {t.keyMoments.slice(0, 15).map((m, i) => (
-              <li key={i} className="tj-moment"><b>{m.when}</b><span>{m.text}</span></li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* 轨迹 AI 解读（独立输出流） */}
-      <div className="ds-card rs-section tj-ai">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <h2 className="ds-card-head" style={{ margin: 0 }}><Compass size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />轨迹解盘师 · 人生轨迹解读</h2>
-          {!aiLoading && (
-            <Button variant="ghost" size="sm" onClick={onGenerate}>
-              <RefreshCw size={13} style={{ marginRight: 6 }} />{aiText ? '重新生成轨迹解读' : '生成轨迹解读'}
-            </Button>
-          )}
-        </div>
-        <p className="tj-ai-sep">本文只解读人生节奏与关键节点，与上方人品性格解读互不覆盖。</p>
-        {aiText || aiLoading || aiError
-          ? <AiInsightCard insight={aiText} loading={aiLoading} error={aiError} title={null} id="ai-trajectory" collapsible />
-          : <p className="tj-none">（尚未生成。点击右上角按钮，基于上方引擎事实撰写 1100-1600 字轨迹解读。）</p>}
-      </div>
-
-      {/* 方法论披露 */}
-      <div className="ds-card rs-section rs-disclosure">
-        <h2 className="ds-card-head"><Feather size={15} style={{ color: 'var(--hu-po-jin-dark)' }} />轨迹口径说明</h2>
-        <details className="rs-disclosure-details">
-          <summary>展开限运分段、大运流年取法与古法为今用的说明（{t.disclosure.length} 条）</summary>
-          <ul className="rs-disclosure-list">
-            {t.disclosure.map((d, i) => <li key={i}>{d}</li>)}
-          </ul>
-        </details>
-      </div>
-    </section>
+/** 轨迹口径说明（方法论披露） */
+export function TrajectoryDisclosure({ t }: { t: TrajectoryResult }) {
+  return (
+  <>
+  <details className="rs-disclosure-details">
+    <summary>展开限运分段、大运流年取法与古法为今用的说明（{t.disclosure.length} 条）</summary>
+    <ul className="rs-disclosure-list">
+      {t.disclosure.map((d, i) => <li key={i}>{d}</li>)}
+    </ul>
+  </details>
+  </>
   )
 }

@@ -20,8 +20,12 @@ import { deriveChapterNums, type ReportChapter, type ReportContext, type ReportS
  * 注：P2-1 Batch 0 只落地骨架，**尚未接入任何页面**。
  */
 export function ReportView<R>({ spec, ctx }: { spec: ReportSpec<R>; ctx: ReportContext<R> }) {
-  const nums = deriveChapterNums(spec.chapters)
-  const navChapters: NavChapter[] = spec.chapters.map((c, i) => ({
+  // 先按 when 过滤，再派生序号——条件不满足的章节视为"不存在"，不占号
+  const chapters = spec.chapters
+    .filter((c) => !c.when || c.when(ctx))
+    .map((c) => ({ ...c, title: typeof c.title === 'function' ? c.title(ctx) : c.title }))
+  const nums = deriveChapterNums(chapters)
+  const navChapters: NavChapter[] = chapters.map((c, i) => ({
     id: c.id,
     num: nums[i] ?? '',
     title: c.title,
@@ -32,8 +36,8 @@ export function ReportView<R>({ spec, ctx }: { spec: ReportSpec<R>; ctx: ReportC
       <ReportNav chapters={navChapters} />
       <Card title={spec.title}>
         {spec.subtitle && <p className="report-view-subtitle">{spec.subtitle}</p>}
-        {spec.chapters.map((c, i) => (
-          <ChapterView key={c.id} chapter={c} num={nums[i] ?? ''} ctx={ctx} />
+        {chapters.map((c, i) => (
+          <ChapterView key={c.id} chapter={c} title={c.title} num={nums[i] ?? ''} ctx={ctx} />
         ))}
       </Card>
     </div>
@@ -41,7 +45,13 @@ export function ReportView<R>({ spec, ctx }: { spec: ReportSpec<R>; ctx: ReportC
 }
 
 /** 单章渲染。AI 章节与非 AI 章节在这里分道，页面无需再判断。 */
-function ChapterView<R>({ chapter, num, ctx }: { chapter: ReportChapter<R>; num: string; ctx: ReportContext<R> }) {
+function ChapterView<R>({ chapter, title, num, ctx }: {
+  chapter: ReportChapter<R>
+  /** 已解析的标题（spec 里可以是函数，由 ReportView 统一求值） */
+  title: string
+  num: string
+  ctx: ReportContext<R>
+}) {
   const collapsible = chapter.collapsible ?? true
   const [open, setOpen] = useState(chapter.defaultOpen ?? true)
 
@@ -50,15 +60,18 @@ function ChapterView<R>({ chapter, num, ctx }: { chapter: ReportChapter<R>; num:
     const slot = ctx.ai?.[chapter.id]
     if (!slot) return null
     return (
-      <AiInsightCard
-        id={chapter.id}
-        title={chapter.title}
-        insight={slot.text}
-        loading={slot.loading}
-        error={slot.error}
-        action={slot.action}
-        collapsible
-      />
+      <>
+        {chapter.note && <p className="report-view-note">{chapter.note}</p>}
+        <AiInsightCard
+          id={chapter.id}
+          title={title}
+          insight={slot.text}
+          loading={slot.loading}
+          error={slot.error}
+          action={slot.action}
+          collapsible
+        />
+      </>
     )
   }
 
@@ -70,7 +83,9 @@ function ChapterView<R>({ chapter, num, ctx }: { chapter: ReportChapter<R>; num:
   const header = (
     <>
       <span className="report-section-num">{num}</span>
-      <span className="report-section-title">{chapter.title}</span>
+      {chapter.icon && <span className="report-section-icon">{chapter.icon}</span>}
+      <span className="report-section-title">{title}</span>
+      {chapter.headerExtra?.(ctx)}
       {collapsible && (
         <span className={`report-section-toggle ${open ? 'open' : ''}`}><ChevronDown size={14} /></span>
       )}
@@ -78,7 +93,7 @@ function ChapterView<R>({ chapter, num, ctx }: { chapter: ReportChapter<R>; num:
   )
 
   return (
-    <div className="report-section" id={chapter.id}>
+    <div className={`report-section${chapter.variant ? ` ${chapter.variant}` : ''}`} id={chapter.id}>
       {collapsible ? (
         <button
           className="report-section-header"
