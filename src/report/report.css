@@ -13,7 +13,11 @@
   overflow-wrap: break-word; word-break: break-word;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
-.report :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: 44em; }
+/* 行宽控制放在**容器**上（`.site-container` 上限 1152px），不再按元素卡 em。
+   原先这里是 `max-width: 44em`：在 15px 字号下等于 660px，而报告卡片内宽有 841px——
+   正文右边永久空出一条 180px 的空白，看起来像排版坏了（AI 解读卡尤其明显）。
+   按元素卡宽度还有一个坏处：卡片越宽，空白越大，而这一层是看不见的。 */
+.report :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: 100%; }
 .report h1 { font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 700; margin: 36px 0 14px; color: var(--dai-qing-dark); letter-spacing: 0.02em; }
 .report h2 { font-family: var(--font-serif); font-size: clamp(1.1rem, 2.5vw, 1.3rem); font-weight: 700; margin: 28px 0 10px; color: var(--dai-qing-dark); padding-bottom: 8px; border-bottom: 1px solid rgba(212, 175, 55, 0.35); scroll-margin-top: 120px; }
 .report h3 { font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; margin: 20px 0 8px; color: var(--dai-qing-dark); }

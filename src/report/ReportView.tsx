@@ -110,9 +110,19 @@ function ChapterView<R>({ chapter, title, num, ctx }: {
   // body 返回字符串时一律按 Markdown 渲染，并做一次显示侧规范化
   // （去掉与卡头同名的首行标题、去掉标题行 emoji，见 chapterMarkdown.ts）。
   // 这样各板块不必各自包一层 <ReportMarkdown>，也就不会有人漏掉规范化。
+  //
+  // ⚠️ `.report` 这个类**必须留着**：report.css 里全部正文排版（字号/行距/表格边框与内边距/
+  // 引用块样式）都挂在 `.report` 下面。P2-1 迁移时旧 BaziReport / CompatReport 上的
+  // `<div className="report">` 被一起删掉了，结果是八字与合婚的正文退回浏览器默认样式
+  // ——表格没有边框、没有内边距，看起来"表格没了、样式没了"。
+  // 只有 Markdown 正文走这个容器；识人 / 算卦 / 风水 的章节自带容器，不受影响。
   const raw = typeof chapter.body === 'function' ? chapter.body(ctx) : chapter.body
   const body: ReactNode = typeof raw === 'string'
-    ? <ReportMarkdown>{normalizeChapterMarkdown(raw, title)}</ReportMarkdown>
+    ? (
+      <div className="report">
+        <ReportMarkdown>{normalizeChapterMarkdown(raw, title)}</ReportMarkdown>
+      </div>
+    )
     : raw
 
   const header = (
