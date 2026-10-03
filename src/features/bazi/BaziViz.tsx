@@ -1,25 +1,10 @@
 import { useState } from 'react'
-import { Card } from '../../components/ui/Card'
-import { ReportMarkdown } from '../../report/ReportMarkdown'
-import { AiBody } from '../../report/AiBody'
 import { BarTrack } from '../../report/BarTrack'
-import type { NavChapter } from '../../report/ReportNav'
-import { ChevronDown, Orbit, User, Compass, Sparkles, Users, Heart, TrendingUp, Shield, Star } from '../../components/ui/Icon'
-import { Loading } from '../../components/ui/Loading'
 import type { AnalysisResult } from '../../types'
-import type { ReportSection, PillarTableData, LiuNianItem } from '../../utils/analysis'
+import type { PillarTableData, LiuNianItem } from '../../utils/analysis'
 import { buildPillarTableData, buildFortuneYears } from '../../utils/analysis'
-import { CareerCityMap } from '../../components/viz/CareerCityMap'
 import { STEM_ELEMENT } from '../../constants'
-import type { FiveElement, HeavenlyStem } from '../../constants'
-
-interface BaziReportProps {
-  markdown?: string
-  sections?: ReportSection[]
-  result?: AnalysisResult | null
-  /** 运程长卷章节内嵌的时间轴组件（可选） */
-  fortuneTimeline?: React.ReactNode
-}
+import type { FiveElement } from '../../constants'
 
 /** 五行配色（对齐 design-showcase 古籍美学：木苍翠/火朱砂/土琥珀/金淡金/水黛青） */
 const ELEM_COLORS: Record<FiveElement, string> = {
@@ -28,51 +13,6 @@ const ELEM_COLORS: Record<FiveElement, string> = {
   '土': '#b8960f',
   '金': '#8a8072',
   '水': '#006666',
-}
-
-/** 章节图标（按 id 映射 lucide 图标，替换旧 emoji） */
-const SECTION_ICONS: Record<string, React.ReactNode> = {
-  fundamental: <Orbit size={15} />,
-  personality: <Sparkles size={15} />,
-  career: <Compass size={15} />,
-  intelligence: <Star size={15} />,
-  family: <Users size={15} />,
-  health: <Heart size={15} />,
-  lifestages: <TrendingUp size={15} />,
-  risk: <Shield size={15} />,
-  appearance: <User size={15} />,
-}
-
-/** 折叠章节卡片：桌面默认按 defaultOpen，打印时强制展开 */
-function ReportSectionCard({ section, result, index, children }: {
-  section: ReportSection
-  result: AnalysisResult
-  index: number
-  children?: React.ReactNode
-}) {
-  const [open, setOpen] = useState(section.defaultOpen)
-  const md = section.render(result)
-
-  return (
-    <div className="report-section" id={`section-${section.id}`}>
-      <button
-        className="report-section-header"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
-        <span className="report-section-num">{section.num}</span>
-        <span className="report-section-icon">{SECTION_ICONS[section.id] || section.icon}</span>
-        <span className="report-section-title">{section.title}</span>
-        <span className={`report-section-toggle ${open ? 'open' : ''}`}><ChevronDown size={14} /></span>
-      </button>
-      {open && (
-        <div className="report-section-body">
-          <ReportMarkdown>{md}</ReportMarkdown>
-          {children}
-        </div>
-      )}
-    </div>
-  )
 }
 
 /** 五行能量可视化条形图 */
@@ -378,62 +318,5 @@ export function FortuneTimelineV2({ result }: { result: AnalysisResult }) {
         </div>
       )}
     </div>
-  )
-}
-
-const SECTION_NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
-
-/**
- * 章节序号的**唯一**产生点（正文 Markdown 标题已不再自带序号）。
- * @param indexInFullList 在完整章节表（含页级「乾坤定盘」）中的下标
- */
-function chapterNum(indexInFullList: number, id: string, fallback: string): string {
-  if (id === 'appearance') return fallback
-  return SECTION_NUMS[indexInFullList] || String(indexInFullList + 1)
-}
-
-/**
- * 生成完整章节导航列表（含页级「乾坤定盘」）。
- * 传入 `buildReportSections()` 的完整结果；深度报告渲染时用 `slice(1)` 后的下标 +1 对齐。
- */
-export function buildChapterList(sections: ReportSection[]): NavChapter[] {
-  return sections.map((s, i) => ({
-    id: `section-${s.id}`,
-    num: chapterNum(i, s.id, s.num),
-    title: s.title,
-  }))
-}
-
-export function BaziReport({ markdown, sections, result, fortuneTimeline }: BaziReportProps) {
-  // 新式：sections 驱动（含折叠），旧式 markdown 兜底
-  if (sections && result) {
-    // 传入的是 slice(1) 后的列表，故下标 +1 才能与完整章节表对齐
-    const displaySections = sections.map((s, i) => ({
-      ...s,
-      num: chapterNum(i + 1, s.id, s.num),
-    }))
-
-    return (
-      <Card title="深度分析报告">
-        <div className="report">
-          {displaySections.map((s, i) => (
-            <ReportSectionCard key={s.id} section={s} result={result} index={i}>
-              {/* 事业前程：推荐发展城市地图 */}
-              {s.id === 'career' && <CareerCityMap result={result} />}
-              {/* 运程长卷章节内嵌大运流年时间轴 */}
-              {s.id === 'lifestages' && fortuneTimeline}
-            </ReportSectionCard>
-          ))}
-        </div>
-      </Card>
-    )
-  }
-
-  return (
-    <Card title="深度分析报告">
-      <div className="report">
-        <ReportMarkdown>{markdown ?? ''}</ReportMarkdown>
-      </div>
-    </Card>
   )
 }

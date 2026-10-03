@@ -2,24 +2,14 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { PersonInfo } from '../../types'
 import { useBazi } from '../../hooks/useBazi'
 import { getAllRecordsMerged, deleteRecord, getRecordById, type SavedRecord } from '../../utils/db'
-import {
-  renderFundamentalReport, renderLifeStagesReport,
-  buildReportSections,
-} from '../../utils/analysis'
+import { buildBaziAiContext } from '../../utils/analysis'
 import { BaziInput } from './BaziInput'
-import { BaziResult } from './BaziResult'
-import {
-  BaziReport, ElementBars, PillarTable,
-  ShenShaGrid, YongShenBadges, FortuneTimelineV2, buildChapterList,
-} from './BaziReport'
-import { AiInsightCard } from '../../report/AiInsightCard'
-import { ReportNav } from '../../report/ReportNav'
+import { ReportView } from '../../report/ReportView'
+import { BAZI_SPEC } from './baziSpec'
 import { BaziChat } from './BaziChat'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { ReportMarkdown } from '../../report/ReportMarkdown'
 import { ToolHeader } from '../../components/layout/ToolHeader'
-import { Orbit } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Loading'
 
 function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
@@ -81,14 +71,12 @@ export default function BaziPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, aiInsight, authToken])
 
-  const reportSections = useMemo(() => buildReportSections(), [])
-  const navChapters = useMemo(() => buildChapterList(reportSections), [reportSections])
 
   const handleAnalyze = useCallback(async (person: PersonInfo) => {
     const res = await analyze(person)
     // AI 输入精简为"定盘 + 运程"两章，避免 AI 复述与正文重复
-    const reportText = renderFundamentalReport(res) + '\n\n---\n\n' + renderLifeStagesReport(res)
-    fetchAiInsight(reportText, person)
+    // AI 输入经唯一出口取（与 BAZI_SPEC.chapters['ai-bazi'].aiContext 同一个函数）
+    fetchAiInsight(buildBaziAiContext(res), person)
   }, [analyze, fetchAiInsight])
 
   const handleLoadRecord = useCallback(async (record: SavedRecord) => {
@@ -177,44 +165,18 @@ export default function BaziPage() {
             )}
           </div>
 
-          {/* 章节导航：吸顶，长报告随时可跳章 */}
-          <ReportNav chapters={navChapters} />
-
-          {/* 命盘基础信息：字段为行、四柱为列的纵向大表 */}
-          <Card title="命盘基础信息">
-            <PillarTable result={result} />
-          </Card>
-
-          {/* 身强弱 + 格局大卡（基础信息正下方） */}
-          <BaziResult result={result} />
-
-          {/* 一、乾坤定盘（文字部分 + 五行能量条形图 + 神煞/用神徽章） */}
-          {reportSections[0] && (
-            <div className="report-section" id="section-fundamental">
-              <div className="report-section-header">
-                <span className="report-section-num">一</span>
-                <span className="report-section-icon"><Orbit size={15} /></span>
-                <span className="report-section-title">乾坤定盘</span>
-              </div>
-              <div className="report-section-body">
-                <div className="report">
-                  <ReportMarkdown>{reportSections[0].render(result)}</ReportMarkdown>
-                </div>
-                <ElementBars result={result} />
-                <h4 className="comp-subtitle">用神体系</h4>
-                <YongShenBadges result={result} />
-                <h4 className="comp-subtitle">神煞一览</h4>
-                <ShenShaGrid result={result} />
-              </div>
-            </div>
-          )}
-          {/* AI 总评（紧随定盘之后） */}
-          <AiInsightCard insight={aiInsight} loading={aiLoading} error={aiError} collapsible />
-          {/* 深度报告（内部从一编号）+ 附录A；运程长卷内嵌时间轴 */}
-          <BaziReport
-            sections={reportSections.slice(1)}
-            result={result}
-            fortuneTimeline={<FortuneTimelineV2 result={result} />}
+          {/*
+            报告结构由 BAZI_SPEC 描述：命盘基础信息 → 乾坤定盘 → AI 总评 → 七章详解 → 附录A。
+            序号/锚点/目录/折叠/AI 承载全部由 ReportView 统一处理，页面不再手工拼章节。
+          */}
+          <ReportView
+            spec={BAZI_SPEC}
+            ctx={{
+              result,
+              ai: {
+                'ai-bazi': { text: aiInsight, loading: aiLoading, error: aiError },
+              },
+            }}
           />
           <div className="actions">
             <Button variant="secondary" onClick={handleReset}>重新排盘</Button>

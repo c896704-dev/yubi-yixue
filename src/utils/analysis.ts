@@ -634,29 +634,14 @@ export function buildFortuneYears(result: AnalysisResult): LiuNianItem[] {
   return years
 }
 
-export interface ReportSection {
-  id: string
-  num: string          // 章节编号（一~八 / 附录A）
-  title: string
-  icon: string
-  render: (result: AnalysisResult) => string
-  defaultOpen: boolean
-}
-
 /**
- * 八字报告章节编排（逻辑顺序：定盘→性格→事业→智识→家庭婚恋→健康→运程→判官→面相附录）
- * AI 总评（AiInsightCard）由页面在"一、乾坤定盘"之后插入，不在此列表内。
+ * 八字 AI 总评的**上下文唯一出口**。
+ *
+ * 与显示内容同源（同样来自 render*），但独立成一个函数而不是"把报告串喂给 AI"——
+ * 显示侧无论怎么调整章节取舍，AI 的输入都不会被动改变（根因 B 的解法）。
+ * 内容与拆分前的 `renderFundamentalReport(res) + '\n\n---\n\n' + renderLifeStagesReport(res)`
+ * 逐字相同。
  */
-export function buildReportSections(): ReportSection[] {
-  return [
-    { id: 'fundamental', num: '一', title: '乾坤定盘', icon: '☯️', render: renderFundamentalReport, defaultOpen: true },
-    { id: 'personality', num: '二', title: '性格全息图谱', icon: '🎭', render: renderPersonalityReport, defaultOpen: true },
-    { id: 'career', num: '三', title: '事业前程', icon: '💼', render: renderCareerReport, defaultOpen: true },
-    { id: 'intelligence', num: '四', title: '智识天赋', icon: '🧠', render: renderIntelligenceReport, defaultOpen: true },
-    { id: 'family', num: '五', title: '家庭与婚恋', icon: '🏠', render: (r) => renderFamilyDeepReport(r) + '\n' + renderCompatibilityPreview(r), defaultOpen: true },
-    { id: 'health', num: '六', title: '健康养生', icon: '🫀', render: renderHealthReport, defaultOpen: true },
-    { id: 'lifestages', num: '七', title: '运程长卷', icon: '📈', render: renderLifeStagesReport, defaultOpen: true },
-    { id: 'risk', num: '八', title: '判官直言', icon: '🛡️', render: renderRiskReport, defaultOpen: true },
-    { id: 'appearance', num: '附录A', title: '面相身形', icon: '🧍', render: renderAppearanceReport, defaultOpen: false },
-  ]
+export function buildBaziAiContext(result: AnalysisResult): string {
+  return renderFundamentalReport(result) + '\n\n---\n\n' + renderLifeStagesReport(result)
 }
