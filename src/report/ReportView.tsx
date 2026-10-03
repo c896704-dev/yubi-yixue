@@ -20,9 +20,12 @@ import { deriveChapterNums, type ReportChapter, type ReportContext, type ReportS
  * 注：P2-1 Batch 0 只落地骨架，**尚未接入任何页面**。
  */
 export function ReportView<R>({ spec, ctx }: { spec: ReportSpec<R>; ctx: ReportContext<R> }) {
-  // 先按 when 过滤，再派生序号——条件不满足的章节视为"不存在"，不占号
+  // 先过滤，再派生序号与导航——条件不满足的章节视为"本章不存在"，不占号、不进目录。
+  // AI 章节额外要求 ctx 提供了槽位：没有 AI 内容的板块（如楼盘位置分析）不应在目录里
+  // 留一个点不开的条目。两处过滤必须都发生在构建 navChapters 之前。
   const chapters = spec.chapters
     .filter((c) => !c.when || c.when(ctx))
+    .filter((c) => c.kind !== 'ai' || Boolean(ctx.ai?.[c.id]))
     .map((c) => ({ ...c, title: typeof c.title === 'function' ? c.title(ctx) : c.title }))
   const nums = deriveChapterNums(chapters)
   const navChapters: NavChapter[] = chapters.map((c, i) => ({

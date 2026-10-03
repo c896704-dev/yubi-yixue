@@ -1,17 +1,13 @@
 import { useState } from 'react'
 import { Card } from '../../components/ui/Card'
+import { ReportView } from '../../report/ReportView'
+import { FENGSHUI_SPEC } from './fengshuiSpec'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { ImageUpload } from '../../components/form/ImageUpload'
 import { Loading } from '../../components/ui/Loading'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { ScoreGauge } from '../../components/viz/ScoreGauge'
-import { PalaceGrid } from '../../components/viz/PalaceGrid'
 import { ChatPanel } from '../../components/ui/ChatPanel'
 import { buildFengshuiQASystemPrompt } from '../../utils/ai'
-import { ProsConsList } from './ProsConsList'
-import { SuggestionList } from './SuggestionList'
 import { useFengshui } from '../../hooks/useFengshui'
 
 export function LayoutAnalysis() {
@@ -48,22 +44,22 @@ export function LayoutAnalysis() {
 
     return (
       <div className="flex flex-col gap-5">
-        <Card><div className="text-center"><ScoreGauge score={d.overallScore || 0} label="综合评分" /></div></Card>
-        {cells.length > 0 && <Card title="九宫方位分析"><PalaceGrid cells={cells} /></Card>}
-        {d.summary && <Card title="分析总结"><p className="text-[15px] leading-relaxed" style={{ color: 'var(--fg)' }}>{d.summary}</p></Card>}
-        {(d.strengths?.length > 0 || d.weaknesses?.length > 0) && (
-          <Card><ProsConsList strengths={d.strengths} weaknesses={d.weaknesses} /></Card>
-        )}
-        {d.suggestions?.length > 0 && (
-          <Card><SuggestionList suggestions={d.suggestions} /></Card>
-        )}
-        {d.aiReport && (
-          <Card title="AI 分析报告">
-            <div className="report">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{d.aiReport}</ReactMarkdown>
-            </div>
-          </Card>
-        )}
+        {/* 章节结构由 FENGSHUI_SPEC 描述；AI 承载与目录由 ReportView 统一处理 */}
+        <ReportView
+          spec={FENGSHUI_SPEC}
+          ctx={{
+            result: {
+              scoreLabel: '综合评分',
+              score: d.overallScore || 0,
+              summary: d.summary,
+              cells,
+              strengths: d.strengths,
+              weaknesses: d.weaknesses,
+              suggestions: d.suggestions,
+            },
+            ai: { 'ai-fengshui': { text: d.aiReport ?? null } },
+          }}
+        />
         <div className="actions">
           <Button variant="mist" onClick={reset}>重新分析</Button>
           <Button variant="clear" onClick={() => window.print()}>打印报告</Button>

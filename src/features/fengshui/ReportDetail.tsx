@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
-import { ScoreGauge } from '../../components/viz/ScoreGauge'
-import { PalaceGrid } from '../../components/viz/PalaceGrid'
-import { ProsConsList } from './ProsConsList'
-import { SuggestionList } from './SuggestionList'
+import { Card } from '../../components/ui/Card'
+import { ReportView } from '../../report/ReportView'
+import { FENGSHUI_SPEC } from './fengshuiSpec'
 import { ChatPanel } from '../../components/ui/ChatPanel'
 import { buildFengshuiQASystemPrompt } from '../../utils/ai'
 import { getRecordDetail } from '../../services/fengshuiApi'
@@ -46,20 +42,24 @@ export function ReportDetail({ recordId, onBack }: ReportDetailProps) {
   return (
     <div className="flex flex-col gap-5">
       <div><Button variant="clear" size="sm" onClick={onBack}>← 返回列表</Button></div>
-      <Card><div className="text-center"><ScoreGauge score={detail.overallScore || data.overall_score || 0} label="综合评分" /></div></Card>
-      {detail.summary && <Card title="分析总结"><p className="text-[15px] leading-relaxed" style={{ color: 'var(--fg)' }}>{detail.summary}</p></Card>}
-      {cells.length > 0 && <Card title="九宫方位分析"><PalaceGrid cells={cells} /></Card>}
-      {(detail.strengths?.length > 0 || detail.weaknesses?.length > 0) && (
-        <Card><ProsConsList strengths={detail.strengths} weaknesses={detail.weaknesses} /></Card>
-      )}
-      {detail.suggestions?.length > 0 && (
-        <Card><SuggestionList suggestions={detail.suggestions} /></Card>
-      )}
-      {data.ai_report && (
-        <Card title="AI 分析报告">
-          <div className="report"><ReactMarkdown remarkPlugins={[remarkGfm]}>{data.ai_report}</ReactMarkdown></div>
-        </Card>
-      )}
+
+      {/* 章节结构由 FENGSHUI_SPEC 描述；序号/锚点/目录/AI 承载由 ReportView 统一处理 */}
+      <ReportView
+        spec={FENGSHUI_SPEC}
+        ctx={{
+          result: {
+            scoreLabel: '综合评分',
+            score: detail.overallScore || data.overall_score || 0,
+            summary: detail.summary,
+            cells,
+            strengths: detail.strengths,
+            weaknesses: detail.weaknesses,
+            suggestions: detail.suggestions,
+          },
+          ai: { 'ai-fengshui': { text: data.ai_report ?? null } },
+        }}
+      />
+
       <div className="actions">
         <Button variant="mist" onClick={onBack}>返回列表</Button>
         <Button variant="clear" onClick={() => window.print()}>打印报告</Button>

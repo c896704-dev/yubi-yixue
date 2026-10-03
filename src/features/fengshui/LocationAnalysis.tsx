@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Card } from '../../components/ui/Card'
+import { ReportView } from '../../report/ReportView'
+import { FENGSHUI_SPEC } from './fengshuiSpec'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { ImageUpload } from '../../components/form/ImageUpload'
 import { Loading } from '../../components/ui/Loading'
-import { ScoreGauge } from '../../components/viz/ScoreGauge'
-import { ProsConsList } from './ProsConsList'
-import { SuggestionList } from './SuggestionList'
 import { ChatPanel } from '../../components/ui/ChatPanel'
 import { buildFengshuiQASystemPrompt } from '../../utils/ai'
 import { useFengshui } from '../../hooks/useFengshui'
@@ -36,21 +35,24 @@ export function LocationAnalysis() {
     const d = (result as any).data || result
     return (
       <div className="flex flex-col gap-5">
-        <Card><div className="text-center"><ScoreGauge score={d.overallScore || 0} label="楼盘评分" /></div></Card>
-        {d.summary && <Card title="分析总结"><p className="text-[15px] leading-relaxed" style={{ color: 'var(--fg)' }}>{d.summary}</p></Card>}
-        {(d.strengths?.length > 0 || d.weaknesses?.length > 0) && (
-          <Card><ProsConsList strengths={d.strengths} weaknesses={d.weaknesses} /></Card>
-        )}
-        {d.suggestions?.length > 0 && (
-          <Card><SuggestionList suggestions={d.suggestions} /></Card>
-        )}
-        {d.environment && (
-          <Card title="环境分析">
-            <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(0,77,77,0.55)' }}>
-              {typeof d.environment === 'string' ? d.environment : JSON.stringify(d.environment, null, 2)}
-            </div>
-          </Card>
-        )}
+        {/* 章节结构由 FENGSHUI_SPEC 描述。本页没有 AI 报告，
+            故不传 ai 槽位——ReportView 会整章跳过（视为"本章不存在"）。 */}
+        <ReportView
+          spec={FENGSHUI_SPEC}
+          ctx={{
+            result: {
+              scoreLabel: '楼盘评分',
+              score: d.overallScore || 0,
+              summary: d.summary,
+              strengths: d.strengths,
+              weaknesses: d.weaknesses,
+              suggestions: d.suggestions,
+              environment: typeof d.environment === 'string'
+                ? d.environment
+                : (d.environment ? JSON.stringify(d.environment, null, 2) : undefined),
+            },
+          }}
+        />
         <div className="actions">
           <Button variant="mist" onClick={reset}>重新分析</Button>
           <Button variant="clear" onClick={() => window.print()}>打印报告</Button>
