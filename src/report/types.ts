@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { PersonInfo } from '../types'
+import type { DocBlock } from './docModel'
 
 /**
  * 报告章节模型 —— 全站报告的唯一结构契约。
@@ -105,6 +106,19 @@ interface ChapterBase<R> {
 export interface ContentChapter<R> extends ChapterBase<R> {
   kind: 'engine' | 'data'
   body: ChapterBody<R>
+  /**
+   * Word / 打印导出时的正文投影。**只描述内容，不描述排版**——字号、间距、
+   * 分页由导出器统一决定（见 report/exportDocx.ts）。
+   *
+   * 为什么屏幕的 `body` 不能自动变成 Word：`body` 返回的是 ReactNode，
+   * 里面的仪表盘、可点选时间轴在文档里没有对应物。所以每个章节要显式声明
+   * 它在文档里的样子。没写 `doc` 的章节**不会被静默跳过**——导出器会直接抛错，
+   * 避免出现"少了一章但没人发现"的文档。
+   *
+   * 注意：`body` 与 `doc` 是同一份内容的两种呈现，改一个就要改另一个；
+   * 两边的**章节标题、顺序、序号、可见条件**由 resolveChapters 保证一致，无需操心。
+   */
+  doc?: (ctx: ReportContext<R>) => DocBlock[]
 }
 
 /**
@@ -165,6 +179,43 @@ export function deriveChapterNums<R = unknown>(chapters: ReportChapter<R>[]): st
     main += 1
     return n
   })
+}
+
+/** 已解析的章节：可见性、序号、标题都已求值，可直接交给任何呈现介质。 */
+export interface ResolvedChapter<R = unknown> {
+  chapter: ReportChapter<R>
+  /** 已求值的标题（spec 里可以是函数） */
+  title: string
+  /** 已派生的序号；AI 章节为空串 */
+  num: string
+}
+
+/**
+ * **「这份报告有哪些章节」的唯一答案** —— 屏幕、Word、打印共用。
+ *
+ * 两处过滤都必须发生在派生序号之前（踩过的坑）：
+ *  1. `when` 不满足 → 视为"本章不存在"，不占号、不进目录
+ *  2. `kind:'ai'` 但 ctx 没给槽位（如楼盘位置分析没有 AI 报告）→ 同样整章跳过。
+ *     若把过滤留到渲染时做，目录里会留下一个点不开的幽灵条目。
+ *
+ * 这是 P2-1 迁移后 Phase 2 的关键一步：此前「屏幕的章节」由 ReportView 决定、
+ * 「Word 的章节」由 docxExport 自己手写，两者只能靠人肉对齐（实际已经漂移过：
+ * Word 有「尊卑生克链」「胎息·元神画像」等屏幕并不存在的独立章节）。
+ * 现在两边调同一个函数，**结构一致性由构造成立，不靠纪律**。
+ */
+export function resolveChapters<R>(
+  spec: ReportSpec<R>,
+  ctx: ReportContext<R>,
+): ResolvedChapter<R>[] {
+  const chapters = spec.chapters
+    .filter((c) => !c.when || c.when(ctx))
+    .filter((c) => c.kind !== 'ai' || Boolean(ctx.ai?.[c.id]))
+  const nums = deriveChapterNums(chapters)
+  return chapters.map((c, i) => ({
+    chapter: c,
+    title: typeof c.title === 'function' ? c.title(ctx) : c.title,
+    num: nums[i] ?? '',
+  }))
 }
 
 /** 汇总一份报告要喂给 AI 的全部上下文（按章节顺序，跳过未提供 aiContext 的章节）。 */

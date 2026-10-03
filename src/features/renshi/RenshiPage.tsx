@@ -9,7 +9,8 @@ import { Download, History, Printer, RefreshCw } from '../../components/ui/Icon'
 import { analyzeSixiang, type SixiangResult } from '../../utils/sixiang'
 import { analyzeTrajectory, type TrajectoryResult } from '../../utils/trajectory'
 import { generateSixiangInsight, generateTrajectoryInsight, buildSixiangQASystemPrompt } from '../../utils/ai'
-import { exportRenshiDocx } from '../../utils/docxExport'
+import { exportReportDocx } from '../../report/exportDocx'
+import { useToast } from '../../components/ui/Toast'
 import {
   saveRenshiRecord, getRenshiRecordsMerged, getRenshiRecordById,
   updateRenshiAi, updateRenshiTrajectoryAi, deleteRenshiRecord, type RenshiRecord,
@@ -62,6 +63,7 @@ function RecordList({ records, showRecords, onToggle, onLoad, onDelete }: {
 }
 
 export function RenshiPage() {
+  const { toast } = useToast()
   const [records, setRecords] = useState<RenshiRecord[]>([])
   const [showRecords, setShowRecords] = useState(true)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
@@ -200,17 +202,35 @@ export function RenshiPage() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [loadRecords])
 
+  /**
+   * Word 导出：由 RENSHI_SPEC 驱动，**章节与屏幕完全同源**（同一个 resolveChapters）。
+   * 每章的正文由 spec 里的 doc() 给出，所以 Word 里不会再出现屏幕没有的章节，
+   * 也不会漏掉屏幕上有的章节。缺少 doc() 的章节会让导出直接报错而不是静默少一章。
+   */
   const handleExport = useCallback(async () => {
     if (!analysis) return
     setExporting(true)
+    const p = analysis.person
+    const pad = (n: number) => String(n).padStart(2, '0')
     try {
-      await exportRenshiDocx(analysis.result, aiText, analysis.person, {
-        traj: analysis.traj, trajText,
-      })
+      await exportReportDocx(
+        RENSHI_SPEC,
+        {
+          result: { person: p, r: analysis.result, t: analysis.traj },
+          // 只传已生成的 AI 正文；尚未生成的那一章会自动整章跳过（屏幕上此时也只有按钮）
+          ai: { 'ai-renshi': { text: aiText }, 'ai-trajectory': { text: trajText } },
+        },
+        {
+          meta: `${p.name || '命主'}｜${p.gender}｜${p.birthYear}-${pad(p.birthMonth)}-${pad(p.birthDay)} ${pad(p.birthHour)}:${pad(p.birthMinute)}｜${p.birthPlace}`,
+          fileName: `四象三垣胎息识人_${p.name || '未命名'}_${p.birthYear}${pad(p.birthMonth)}${pad(p.birthDay)}`,
+        },
+      )
+    } catch (e) {
+      toast('error', e instanceof Error ? e.message : '导出失败，请稍后重试')
     } finally {
       setExporting(false)
     }
-  }, [analysis, aiText, trajText])
+  }, [analysis, aiText, trajText, toast])
 
   const handleRetryAi = useCallback(() => {
     if (analysis) fetchAi(analysis.result, analysis.person, analysis.id)

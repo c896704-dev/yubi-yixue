@@ -1485,16 +1485,8 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
 .form-card-title { font-family: var(--font-serif); font-size: 16px; font-weight: 700; color: var(--dai-qing); margin-bottom: 18px; letter-spacing: 0.02em; display: flex; align-items: center; gap: 10px; }
 .form-card-title::before { content: ""; width: 18px; height: 2px; background: var(--hu-po-jin); border-radius: 2px; }
 
-/* 打印 */
-@media print {
-  html, body { background: #fff !important; color: #000 !important; font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .site-topnav, .site-dock, .ds-fab, .ds-chat-panel, .tool-back, .actions button, .report-section-toggle, .fold-trigger, .ai-toggle { display: none !important; }
-  /* AI 正文若被手动收起，打印时必须还原全文 */
-  .pillar-table-wrap, .ft2-days, .ft2-year-nodes { overflow: visible; }
-  .ds-card, .form-card, .report-section, .ai-insight, .pillar-table, .hub-card { box-shadow: none !important; }
-  .land-hero { min-height: auto; background: #fff !important; }
-  @page { margin: 10mm 12mm; size: A4; }
-}
+/* 打印规则已全部迁到 src/report/print.css（全站唯一打印样式表）。
+   原来分散在这里的两段 @media print 与 report.css 里的一段已合并过去。 */
 
 /* 窄屏：命盘大表仍等宽，压缩字距 */
 @media (max-width: 480px) {
@@ -1664,13 +1656,8 @@ input.field[type='number']::-webkit-inner-spin-button { -webkit-appearance: none
   .rs-export .ds-btn, .rs-export .ds-btn-primary { flex: 1; }
 }
 
-/* 打印 */
-@media print {
-  .rs-export, .no-print { display: none !important; }
-  .rs-board-cell, .rs-stage, .rs-yuan-card, .rs-overall {
-    background: #fff !important; border-color: #ccc !important;
-  }
-}
+/* 打印规则见 src/report/print.css（.rs-export / .no-print 的隐藏与 .rs-board-cell
+   / .rs-stage / .rs-yuan-card / .rs-overall 的纸面配色都在那里）*/
 
 /* ============================================================
    识人术 v2：口径披露/干支事实层/运程/方法论

@@ -1,46 +1,73 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Card } from '../components/ui/Card'
 import { ChevronDown } from '../components/ui/Icon'
 import { ReportMarkdown } from './ReportMarkdown'
 import { AiInsightCard } from './AiInsightCard'
 import { ReportNav, type NavChapter } from './ReportNav'
-import { deriveChapterNums, type ReportChapter, type ReportContext, type ReportSpec } from './types'
+import { resolveChapters, type ReportChapter, type ReportContext, type ReportSpec } from './types'
 
 /**
  * 报告统一渲染器 —— 报告骨架的呈现层。
  *
- * 全站只实现一次的东西都在这里：**章节序号、锚点、吸顶导航、折叠、AI 承载**。
+ * 全站只实现一次的东西都在这里：**章节序号、锚点、吸顶导航、折叠、AI 承载、打印前展开**。
  * 各板块只负责构造 `ReportSpec`（数据），不再关心这些。
  *
  * 设计约束：
- *  - 序号由 `deriveChapterNums` 派生，章节数据里不含序号 → 不会再出现"卡头与正文各说一套"
+ *  - 「有哪些章节」由 `resolveChapters` 唯一决定（屏幕 / Word / 打印共用同一答案）
  *  - `kind:'ai'` 的章节自动套用 AI 承载，页面不重复实现
- *  - 打印时折叠章节强制展开（见 report.css 的 @media print）
- *
- * 注：P2-1 Batch 0 只落地骨架，**尚未接入任何页面**。
+ *  - 折叠只改变 CSS，**正文始终在 DOM 里**，因此打印能完整还原（见下方注释）
  */
 export function ReportView<R>({ spec, ctx }: { spec: ReportSpec<R>; ctx: ReportContext<R> }) {
-  // 先过滤，再派生序号与导航——条件不满足的章节视为"本章不存在"，不占号、不进目录。
-  // AI 章节额外要求 ctx 提供了槽位：没有 AI 内容的板块（如楼盘位置分析）不应在目录里
-  // 留一个点不开的条目。两处过滤必须都发生在构建 navChapters 之前。
-  const chapters = spec.chapters
-    .filter((c) => !c.when || c.when(ctx))
-    .filter((c) => c.kind !== 'ai' || Boolean(ctx.ai?.[c.id]))
-    .map((c) => ({ ...c, title: typeof c.title === 'function' ? c.title(ctx) : c.title }))
-  const nums = deriveChapterNums(chapters)
-  const navChapters: NavChapter[] = chapters.map((c, i) => ({
-    id: c.id,
-    num: nums[i] ?? '',
-    title: c.title,
+  const chapters = resolveChapters(spec, ctx)
+  const navChapters: NavChapter[] = chapters.map(({ chapter, title, num }) => ({
+    id: chapter.id,
+    num,
+    title,
   }))
 
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  /**
+   * 打印前把页内所有 `<details>` 展开。
+   *
+   * 方法论披露、晚子时口径对照都是原生 `<details>`（默认收起）：CSS 无法强制展开
+   * 一个收起状态的 details，不处理的话它们会**整段从 PDF 里消失**。
+   * 这里在 beforeprint 里同步展开、afterprint 还原，屏幕观感不受影响。
+   *
+   * 顺带把 document.title 换成报告名 —— Chrome「另存为 PDF」默认拿它当文件名，
+   * 否则导出的一律叫「御笔易学」。
+   */
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    let collapsed: HTMLDetailsElement[] = []
+    let prevTitle = ''
+    const onBeforePrint = () => {
+      collapsed = Array.from(root.querySelectorAll('details')).filter((d) => !d.open)
+      collapsed.forEach((d) => { d.open = true })
+      prevTitle = document.title
+      document.title = spec.title
+    }
+    const onAfterPrint = () => {
+      collapsed.forEach((d) => { d.open = false })
+      collapsed = []
+      if (prevTitle) document.title = prevTitle
+    }
+    window.addEventListener('beforeprint', onBeforePrint)
+    window.addEventListener('afterprint', onAfterPrint)
+    return () => {
+      window.removeEventListener('beforeprint', onBeforePrint)
+      window.removeEventListener('afterprint', onAfterPrint)
+    }
+  }, [spec.title])
+
   return (
-    <div className="report-view">
+    <div className="report-view" ref={rootRef}>
       <ReportNav chapters={navChapters} />
       <Card title={spec.title}>
         {spec.subtitle && <p className="report-view-subtitle">{spec.subtitle}</p>}
-        {chapters.map((c, i) => (
-          <ChapterView key={c.id} chapter={c} title={c.title} num={nums[i] ?? ''} ctx={ctx} />
+        {chapters.map(({ chapter, title, num }) => (
+          <ChapterView key={chapter.id} chapter={chapter} title={title} num={num} ctx={ctx} />
         ))}
       </Card>
     </div>
@@ -95,8 +122,13 @@ function ChapterView<R>({ chapter, title, num, ctx }: {
     </>
   )
 
+  const collapsed = collapsible && !open
+
   return (
-    <div className={`report-section${chapter.variant ? ` ${chapter.variant}` : ''}`} id={chapter.id}>
+    <div
+      className={`report-section${chapter.variant ? ` ${chapter.variant}` : ''}${collapsed ? ' is-collapsed' : ''}`}
+      id={chapter.id}
+    >
       {collapsible ? (
         <button
           className="report-section-header"
@@ -108,12 +140,17 @@ function ChapterView<R>({ chapter, title, num, ctx }: {
       ) : (
         <div className="report-section-header">{header}</div>
       )}
-      {(!collapsible || open) && (
-        <div className="report-section-body">
-          {body}
-          {chapter.aside?.(ctx)}
-        </div>
-      )}
+      {/*
+        正文**始终留在 DOM 里**，折叠只由 CSS（.is-collapsed）隐藏。
+        原因：打印 / 存 PDF 时必须能还原全文，而 `@media print` 无法让一段
+        根本没被 React 渲染的内容出现。此前写成 `{(open) && <div …>}`，
+        结果是「用户收起过的章节在 PDF 里整章消失」，且屏幕上看不出任何异常。
+        代价仅是被折叠章节的组件仍会挂载（数量很少，只在附录类章节）。
+      */}
+      <div className="report-section-body">
+        {body}
+        {chapter.aside?.(ctx)}
+      </div>
     </div>
   )
 }

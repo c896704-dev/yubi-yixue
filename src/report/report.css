@@ -164,6 +164,8 @@
 .report-section-toggle { font-size: 14px; color: rgba(var(--rgb-ink), 0.5); transition: transform 0.2s; }
 .report-section-toggle.open { transform: rotate(180deg); }
 .report-section-body { padding: 16px 22px 22px; border-top: 1px solid var(--dan-mo); }
+/* 折叠：只隐藏，不卸载 —— 正文留在 DOM 里，打印时才还原得出来（见 ReportView 注释） */
+.report-section.is-collapsed .report-section-body { display: none; }
 .report-nav {
   position: sticky; top: 60px; z-index: 30;
   background: rgba(251, 250, 245, 0.96);
@@ -194,15 +196,7 @@
 .report-nav-item:hover { border-color: rgba(212, 175, 55, 0.5); background: rgba(212, 175, 55, 0.08); }
 .report-nav-item.is-active { border-color: var(--hu-po-jin); background: rgba(212, 175, 55, 0.12); font-weight: 600; }
 
-/* ── 打印：报告级规则 ─────────────────────────────── */
-@media print {
-  .ai-body.is-collapsed { max-height: none !important; overflow: visible !important; }
-  .ai-body.is-collapsed::after { display: none !important; }
-  .report-section-body { display: block !important; }
-  .report-section { break-inside: avoid; box-shadow: none !important; }
-}
-
-/* ── 报告统一渲染器外壳（P2-1 Batch 0 骨架，尚未接入页面） ───── */
+/* ── 报告统一渲染器外壳 ─────────────────────────────────── */
 .report-view { display: flex; flex-direction: column; gap: 18px; }
 .report-view-subtitle { margin: 0 0 12px; font-size: 13px; color: rgba(0, 77, 77, 0.55); }
 .report-view-note {

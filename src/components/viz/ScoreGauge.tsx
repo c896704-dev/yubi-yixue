@@ -31,7 +31,8 @@ export function ScoreGauge({ score, label, size = 180, className = '' }: ScoreGa
   const secondaryText = 'rgba(0, 77, 77, 0.5)'
 
   return (
-    <div className={`flex flex-col items-center ${className}`} style={{ maxWidth: size }}>
+    // score-gauge：打印样式表的挂钩（屏幕上 180px 的仪表盘在纸上有 4.8cm 宽）
+    <div className={`score-gauge flex flex-col items-center ${className}`} style={{ maxWidth: size }}>
       <svg width={size} height={svgHeight} viewBox={`0 0 ${size} ${svgHeight}`}>
         <path d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`} fill="none" stroke={trackColor} strokeWidth={strokeWidth} strokeLinecap="round" />
         {clamped > 0 && (

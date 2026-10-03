@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════════
+   打印 / 存 PDF —— 全站唯一的打印样式表
+   ═══════════════════════════════════════════════════════════════
+   由 main.tsx 在最后引入，因此本文件里的规则能盖掉 index.css / report.css
+   中同优先级的屏幕样式（此前三处 @media print 分散在 index.css ×2 与
+   report.css ×1，改一处漏一处）。
+
+   设计原则（用户要求：**与屏幕内容一致，但排版紧凑、正常大小**）：
+     内容一致 = 打印的就是屏幕那份 DOM，不做任何删减
+     交互态一律展开 = 折叠章节、AI 折叠、<details> 在纸上必须是全文
+        （章节由 .is-collapsed 的 CSS 规则还原；<details> 由 ReportView 的
+          beforeprint 展开，CSS 做不到）
+     排版紧凑 = 去掉卡片外壳、间距按毫米给、正文 10.5pt、表格 9pt
+     正常大小 = 屏幕上的展示型大字（命盘 30px、仪表盘 180px）要收回文档尺度，
+        否则每个字都像截图放大出来的
+
+   注意：屏幕是"卡片堆叠"心智，纸面是"章节流"心智。所以这里做的事本质上是
+   把「卡」翻译成「节」——保留层级，去掉边框、圆角、阴影、悬停与内边距。
+   ═══════════════════════════════════════════════════════════════ */
+
+@media print {
+  /* ── ① 页面设置与基准字号 ───────────────────────────── */
+  @page { size: A4; margin: 14mm; }
+  html, body {
+    background: #fff !important; color: #000 !important;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  /* rem 基准降到 10.5pt：Tailwind 的比例字号（text-sm / text-lg…）随之收敛。
+     写死 px 的类不受影响，下面按类单独处理。 */
+  html { font-size: 10.5pt; }
+  body { font-size: 10.5pt; }
+
+  /* ── ② 交互外壳：全部不打印 ─────────────────────────── */
+  .site-topnav, .site-dock, .ds-fab, .ds-chat-panel, .tool-header, .tool-back,
+  .actions, .no-print, .rs-export, .report-section-toggle, .fold-trigger,
+  .ai-toggle, .site-footer { display: none !important; }
+  /* 首页落地区：打印时不要占满一屏 */
+  .land-hero { min-height: auto !important; background: #fff !important; }
+  /* 一律去阴影（纸面没有浮起效果） */
+  .ds-card, .form-card, .hub-card, .pillar-table, .ai-insight, .report-section { box-shadow: none !important; }
+
+  /* ── ③ 报告外壳：把"卡"变成"节" ─────────────────────── */
+  .report-view { display: block !important; }
+  .report-view > .ds-card {
+    border: none !important; border-radius: 0 !important;
+    box-shadow: none !important; padding: 0 !important; background: #fff !important;
+  }
+  .report-view > .ds-card > .ds-card-head {
+    font-size: 16pt !important; margin: 0 0 5mm !important;
+    padding-bottom: 2mm; border-bottom: 1pt solid var(--dan-mo); break-after: avoid;
+  }
+
+  .report-section {
+    margin: 0 0 6mm !important; padding: 0 !important;
+    border: none !important; border-radius: 0 !important;
+    box-shadow: none !important; background: #fff !important;
+    /* 关键：屏幕上 avoid 会把每个长章节整体推到下一页，留下半页空白（"截图感"的主因之一）。
+       文档里让章节正常跨页，只保证标题不落单。 */
+    break-inside: auto;
+  }
+  .report-section-header {
+    padding: 0 0 1.2mm !important; background: none !important;
+    border-bottom: 0.5pt solid #d9d5cc !important;
+    break-after: avoid; break-inside: avoid;
+  }
+  .report-section-num {
+    min-width: 0 !important; height: auto !important; padding: 0 !important;
+    background: none !important; box-shadow: none !important;
+    font-size: 12pt !important; color: var(--hu-po-jin-dark) !important;
+    vertical-align: baseline;
+  }
+  /* 序号后补顿号，与 Word 导出的「一、」保持一致 */
+  .report-section-num:not(:empty)::after { content: "、"; }
+  .report-section-icon { display: none !important; }
+  .report-section-title { font-size: 12pt !important; }
+  .report-section-body {
+    display: block !important; padding: 2mm 0 0 !important; border-top: none !important;
+  }
+  /* 折叠章节在纸上必须还原全文（正文始终在 DOM 里，此处只是反过来显示） */
+  .report-section.is-collapsed .report-section-body { display: block !important; }
+
+  /* ── ④ AI 承载：保留标题与「AI 生成」标识，去掉卡片外观 ── */
+  .ai-insight {
+    margin: 0 0 6mm !important; padding: 0 !important;
+    border: none !important; border-radius: 0 !important; box-shadow: none !important;
+    break-inside: auto;
+  }
+  .ai-insight-head { margin-bottom: 2mm !important; break-after: avoid; }
+  .ai-insight-heading { padding-bottom: 1.2mm; border-bottom: 0.5pt solid #d9d5cc; width: 100%; }
+  .ai-insight-title { font-size: 12pt !important; margin-bottom: 1mm !important; }
+  .ai-insight-title::before { display: none !important; }
+  .ai-insight-note { font-size: 7.5pt !important; }
+  .ai-body.is-collapsed { max-height: none !important; overflow: visible !important; }
+  .ai-body.is-collapsed::after { display: none !important; }
+
+  /* ── ⑤ 正文排版（Markdown 块）───────────────────────── */
+  .report { font-size: 10.5pt !important; line-height: 1.7 !important; overflow: visible !important; }
+  /* 屏幕上限制 44em 是为了行宽可读；纸上由页宽决定，不再限制 */
+  .report :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: none !important; }
+  .report p, .report li { orphans: 3; widows: 3; }
+  .report p { margin: 0 0 2mm !important; }
+  .report ul, .report ol { margin: 0 0 2mm !important; padding-left: 6mm !important; }
+  .report li { margin: 0 0 0.8mm !important; }
+  .report :is(h1, h2, h3, h4) { break-after: avoid; }
+  .report h1 { font-size: 15pt !important; margin: 5mm 0 2mm !important; }
+  .report h2 { font-size: 13pt !important; margin: 5mm 0 2mm !important; padding-bottom: 1mm !important; }
+  .report h3 { font-size: 11.5pt !important; margin: 3.5mm 0 1.5mm !important; }
+  .report h4 { font-size: 10.5pt !important; margin: 3mm 0 1mm !important; }
+  .report hr { margin: 3mm 0 !important; }
+  .report blockquote {
+    margin: 2mm 0 !important; padding: 1.5mm 3mm !important;
+    font-size: 10pt !important; border-radius: 0 !important;
+  }
+  .report table { font-size: 9pt !important; break-inside: auto; box-shadow: none !important; border-radius: 0 !important; }
+  .report thead { display: table-header-group; }   /* 跨页时表头重复 */
+  .report tr { break-inside: avoid; }
+  .report th { font-size: 8pt !important; padding: 1.2mm 2mm !important; }
+  .report td { padding: 1.2mm 2mm !important; }
+  .report tbody tr:nth-child(even) { background: transparent !important; }
+  .report tbody tr:hover { background: transparent !important; }
+  .report pre { font-size: 8.5pt !important; padding: 2mm !important; }
+
+  /* ── ⑥ 屏幕上的"展示型大字"收回文档尺度 ──────────────
+     这些字号是为屏幕第一眼冲击力调的，直接打出来每个字都像放大截图。 */
+  .pillar-table .pt-ganzhi { font-size: 17pt !important; }
+  .pillar-table td, .pillar-table .pt-text { font-size: 9pt !important; }
+  .pillar-table thead th { font-size: 8.5pt !important; padding: 1.5mm 1mm !important; }
+  .pillar-table td { padding: 1.2mm 1mm !important; }
+  .pillar-table-wrap { overflow: visible !important; }
+  .ft2-ganzhi, .ft2-year-ganzhi { font-size: 12pt !important; }
+  .ft2-days, .ft2-year-nodes { overflow: visible !important; }
+  .rs-stage-nayin, .rs-taixi-nayin, .rs-board-ganzhi, .rs-yuan-gz { font-size: 12pt !important; }
+  .rs-taixi-gz { font-size: 12pt !important; }
+  .tj-gz, .tj-dayun-gz, .tj-dy-gz, .tj-stage-nayin { font-size: 11pt !important; }
+  .verdict-value { font-size: 11pt !important; }
+  /* 仪表盘：180px 的 SVG 在纸上是 4.8cm，缩到文档尺度 */
+  .score-gauge svg { width: 78px !important; height: auto !important; }
+
+  /* ── ⑥b 章内的"小卡"：屏幕靠边框分组，纸上靠缩进与细线分组 ──
+     这是"像截图"的最后来源——外层卡片去掉了，但每段四象/每张三垣卡
+     仍带着屏幕的 16px 内边距与整圈边框。改成左侧竖线 + 紧内边距。 */
+  .rs-stage, .rs-yuan-card, .rs-overall, .rs-zunbei,
+  .tj-stage, .tj-rel-card, .tj-dy-detail {
+    border: none !important;
+    border-left: 0.75pt solid var(--dan-mo) !important;
+    border-radius: 0 !important;
+    padding: 0 0 0 3mm !important;
+    margin: 0 0 3mm !important;
+    background: #fff !important;
+  }
+  .tj-dayun-node { border-radius: 0 !important; }
+  .tj-ln { border-radius: 0 !important; }
+  /* 网格类仍保留分格线（它们本来就是表），只收内边距 */
+  .rs-board-cell, .rs-alt-col, .palace-cell, .verdict-item, .tj-dayun-node { padding: 1.5mm 2mm !important; }
+  .rs-board-grid, .rs-timeline, .rs-yuan-grid, .tj-stages, .tj-rel-grid, .palace-grid { gap: 2mm !important; }
+  /* chip：屏幕上是圆角药丸，纸上缩成紧凑的行内标记 */
+  .ds-chip, .pt-chip, .ss-pill { padding: 0 1.6mm !important; font-size: 8.5pt !important; }
+  .report-view .ds-chip { border-radius: 1mm !important; }
+  /* 命主信息条：报告文档的抬头行，去掉卡片外壳 */
+  .person-info-strip {
+    border: none !important; border-radius: 0 !important;
+    padding: 0 0 2mm !important; margin-bottom: 3mm !important;
+    border-bottom: 0.5pt solid var(--dan-mo) !important;
+  }
+  /* 等宽格子：屏幕上靠色块分隔，纸上改成细线 */
+  .rs-board-grid, .rs-yuan-grid, .rs-stage, .rs-yuan-card, .rs-overall,
+  .tj-stage, .tj-rel-card, .tj-dy-detail, .tj-ln, .palace-cell, .verdict-strip {
+    break-inside: avoid;
+  }
+  .rs-board-cell, .rs-stage, .rs-yuan-card, .rs-overall, .tj-stage, .tj-rel-card,
+  .tj-dy-detail, .palace-cell, .verdict-item {
+    background: #fff !important; border-color: #ccc !important; box-shadow: none !important;
+  }
+  .rs-timeline-item, .rs-zunbei, .tj-dayun-node, .tj-ln-row { break-inside: avoid; }
+  .tj-dayun-node { background: #fff !important; border-color: #ccc !important; }
+
+  /* ── ⑦ 通用：去掉一切阴影/圆角/悬停，收掉超宽溢出 ──── */
+  .report-view *, .report-view *::before, .report-view *::after { text-shadow: none !important; }
+  .report-view svg, .report-view img { max-width: 100%; }
+  .report-view .ds-chip { break-inside: avoid; }
+  a { color: inherit !important; text-decoration: none !important; }
+}
