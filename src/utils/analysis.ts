@@ -261,88 +261,138 @@ function renderPaipanDisclaimer(person: PersonInfo, bazi: BaziChart): string {
 // 1. 乾坤定盘 报告
 // ============================================================
 
-export function renderFundamentalReport(result: AnalysisResult): string {
-  const { bazi, person, fiveElementDistribution, bodyStrength, geJu, warnings, favorableElements, unfavorableElements } = result
+/** 乾坤定盘的组成块。key 用于显示侧取舍（见 renderFundamentalReportView）。 */
+export type FundamentalPartKey =
+  | 'header' | 'warnings' | 'judge' | 'paipan' | 'geJuTable'
+  | 'strength' | 'vertical' | 'special' | 'climate' | 'chongHe' | 'muku'
 
-  let md = '## 乾坤定盘 (Fundamental Analysis)\n\n'
+/**
+ * 把「乾坤定盘」拆成具名块。
+ *
+ * 拆开的原因（审计 P-04/P-05 与 P-08）：显示侧要**去掉已由首屏结论条承载的「格局定性」表**
+ * （身强弱/格局/喜用神在同一屏内复述四次），并把**排盘方法论说明移到章末**
+ * （它原本占据注意力最高的第二屏）。但这两段都是 AI 上下文的一部分，不能从模板里删。
+ *
+ * 于是块是唯一真相，两个消费方各自拼装：
+ *  - `renderFundamentalReport`     → 原顺序原样拼接，AI 上下文**逐字不变**
+ *  - `renderFundamentalReportView` → 显示侧取舍后拼接
+ * 之所以不用一个 `forAI` 开关，理由与算卦那两页相同：开关会让改显示牵动 AI。
+ */
+export function fundamentalPartList(result: AnalysisResult): { key: FundamentalPartKey; md: string }[] {
+  const { bazi, person, bodyStrength, geJu, warnings, favorableElements, unfavorableElements } = result
+  const parts: { key: FundamentalPartKey; md: string }[] = []
+
+  parts.push({ key: 'header', md: '## 乾坤定盘 (Fundamental Analysis)\n\n' })
 
   // 警示录
   if (warnings.length > 0) {
-    md += '> **【⚠️ 警示录】** 判官直言，此局有不可忽视之偏枯/刑冲，切勿讳疾忌医。\n>\n'
+    let md = '> **【⚠️ 警示录】** 判官直言，此局有不可忽视之偏枯/刑冲，切勿讳疾忌医。\n>\n'
     for (const w of warnings) {
       md += `> - ⚠️ ${w}\n`
     }
     md += '\n'
+    parts.push({ key: 'warnings', md })
   }
 
   // 排盘表与五行能量由 PillarTable / ElementBars 组件渲染，此处只出判官批语
-  md += `> **判官批语：** 日主 **${bazi.dayMaster}**（${ELEM_SYMBOL[STEM_ELEMENT[bazi.dayMaster]]}${STEM_ELEMENT[bazi.dayMaster]}），生于${bazi.month.branch}月，为 **${geJu}**。\n\n`
+  parts.push({
+    key: 'judge',
+    md: `> **判官批语：** 日主 **${bazi.dayMaster}**（${ELEM_SYMBOL[STEM_ELEMENT[bazi.dayMaster]]}${STEM_ELEMENT[bazi.dayMaster]}），生于${bazi.month.branch}月，为 **${geJu}**。\n\n`,
+  })
 
   // 排盘方法论说明
-  md += renderPaipanDisclaimer(person, bazi)
+  parts.push({ key: 'paipan', md: renderPaipanDisclaimer(person, bazi) })
 
   // 格局定性
-  md += '### ⚖️ 格局定性\n\n'
-  md += `| 属性 | 判定 |\n|:---|:---|\n`
-  md += `| **身强/身弱** | ${bodyStrength} |\n`
-  md += `| **格局** | ${geJu} |\n`
-  md += `| **喜用神** | ${favorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')} |\n`
-  md += `| **忌神** | ${unfavorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')} |\n`
-
-  md += '\n'
+  let geJuTable = '### ⚖️ 格局定性\n\n'
+  geJuTable += `| 属性 | 判定 |\n|:---|:---|\n`
+  geJuTable += `| **身强/身弱** | ${bodyStrength} |\n`
+  geJuTable += `| **格局** | ${geJu} |\n`
+  geJuTable += `| **喜用神** | ${favorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')} |\n`
+  geJuTable += `| **忌神** | ${unfavorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')} |\n`
+  geJuTable += '\n'
+  parts.push({ key: 'geJuTable', md: geJuTable })
 
   // 旺衰详细
-  md += '### 📊 旺衰判定（多维度综合加权法）\n\n'
-  md += `> **结论：** ${result.bodyStrength}（总分：${result.strengthDetail.totalScore >= 0 ? '+' : ''}${result.strengthDetail.totalScore.toFixed(1)}）\n>\n`
-  md += '> **评分方法：** 月令旺衰(±3) + 地支根气(0~+4) + 天干生助(±5) + 三围生克(±3) + 连锁惩罚(-0~-3) + 寒暖修正(±1)\n\n'
-  md += '| 维度 | 得分 | 说明 |\n|:---|:---|:---|\n'
-  md += `| 月令旺衰 | ${result.strengthDetail.monthScore} | ${result.bazi.month.branch}月·${getWangXiangDesc(result.bazi.dayMaster, result.bazi.month.branch)} |\n`
-  md += `| 地支根气 | +${result.strengthDetail.rootScore.toFixed(1)} | ${result.strengthDetail.rootDetails.map(d => d.rootType).join('、') || '无根'} |\n`
-  md += `| 天干生助 | ${result.strengthDetail.helpScore >= 0 ? '+' : ''}${result.strengthDetail.helpScore} | 比劫印星天干透出 |\n`
-  md += `| 三围生克 | ${result.strengthDetail.surroundScore >= 0 ? '+' : ''}${result.strengthDetail.surroundScore} | 月干+日支+时干 |\n`
-  if (result.strengthDetail.chainPenalty !== 0) md += `| 连锁惩罚 | ${result.strengthDetail.chainPenalty} | 生助忌神自动扣分 |\n`
-  if (result.strengthDetail.coldPenalty !== 0) md += `| 寒暖修正 | ${result.strengthDetail.coldPenalty} | 冬火减力/夏水减力 |\n`
-  md += '\n'
+  let strength = '### 📊 旺衰判定（多维度综合加权法）\n\n'
+  strength += `> **结论：** ${result.bodyStrength}（总分：${result.strengthDetail.totalScore >= 0 ? '+' : ''}${result.strengthDetail.totalScore.toFixed(1)}）\n>\n`
+  strength += '> **评分方法：** 月令旺衰(±3) + 地支根气(0~+4) + 天干生助(±5) + 三围生克(±3) + 连锁惩罚(-0~-3) + 寒暖修正(±1)\n\n'
+  strength += '| 维度 | 得分 | 说明 |\n|:---|:---|:---|\n'
+  strength += `| 月令旺衰 | ${result.strengthDetail.monthScore} | ${result.bazi.month.branch}月·${getWangXiangDesc(result.bazi.dayMaster, result.bazi.month.branch)} |\n`
+  strength += `| 地支根气 | +${result.strengthDetail.rootScore.toFixed(1)} | ${result.strengthDetail.rootDetails.map(d => d.rootType).join('、') || '无根'} |\n`
+  strength += `| 天干生助 | ${result.strengthDetail.helpScore >= 0 ? '+' : ''}${result.strengthDetail.helpScore} | 比劫印星天干透出 |\n`
+  strength += `| 三围生克 | ${result.strengthDetail.surroundScore >= 0 ? '+' : ''}${result.strengthDetail.surroundScore} | 月干+日支+时干 |\n`
+  if (result.strengthDetail.chainPenalty !== 0) strength += `| 连锁惩罚 | ${result.strengthDetail.chainPenalty} | 生助忌神自动扣分 |\n`
+  if (result.strengthDetail.coldPenalty !== 0) strength += `| 寒暖修正 | ${result.strengthDetail.coldPenalty} | 冬火减力/夏水减力 |\n`
+  strength += '\n'
+  parts.push({ key: 'strength', md: strength })
 
   // 干支作用路线说明（竖向同柱 / 横向相邻；地支不克天干除非自合；燥土寒水）
   if (result.strengthDetail.verticalNotes.length > 0) {
-    md += '**干支作用路线：**\n\n'
+    let md = '**干支作用路线：**\n\n'
     for (const note of result.strengthDetail.verticalNotes) {
       md += `- ${note}\n`
     }
     md += '\n'
+    parts.push({ key: 'vertical', md })
   }
 
   // 格局
   if (result.specialGeJu) {
-    md += `> **特殊格局：** ⚠️ 此命为「**${result.specialGeJu}**」，非寻常格局，论断需格外谨慎。`
+    let md = `> **特殊格局：** ⚠️ 此命为「**${result.specialGeJu}**」，非寻常格局，论断需格外谨慎。`
     md += `喜忌取法特殊：**弃命从势，顺其势而逆扶抑**（喜用神 ${result.favorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')}，忌神 ${result.unfavorableElements.map(e => ELEM_SYMBOL[e] + e).join('、')}）。\n\n`
+    parts.push({ key: 'special', md })
   }
 
   // 寒暖燥湿
-  md += `**寒暖燥湿：** ${result.climate.label === '寒' ? '❄️ 寒局，需火调候' : result.climate.label === '暖' ? '☀️ 暖局，需水调候' : result.climate.label === '燥' ? '🔥 燥局，需水润泽' : result.climate.label === '湿' ? '💧 湿局，需火暖局' : '✅ 气候中和'}（暖度${result.climate.warmthScore} / 湿度${result.climate.humidityScore}）${result.climate.needTiaoHou ? ' ⚠️需调候' : ''} | **胎元：** ${result.taiYuan.stem}${result.taiYuan.branch} | **命宫：** ${result.mingGong.stem}${result.mingGong.branch}\n\n`
+  parts.push({
+    key: 'climate',
+    md: `**寒暖燥湿：** ${result.climate.label === '寒' ? '❄️ 寒局，需火调候' : result.climate.label === '暖' ? '☀️ 暖局，需水调候' : result.climate.label === '燥' ? '🔥 燥局，需水润泽' : result.climate.label === '湿' ? '💧 湿局，需火暖局' : '✅ 气候中和'}（暖度${result.climate.warmthScore} / 湿度${result.climate.humidityScore}）${result.climate.needTiaoHou ? ' ⚠️需调候' : ''} | **胎元：** ${result.taiYuan.stem}${result.taiYuan.branch} | **命宫：** ${result.mingGong.stem}${result.mingGong.branch}\n\n`,
+  })
 
   // 刑冲合害
-  md += '### ⚡ 刑冲合害\n\n'
+  let chongHe = '### ⚡ 刑冲合害\n\n'
   if (result.chongHe.summary.length > 0) {
     for (const s of result.chongHe.summary) {
-      md += `- ${s}\n`
+      chongHe += `- ${s}\n`
     }
-    md += '\n'
+    chongHe += '\n'
   } else {
-    md += '命局地支平和，无明显刑冲合害。\n\n'
+    chongHe += '命局地支平和，无明显刑冲合害。\n\n'
   }
+  parts.push({ key: 'chongHe', md: chongHe })
 
   // 墓库
   if (result.muku.length > 0) {
-    md += '**墓库：**\n\n'
+    let md = '**墓库：**\n\n'
     for (const m of result.muku) {
       md += `- ${m.branch}（${m.name}）：${m.state === '库' ? '旺而为库' : m.state === '墓' ? '衰而为墓' : '中和之库'}，库门${m.door}${m.notes.length > 0 ? ` — ${m.notes.join('；')}` : ''}\n`
     }
     md += '\n'
+    parts.push({ key: 'muku', md })
   }
 
-  return md
+  return parts
+}
+
+/** 完整版（块按原顺序拼接）—— **AI 上下文的唯一入口，输出逐字不变**。 */
+export function renderFundamentalReport(result: AnalysisResult): string {
+  return fundamentalPartList(result).map(p => p.md).join('')
+}
+
+/**
+ * 显示版：仅两处与完整版不同，均对应审计已登记的问题。
+ *  - 去掉「格局定性」表（P-04/P-05）：身强弱/格局/喜用神已由首屏结论条给出，忌神并入结论条
+ *  - 排盘方法论说明移到章末（P-08）：它是口径说明，不是结论，不该占据注意力最高的位置
+ */
+export function renderFundamentalReportView(result: AnalysisResult): string {
+  const parts = fundamentalPartList(result)
+  const dropped = new Set<FundamentalPartKey>(['geJuTable'])
+  const trailing = new Set<FundamentalPartKey>(['paipan'])
+  return [
+    ...parts.filter(p => !dropped.has(p.key) && !trailing.has(p.key)),
+    ...parts.filter(p => trailing.has(p.key)),
+  ].map(p => p.md).join('')
 }
 
 function getWangXiangDesc(dayMaster: HeavenlyStem, monthBranch: EarthlyBranch): string {
@@ -447,7 +497,7 @@ export function renderRiskReport(result: AnalysisResult): string {
   let md = '## 判官直言 (Risk Warning)\n\n'
 
   // 判官批语：综合命局风险（性格/健康细节见对应章节，此处只给总纲）
-  md += '> **判官总批：** 此局日主' + bodyStrength + '，'
+  md += '> **判官批语：** 此局日主' + bodyStrength + '，'
   const maxElem = (Object.entries(fiveElementDistribution).sort((a, b) => b[1] - a[1])[0]?.[0] || '') as FiveElement
   const minElem = (Object.entries(fiveElementDistribution).sort((a, b) => a[1] - b[1])[0]?.[0] || '') as FiveElement
   const spread = Math.max(...Object.values(fiveElementDistribution)) - Math.min(...Object.values(fiveElementDistribution))

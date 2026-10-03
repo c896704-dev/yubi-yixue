@@ -34,6 +34,6 @@ export const LIUYAO_SPEC: ReportSpec<LiuyaoCtx> = {
       id: 'ly-duanyu', title: '传统断语', kind: 'data',
       body: (c) => <LiuyaoDuanYuSection p={c.result} />,
     },
-    { id: 'ai-liuyao', title: 'AI 解读', kind: 'ai' },
+    { id: 'ai-liuyao', title: 'AI 解读 · 断卦', kind: 'ai' },
   ],
 }

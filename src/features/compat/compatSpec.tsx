@@ -1,7 +1,5 @@
-import type { ReactNode } from 'react'
 import type { CompatibilityResult, AnalysisResult } from '../../types'
 import type { ReportSpec, ReportContext } from '../../report/types'
-import { ReportMarkdown } from '../../report/ReportMarkdown'
 import { buildCompatSections } from '../../utils/compatibility'
 import { BaziChart } from '../../components/viz/BaziChart'
 
@@ -14,13 +12,9 @@ export interface CompatReportInput {
 }
 
 /**
- * 把「一段动态 markdown」包成章节 body。
- *
- * `body` 的 string 形式只适用于**静态**文本；合婚的章节内容随结果变化，
- * 所以走函数形式并显式交给 ReportMarkdown —— 比让 ReportView 去猜返回值是不是 markdown 更清楚。
+ * 章节正文直接返回 Markdown 字符串，由 ReportView 统一渲染（见 report/chapterMarkdown.ts）。
+ * `body` 的 string 形式只适用于**静态**文本；合婚的章节内容随结果变化，走函数形式。
  */
-const md = (fn: (c: ReportContext<CompatReportInput>) => string) =>
-  (c: ReportContext<CompatReportInput>): ReactNode => <ReportMarkdown>{fn(c)}</ReportMarkdown>
 
 /**
  * 章节按 result 缓存：spec 是静态的，若每次取值都调 buildCompatSections，
@@ -52,7 +46,7 @@ export const COMPAT_SPEC: ReportSpec<CompatReportInput> = {
         id: `compat-${id}`,
         title: (c: ReportContext<CompatReportInput>) => sectionsOf(c.result.compat)[i]?.title ?? `第 ${i + 1} 章`,
         kind: 'data' as const,
-        body: md((c) => sectionsOf(c.result.compat)[i]?.md ?? ''),
+        body: (c: ReportContext<CompatReportInput>) => sectionsOf(c.result.compat)[i]?.md ?? '',
       })),
 
     {
@@ -65,6 +59,6 @@ export const COMPAT_SPEC: ReportSpec<CompatReportInput> = {
       ),
     },
 
-    { id: 'ai-compat', title: 'AI 合盘解读', kind: 'ai' },
+    { id: 'ai-compat', title: 'AI 解读 · 合盘', kind: 'ai' },
   ],
 }

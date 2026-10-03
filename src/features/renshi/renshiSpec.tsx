@@ -380,11 +380,11 @@ export const RENSHI_SPEC: ReportSpec<RenshiReportInput> = {
 
     // ── AI 解读（承载统一，正文一字不改） ────────────────────
     {
-      id: 'ai-trajectory', title: '轨迹解盘师 · 人生轨迹解读', kind: 'ai',
+      id: 'ai-trajectory', title: 'AI 解读 · 人生轨迹', kind: 'ai',
       note: '本文只解读人生节奏与关键节点，与上方人品性格解读互不覆盖。',
     },
     {
-      id: 'ai-renshi', title: '深度识人解读', kind: 'ai',
+      id: 'ai-renshi', title: 'AI 解读 · 识人', kind: 'ai',
     },
 
     {

@@ -41,6 +41,6 @@ export const MEIHUA_SPEC: ReportSpec<MeihuaCtx> = {
       id: 'mh-zhuanti', title: '专题占断', kind: 'data',
       body: (c) => <MeihuaZhuanTiSection p={c.result} />,
     },
-    { id: 'ai-meihua', title: 'AI 解读', kind: 'ai' },
+    { id: 'ai-meihua', title: 'AI 解读 · 断卦', kind: 'ai' },
   ],
 }

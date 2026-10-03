@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Card } from '../components/ui/Card'
 import { ChevronDown } from '../components/ui/Icon'
 import { ReportMarkdown } from './ReportMarkdown'
+import { normalizeChapterMarkdown } from './chapterMarkdown'
 import { AiInsightCard } from './AiInsightCard'
 import { ReportNav, type NavChapter } from './ReportNav'
 import { resolveChapters, type ReportChapter, type ReportContext, type ReportSpec } from './types'
@@ -106,9 +107,13 @@ function ChapterView<R>({ chapter, title, num, ctx }: {
   }
 
   // ── 引擎 / 数据章节：统一章节卡 ──
-  const body: ReactNode = typeof chapter.body === 'function'
-    ? chapter.body(ctx)
-    : <ReportMarkdown>{chapter.body}</ReportMarkdown>
+  // body 返回字符串时一律按 Markdown 渲染，并做一次显示侧规范化
+  // （去掉与卡头同名的首行标题、去掉标题行 emoji，见 chapterMarkdown.ts）。
+  // 这样各板块不必各自包一层 <ReportMarkdown>，也就不会有人漏掉规范化。
+  const raw = typeof chapter.body === 'function' ? chapter.body(ctx) : chapter.body
+  const body: ReactNode = typeof raw === 'string'
+    ? <ReportMarkdown>{normalizeChapterMarkdown(raw, title)}</ReportMarkdown>
+    : raw
 
   const header = (
     <>

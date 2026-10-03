@@ -154,6 +154,12 @@ export default function BaziPage() {
               <span className="verdict-label">喜用神</span>
               <span className="verdict-value fav">{result.favorableElements.join('、') || '—'}</span>
             </div>
+            {/* 忌神原先只在「乾坤定盘」的格局定性表里出现，而那张表与本节其余四项完全重复。
+                把忌神提到结论条后，正文里那张表就可以去掉了（审计 P-04/P-05）。 */}
+            <div className="verdict-item">
+              <span className="verdict-label">忌神</span>
+              <span className="verdict-value">{result.unfavorableElements.join('、') || '—'}</span>
+            </div>
             {result.currentFortune && (
               <div className="verdict-item">
                 <span className="verdict-label">当前大运</span>

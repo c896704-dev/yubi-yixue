@@ -434,60 +434,6 @@ function makeVerdict(total: number): { verdict: string; suggestion: string } {
 // 合盘报告 Markdown 渲染
 // ============================================================
 
-export function renderCompatibilityReport(result: CompatibilityResult): string {
-  const { male, female, scores } = result
-
-  let md = `## ⚖️ 龙凤合鸣：${male.person.name} & ${female.person.name} 深度合盘报告\n\n`
-
-  // 1. 能量磁场看板
-  md += '### 1. 能量磁场看板\n\n'
-  md += '| 维度 | 契合程度 | 判语 |\n'
-  md += '|:---|:---|:---|\n'
-
-  const starAttraction = scores.attraction >= 80 ? '⭐⭐⭐⭐⭐' : scores.attraction >= 65 ? '⭐⭐⭐⭐' : scores.attraction >= 50 ? '⭐⭐⭐' : '⭐⭐'
-  const starStability = scores.stability >= 80 ? '⭐⭐⭐⭐⭐' : scores.stability >= 65 ? '⭐⭐⭐⭐' : scores.stability >= 50 ? '⭐⭐⭐' : '⭐⭐'
-  const starComplement = scores.complement >= 80 ? '⭐⭐⭐⭐⭐' : scores.complement >= 65 ? '⭐⭐⭐⭐' : scores.complement >= 50 ? '⭐⭐⭐' : '⭐⭐'
-
-  md += `| **天干吸引力** | ${starAttraction} | ${describeAttraction(male, female)} |\n`
-  md += `| **地支稳定性** | ${starStability} | ${describeStability(male, female)} |\n`
-  md += `| **五行互补性** | ${starComplement} | ${describeComplement(male, female)} |\n\n`
-
-  // 2. 核心互动逻辑
-  md += '### 2. 核心互动逻辑\n\n'
-  md += `**关系模型：** ${result.relationshipModel}\n\n`
-
-  md += '**优势：**\n'
-  for (const adv of result.advantages) {
-    md += `- ✅ ${adv}\n`
-  }
-  md += '\n'
-
-  md += '**软肋：**\n'
-  for (const w of result.weaknesses) {
-    md += `- 💔 ${w}\n`
-  }
-  md += '\n'
-
-  // 3. 雷区预警
-  md += '### 3. 现实生活"雷区"预警\n\n'
-  for (const warn of result.warnings) {
-    md += `- ⚠️ ${warn}\n`
-  }
-  if (result.warnings.length === 0) {
-    md += '未检测到明显的雷区配置，但仍需在相处中以诚相待。\n'
-  }
-  md += '\n'
-
-  // 4. 判官终极裁定
-  md += '### 4. 判官终极裁定\n\n'
-  md += `| 项目 | 内容 |\n|:---|:---|\n`
-  md += `| **合盘分** | **${scores.total}分** |\n`
-  md += `| **定性** | ${result.verdict} |\n`
-  md += `| **建议** | ${result.suggestion} |\n\n`
-
-  return md
-}
-
 function describeAttraction(male: AnalysisResult, female: AnalysisResult): string {
   const mDay = male.bazi.dayMaster
   const fDay = female.bazi.dayMaster

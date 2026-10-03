@@ -102,6 +102,6 @@ export const FENGSHUI_SPEC: ReportSpec<FengshuiReportData> = {
       when: (c) => (c.result.suggestions?.length ?? 0) > 0,
       body: (c) => <SuggestionList suggestions={c.result.suggestions ?? []} />,
     },
-    { id: 'ai-fengshui', title: 'AI 分析报告', kind: 'ai' },
+    { id: 'ai-fengshui', title: 'AI 解读 · 风水', kind: 'ai' },
   ],
 }
