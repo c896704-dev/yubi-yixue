@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
+import { RefreshCw } from '../../../components/ui/Icon'
 import { Loading } from '../../../components/ui/Loading'
 import { ReportMarkdown } from '../../../report/ReportMarkdown'
 import { HexagramDisplay } from '../HexagramDisplay'
@@ -9,7 +10,9 @@ import { coinShake, numberCast, randomCast, buildCoinResult } from '../utils/liu
 import { generateLiuyaoInterpretation, buildDivinationQASystemPrompt } from '../../../utils/ai'
 import { saveDivinationRecord } from '../../../utils/db'
 import { ChatPanel } from '../../../components/ui/ChatPanel'
-import { AiBody } from '../../../report/AiBody'
+import { ReportView } from '../../../report/ReportView'
+import { LIUYAO_SPEC } from './liuyaoSpec'
+import { buildLiuyaoAnalysisView, buildLiuyaoAnalysisContext } from './liuyaoAnalysis'
 import { determineLiuyaoYongShen } from '../utils/liuyao-yongshen'
 import { analyzeSiShen } from '../../../utils/sishen'
 import { analyzeMoonDayStrength } from '../../../utils/strength'
@@ -59,46 +62,10 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
   const [num3, setNum3] = useState('')
   const [activeLiuyaoHex, setActiveLiuyaoHex] = useState('original')
 
-  /** 构建六爻代码层分析。opts.forAI=true 时保留完整表述，作为喂给 AI 的上下文 */
-  const buildLiuyaoCodeAnalysis = (r: LiuyaoResult, q: string, opts?: { forAI?: boolean }): string | null => {
-    const naja = r.naja
-    if (!naja) return null
-    const lines = naja.lines
-    // 用神定位
-    const ys = determineLiuyaoYongShen(lines, q)
-    // 四神体系
-    const sishen = analyzeSiShen(lines, ys.primary.index)
-    // 旺衰分析
-    const str = analyzeMoonDayStrength(
-      ys.primary.line, ys.primary.line.wuxing!,
-      sishen.yuan.line, sishen.yuan.wuxing,
-      sishen.ji.line, sishen.ji.wuxing,
-      naja.monthWuxing, naja.dayWuxing,
-    )
-    // 应期
-    const yq = computeYingQiLiuyao(ys.primary.line.wuxing!, naja.isStatic, naja.monthWuxing)
-
-    const parts = [`**用神定位：** ${ys.info}`]
-
-    // 四神体系：summary 是下方三条 info 的散文版，正文里二选一即可；AI 版保留散文以便理解
-    if (opts?.forAI) parts.push(`**四神体系：** ${sishen.summary}`)
-    parts.push([sishen.yuan.info, sishen.ji.info, sishen.chou.info].map((s) => `- ${s}`).join('\n'))
-
-    parts.push(`**月日旺衰：** ${str.summary}`)
-    parts.push([str.yong.month, str.yong.day].map((s) => `- ${s}`).join('\n'))
-
-    // 应期：页面下方有结构化「应期推算」块逐条呈现同一结论，正文版不再重复；AI 版需要这段
-    if (opts?.forAI) parts.push(`**应期推算：** ${yq.map((y) => y.timeWindow).join('；')}`)
-
-    parts.push(`**卦局：** ${naja.isLiuChong ? '六冲卦' : '非六冲卦'}，${naja.isStatic ? '静卦' : '有动爻'}，${naja.palaceName}宫${naja.palaceElement}`)
-
-    return parts.join('\n\n')
-  }
-
-  // Derived analysis text — used both in UI and AI prompt
+  /** 六爻代码层分析的派生量：显示版与 AI 版共用同一套计算，保证两边结论一致 */
   const analysisText = useMemo(() => {
     if (!result) return null
-    return buildLiuyaoCodeAnalysis(result, question)
+    return buildLiuyaoAnalysisView(result, question)
   }, [result, question])
 
   const recordIdRef = useRef<string | null>(null)
@@ -123,7 +90,9 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
 
     // 第三步：请求 AI，完成后更新记录
     try {
-      const codeAnalysis = buildLiuyaoCodeAnalysis(r, q, { forAI: true })
+      // AI 输入取自已声明在 LIUYAO_SPEC.aiContext 上的同一个 builder——
+      // 与显示用的 buildLiuyaoAnalysisView 同源不同用，改显示不会再削 AI 上下文
+      const codeAnalysis = buildLiuyaoAnalysisContext(r, q)
       const text = await generateLiuyaoInterpretation(r, q, undefined, codeAnalysis)
       setInterpretation(text)
       // 用 AI 解读更新已保存的记录
@@ -228,221 +197,31 @@ export function LiuyaoPage({ onBack, viewingRecord }: LiuyaoPageProps) {
           </div>
         )}
 
-        {/* 卦象展示 + 卦局分析 */}
-        <Card>
-          <div className="hexagram-row">
-            <HexagramDisplay
-              hexagram={result.originalHexagram}
-              label="本卦"
-              changingPositions={result.changingPositions}
-            />
-            {result.changedHexagram && (
-              <span className="hex-sep">→</span>
-            )}
-            {result.changedHexagram && (
-              <HexagramDisplay
-                hexagram={result.changedHexagram}
-                label="变卦"
-              />
-            )}
-          </div>
-
-          {/* 六爻纳甲排盘表 */}
-          <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-            {/* 月建日辰信息栏 */}
-            {result.naja && (
-              <div className="flex flex-wrap gap-4 justify-center mb-4 text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>
-                <span>宫：<b style={{ color: 'var(--fg)' }}>{result.naja.palaceName}</b>（{result.naja.palaceElement}）</span>
-                <span>月建：<b style={{ color: 'var(--fg)' }}>{result.naja.monthZhi}月{result.naja.monthWuxing}</b></span>
-                <span>日辰：<b style={{ color: 'var(--fg)' }}>{result.naja.dayZhi}日{result.naja.dayWuxing}</b></span>
-                {result.naja.isLiuChong && <span className="font-semibold" style={{ color: 'var(--danger)' }}>六冲卦</span>}
-                {result.naja.isStatic && <span style={{ color: 'var(--primary)' }}>静卦</span>}
-              </div>
-            )}
-
-            {/* 纳甲表头 */}
-            <div className="grid grid-cols-7 gap-1 text-[10px] text-center font-semibold mb-1 px-1"
-              style={{ color: 'rgba(0,77,77,0.55)' }}>
-              <span>爻位</span><span>六神</span><span>干支</span><span>五行</span><span>六亲</span><span>世应</span><span>阴阳</span>
-            </div>
-
-            {/* 纳甲表体 — 从上往下显示 */}
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-              {[...(result.naja?.lines || result.lines)].reverse().map((line, i) => {
-                const pos = 6 - i
-                const posNames = ['','初','二','三','四','五','上']
-                const isShi = line.shiying === '世'
-                const isYing = line.shiying === '应'
-                return (
-                  <div key={i} className="grid grid-cols-7 gap-1 text-xs text-center py-2 px-1 items-center"
-                    style={{
-                      borderBottom: i < 5 ? '1px solid var(--border)' : 'none',
-                      backgroundColor: line.changing ? 'var(--negative-bg)' : isShi ? 'var(--primary-light)' : undefined,
-                    }}>
-                    <span style={{ color: 'rgba(0,77,77,0.55)' }}>{posNames[pos]}爻</span>
-                    <span style={{ color: 'var(--hu-po-jin, #d4af37)' }}>{line.liushen || ''}</span>
-                    <span className="font-semibold tracking-wide" style={{ color: 'var(--fg)' }}>{line.gan || ''}{line.zhi || ''}</span>
-                    <span>{line.wuxing || ''}</span>
-                    <span>{line.liuqin || ''}</span>
-                    <span>
-                      {isShi && <span className="inline-block px-1.5 py-px rounded text-[10px] font-semibold"
-                        style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-hover)' }}>世</span>}
-                      {isYing && <span className="inline-block px-1.5 py-px rounded text-[10px] font-semibold"
-                        style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-hover)' }}>应</span>}
-                    </span>
-                    <span style={line.value ? {} : { color: 'rgba(0,77,77,0.55)' }}>
-                      {line.value ? '⚊' : '⚋'}
-                      {line.changing && <span className="ml-0.5" style={{ color: 'var(--danger)' }}>{line.value ? '○' : '×'}</span>}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* 卦局分析（嵌入卦象卡片底部） */}
-          {result.naja && (
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-2.5 rounded" style={{ backgroundColor: 'var(--bg)' }}>
-                  <span style={{ color: 'rgba(0,77,77,0.55)' }}>卦局：</span>
-                  <span className="font-semibold" style={{ color: 'var(--fg)' }}>
-                    {result.naja.isLiuChong?'六冲卦':result.naja.isLiuHe?'六合卦':'非冲非合'}
-                  </span>
-                  {result.naja.isLiuChong && <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>六冲主快散变动</p>}
-                  {result.naja.isLiuHe && <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>六合主和聚长久</p>}
-                </div>
-                {result.naja.chiShiLiqin && (
-                  <div className="p-2.5 rounded" style={{ backgroundColor: 'var(--bg)' }}>
-                    <span style={{ color: 'rgba(0,77,77,0.55)' }}>持世：</span>
-                    <span className="font-semibold" style={{ color: 'var(--fg)' }}>{result.naja.chiShiLiqin}持世</span>
-                    <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.naja.chiShiText}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* 卦理分析与应期推算 */}
-        <Card title="卦理分析与应期推算">
-          {analysisText && (
-            <div className="report text-sm leading-relaxed p-4 rounded-lg mb-3"
-              style={{ color: 'var(--fg)', backgroundColor: 'var(--bg)' }}>
-              <ReportMarkdown>{analysisText}</ReportMarkdown>
-            </div>
-          )}
-          {result.naja && (() => {
-            const naja = result.naja!
-            const ys = determineLiuyaoYongShen(naja.lines, question)
-            const yq = computeYingQiLiuyao(ys.primary.line.wuxing!, naja.isStatic, naja.monthWuxing)
-            if (!yq || yq.length === 0) return null
-            return (
-              <div className="space-y-2 text-xs">
-                <div className="font-semibold text-sm mb-1" style={{ color: 'var(--fg)' }}>应期推算</div>
-                {yq.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 rounded p-2"
-                    style={{ backgroundColor: 'var(--primary-light)' }}>
-                    <span className="font-semibold min-w-[80px]" style={{ color: 'var(--primary-hover)' }}>{item.method}</span>
-                    <span className="flex-1 font-bold" style={{ color: 'var(--primary)' }}>{item.timeWindow}</span>
-                  </div>
-                ))}
-              </div>
-            )
-          })()}
-          {!analysisText && !result.naja && <p className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</p>}
-        </Card>
-
-        {/* AI 解读 */}
-        {/* 卦辞释义 */}
-        <Card title="卦辞释义">
-          <p className="text-sm leading-relaxed mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>{result.originalHexagram.judgment}</p>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.originalHexagram.meaning}</p>
-          {result.changedHexagram && (
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>
-                变卦 · {result.changedHexagram.name}
-              </p>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{result.changedHexagram.meaning}</p>
-            </div>
-          )}
-        </Card>
-
-        {/* 传统断语 — tab切换本卦/变卦 */}
-        {(() => {
-          const hexOpts = [
-            { key: 'original', label: '本卦', name: result.originalName },
-            ...(result.changedName ? [{ key: 'changed', label: '变卦', name: result.changedName }] : []),
-          ]
-          const active = hexOpts.find(o => o.key === activeLiuyaoHex) || hexOpts[0]
-          const dy = getDuanYu(active.name)
-          const allDims = (name: string) => {
-            const d = getDuanYu(name); if (!d) return []
-            return Object.entries(d).filter(([k]) => ['运势','事业','家运','考试','求财','婚姻','诉讼','出行'].includes(k))
-          }
-          return (
-            <Card title="传统断语">
-              <div className="flex gap-1 mb-3 flex-wrap" style={{ borderBottom: '1px solid var(--border)' }}>
-                {hexOpts.map(opt => (
-                  <button key={opt.key} onClick={() => setActiveLiuyaoHex(opt.key)}
-                    className="px-3 py-1.5 text-xs rounded-t transition-colors"
-                    style={activeLiuyaoHex === opt.key ? { backgroundColor: 'var(--primary)', color: '#fbfaf5', fontWeight: 600 } : { color: 'rgba(0,77,77,0.55)' }}>
-                    {opt.label} · {opt.name}
-                  </button>
-                ))}
-              </div>
-              {dy ? (
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {Object.entries(dy).filter(([k]) => ['运势','事业','家运','考试','求财','婚姻','诉讼','出行'].includes(k)).map(([k, v]) => (
-                    <div key={k} className="p-2 rounded" style={{ backgroundColor: 'var(--bg)' }}>
-                      <span className="font-semibold" style={{ color: 'var(--fg)' }}>{k}</span>
-                      <span className="ml-1" style={{ color: 'var(--fg)' }}>{v as string}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : <p className="text-xs" style={{ color: 'rgba(0,77,77,0.55)' }}>暂无</p>}
-              {/* 打印时显示所有卦断语 */}
-              <div className="hidden print:block mt-4">
-                {hexOpts.map(opt => {
-                  const dims = allDims(opt.name)
-                  if (dims.length === 0) return null
-                  return (
-                    <div key={opt.key}>
-                      <h4 className="text-sm font-[family-name:var(--font-title)] font-bold mb-1">{opt.label} · {opt.name}</h4>
-                      <div className="grid grid-cols-2 gap-1 text-xs">
-                        {dims.map(([k, v]) => (<div key={k} className="p-1"><b>{k}</b> {v as string}</div>))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-          )
-        })()}
-
-        {/* AI 解读：后置为「延伸段」——卦象、卦辞、传统断语等引擎结论先行，模型叙事随后 */}
-        <Card title="AI 解读">
-          <div className="text-sm italic mb-3" style={{ color: 'rgba(0,77,77,0.55)' }}>
-            所问之事：{question || '（未填写）'}
-          </div>
-
-          {interpreting && <Loading text="卦象推演中..." />}
-
-          {interpretError && (
-            <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--negative-bg)', color: 'var(--danger)' }}>
-              {interpretError}
-              <Button variant="clear" size="sm" onClick={handleReinterpret} className="ml-2">
-                重试
-              </Button>
-            </div>
-          )}
-
-          {interpretation && <AiBody text={interpretation} collapsible />}
-
-          {!interpreting && !interpretError && !interpretation && (
-            <div className="text-sm text-center py-4" style={{ color: 'rgba(0,77,77,0.55)' }}>等待 AI 解读完成...</div>
-          )}
-        </Card>
+        {/* 报告结构由 LIUYAO_SPEC 描述：卦象 / 卦理分析 / 卦辞释义 / 传统断语 / AI 解读。
+            序号、锚点、目录、折叠、AI 承载由 ReportView 统一处理。 */}
+        <ReportView
+          spec={LIUYAO_SPEC}
+          ctx={{
+            result: {
+              result, question, analysisText, interpreting, interpretError, interpretation,
+              activeLiuyaoHex, setActiveLiuyaoHex, handleReinterpret,
+            },
+            ai: {
+              'ai-liuyao': {
+                text: interpretation,
+                loading: interpreting,
+                error: interpretError,
+                // 三个按钮（重试 / 首次等待）收敛为卡头一个，行为不变
+                action: !interpreting ? (
+                  <Button variant="ghost" size="sm" onClick={handleReinterpret} className="no-print">
+                    <RefreshCw size={13} style={{ marginRight: 6 }} />
+                    {interpretError ? '重试解读' : interpretation ? '重新解读' : '生成解读'}
+                  </Button>
+                ) : null,
+              },
+            },
+          }}
+        />
 
         <div className="flex justify-center">
           <Button variant="mist" onClick={() => window.print()}>打印报告</Button>

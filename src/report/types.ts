@@ -83,9 +83,11 @@ interface ChapterBase<R> {
    *
    * 迁移纪律（方案 §4.2）：从旧实现搬家时，本字段必须与被替换的字符串**逐字相同**，
    * 否则 AI 输出会漂移且无法归因。显示侧可以自由精简，AI 侧不受影响。
-   * 若 AI 输入本就取自引擎对象（如识人），则**不需要**本字段。
+   * 若 AI 输入本就取自引擎对象（如识人/合婚），则**不需要**本字段。
+   *
+   * 函数形式用于上下文随结果变化的板块（如算卦的代码层分析）。
    */
-  aiContext?: string
+  aiContext?: string | ((ctx: ReportContext<R>) => string)
 
   /** 附录：不占用正文章节号，单独编为「附录A/附录B…」 */
   appendix?: boolean
@@ -166,9 +168,3 @@ export function deriveChapterNums<R = unknown>(chapters: ReportChapter<R>[]): st
 }
 
 /** 汇总一份报告要喂给 AI 的全部上下文（按章节顺序，跳过未提供 aiContext 的章节）。 */
-export function collectAiContext<R = unknown>(spec: ReportSpec<R>): string {
-  return spec.chapters
-    .map((c) => c.aiContext)
-    .filter((s): s is string => Boolean(s && s.trim()))
-    .join('\n\n')
-}
