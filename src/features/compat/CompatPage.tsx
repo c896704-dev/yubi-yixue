@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import type { PersonInfo, AnalysisResult } from '../../types'
 import { analyzePerson } from '../../utils/analysis'
-import { renderEnhancedCompatibilityReport } from '../../utils/compatibility'
 import { useCompat } from '../../hooks/useBazi'
 import { getAllRecordsMerged, type SavedRecord, saveCompatRecord, getAllCompatRecords, deleteCompatRecord, type CompatRecord } from '../../utils/db'
 import { buildCompatQASystemPrompt } from '../../utils/ai'
@@ -10,10 +9,8 @@ import { deleteServerCompatRecord, getServerCompatRecords, saveServerCompatRecor
 import { ChatPanel } from '../../components/ui/ChatPanel'
 import { DualInput } from './DualInput'
 import { CompatScore } from './CompatScore'
-import { CompatReport } from './CompatReport'
-import { BaziChart } from '../../components/viz/BaziChart'
-import { AiInsightCard } from '../../report/AiInsightCard'
-import { AutoReportNav } from '../../report/AutoReportNav'
+import { ReportView } from '../../report/ReportView'
+import { COMPAT_SPEC } from './compatSpec'
 import { Button } from '../../components/ui/Button'
 import { Loading } from '../../components/ui/Loading'
 
@@ -26,7 +23,6 @@ export default function CompatPage() {
   const [analyzing2, setAnalyzing2] = useState(false)
   const [hasRunCompat, setHasRunCompat] = useState(false)
   const { loading, result, aiInsight, aiLoading, aiError, analyze: runCompat, fetchAiInsight, reset, restoreAiInsight } = useCompat()
-  const [report, setReport] = useState<string | null>(null)
   const [records, setRecords] = useState<SavedRecord[]>([])
   const [compatRecords, setCompatRecords] = useState<CompatRecord[]>([])
   const [showCompatHistory, setShowCompatHistory] = useState(true)
@@ -74,7 +70,6 @@ export default function CompatPage() {
   const handleCompat = useCallback(async () => {
     if (!result1 || !result2) return
     const compatResult = await runCompat(result1, result2)
-    setReport(renderEnhancedCompatibilityReport(compatResult))
     setHasRunCompat(true)
     const label = `${person1!.name} & ${person2!.name} · 合盘`
     const record: CompatRecord = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), malePerson: person1!, femalePerson: person2!, result: compatResult, aiInsight: null, label, createdAt: Date.now() }
@@ -100,7 +95,6 @@ export default function CompatPage() {
     setPerson1(record.malePerson); setPerson2(record.femalePerson); setResult1(male); setResult2(female)
     pendingAiRef.current = record.aiInsight || null
     const compatResult = await runCompat(male, female)
-    setReport(renderEnhancedCompatibilityReport(compatResult))
     setHasRunCompat(true); setShowCompatHistory(false)
     // 从历史记录进入报告时回到顶部
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -113,7 +107,7 @@ export default function CompatPage() {
   }, [refreshCompatRecords])
 
   const handleReset = useCallback(() => {
-    setPerson1(null); setPerson2(null); setResult1(null); setResult2(null); setReport(null); setHasRunCompat(false); reset()
+    setPerson1(null); setPerson2(null); setResult1(null); setResult2(null); setHasRunCompat(false); reset()
   }, [reset])
 
   return (
@@ -149,30 +143,27 @@ export default function CompatPage() {
 
       {result && (
         <>
+          {/* 评分卡是首屏结论，留在报告之外（与八字的结论条同一角色） */}
           <CompatScore result={result} />
-          {/* 章节导航：8 章 ~7.7 屏，无导航只能一路滚到底 */}
-          {report && <AutoReportNav containerIds={['compat-report']} skip="^评分口径$" />}
 
-          {report && <CompatReport reportMarkdown={report} />}
-
+          {/*
+            报告结构由 COMPAT_SPEC 描述：8 个模板章节 + 双方八字详情 + AI 解读。
+            序号/锚点/目录/折叠/AI 承载全部由 ReportView 统一处理。
+            AI 正文一字未改：合盘 AI 输入取自 result1/result2，与报告串无关。
+          */}
           {result1 && result2 && (
-            <div className="section">
-              <h3 className="font-serif text-lg font-bold" style={{ color: 'var(--dai-qing)' }}>双方八字详情</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 24 }}>
-                <div className="ds-card"><BaziChart bazi={result1.bazi} person={result1.person} /></div>
-                <div className="ds-card"><BaziChart bazi={result2.bazi} person={result2.person} /></div>
-              </div>
-            </div>
-          )}
-
-          {/* AI 合盘解读：置于报告末尾作为「延伸段」，引擎结论先行、模型叙事随后 */}
-          {(aiInsight || aiLoading || aiError) && (
-            <AiInsightCard
-              insight={aiInsight ?? null}
-              loading={aiLoading}
-              error={aiError}
-              title="AI 合盘解读"
-              collapsible
+            <ReportView
+              spec={COMPAT_SPEC}
+              ctx={{
+                result: { compat: result, male: result1, female: result2 },
+                ai: {
+                  'ai-compat': {
+                    text: aiInsight ?? null,
+                    loading: aiLoading,
+                    error: aiError,
+                  },
+                },
+              }}
             />
           )}
 

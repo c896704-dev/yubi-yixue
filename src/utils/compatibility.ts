@@ -1138,3 +1138,46 @@ function getIndustryByElem(elem: FiveElement): string[] {
   }
   return map[elem] || []
 }
+
+// ============================================================
+// 章节化：供 ReportView 使用（P2-1 Batch 2）
+// ============================================================
+
+/** 合盘报告的章节（id 稳定，用于锚点与 AI 槽位索引） */
+export interface CompatSection {
+  id: string
+  title: string
+  /** 章节正文（Markdown，已去掉原本的 `## N、标题` 行——标题由呈现层给出） */
+  md: string
+}
+
+const COMPAT_SECTION_IDS = [
+  'overview', 'fundamental', 'personality', 'health',
+  'career', 'family', 'fortune', 'verdict',
+] as const
+
+/**
+ * 把合盘报告拆成章节。
+ *
+ * 边界用的是报告自身的 Markdown 二级标题——这些标题由 renderEnhancedCompatibilityReport
+ * 生成，位置可靠，因此不必先把它拆成 8 个函数（那 8 段共享 male/female/scores/pers/
+ * wealth/benefit/breakdown/fortune 八个局部量，硬拆只是搬运参数，不改变任何可见行为）。
+ * 序号（一、二、…）在此剥掉：全站序号只由 ReportView 的 deriveChapterNums 产生。
+ */
+export function buildCompatSections(result: CompatibilityResult): CompatSection[] {
+  const md = renderEnhancedCompatibilityReport(result)
+  // 只按二级标题切分，`### 评分口径` 等三级标题留在所属章节内
+  const blocks = md.split(/\n(?=## )/)
+  const out: CompatSection[] = []
+  for (const block of blocks) {
+    const m = block.match(/^##\s+(.+?)\s*\n([\s\S]*)$/)
+    if (!m) continue
+    const title = m[1]!.replace(/^[一二三四五六七八九十]+、\s*/, '').trim()
+    out.push({
+      id: COMPAT_SECTION_IDS[out.length] ?? `sec-${out.length + 1}`,
+      title,
+      md: m[2]!.trim(),
+    })
+  }
+  return out
+}
