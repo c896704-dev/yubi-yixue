@@ -5,8 +5,8 @@ import { optionalAuth } from '../middleware/auth.js';
 import { handleError } from '../middleware/error-helper.js';
 import { runFengshuiAnalysis, runLocationAnalysis } from '../services/fengshui-engine.js';
 import {
-  callQwenVision,
-  callQwenText,
+  callVisionModel,
+  callTextModel,
   getLayoutRecognitionPrompt,
   getFengshuiReportPrompt,
   getZodiacAnalysisPrompt,
@@ -85,7 +85,7 @@ router.post('/layout', async (req, res) => {
 
     if (!image) return res.status(400).json({ success: false, error: '请上传户型图' });
     // 一律使用服务端密钥（不接受客户端传 key，防止密钥滥用/免费中继）
-    const effectiveApiKey = process.env.DASHSCOPE_API_KEY;
+    const effectiveApiKey = process.env.DEEPSEEK_API_KEY;
     if (!effectiveApiKey) return res.status(400).json({ success: false, error: '请配置 API Key' });
 
     // 校验属相输入
@@ -100,7 +100,7 @@ router.post('/layout', async (req, res) => {
 
     // Step 1: AI 识别户型图
     const base64Data = extractBase64(image);
-    const aiResult = await callQwenVision(base64Data, getLayoutRecognitionPrompt(), effectiveApiKey);
+    const aiResult = await callVisionModel(base64Data, getLayoutRecognitionPrompt(), effectiveApiKey);
     if (!aiResult.success) {
       return res.status(500).json({ success: false, error: `AI 识别失败：${aiResult.error}` });
     }
@@ -131,7 +131,7 @@ router.post('/layout', async (req, res) => {
     if (withBazi && birthData) {
       // 属相分析
       const zodiacPrompt = getZodiacAnalysisPrompt(birthData.year);
-      const zResult = await callQwenText(zodiacPrompt, effectiveApiKey);
+      const zResult = await callTextModel(zodiacPrompt, effectiveApiKey);
       if (zResult.success) {
         zodiacData = parseAIJson(zResult.content) || { raw: zResult.content };
       }
@@ -145,7 +145,7 @@ router.post('/layout', async (req, res) => {
         zodiacData,
         matchData: engineResult.baziAnalysis,
       });
-      const compResult = await callQwenText(compPrompt, effectiveApiKey);
+      const compResult = await callTextModel(compPrompt, effectiveApiKey);
       aiReport = compResult.success ? compResult.content : 'AI 报告生成失败';
     } else {
       // 纯户型报告
@@ -156,7 +156,7 @@ router.post('/layout', async (req, res) => {
         weaknesses: engineResult.weaknesses,
         ninePalaceData: engineResult.ninePalace,
       });
-      const reportResult = await callQwenText(reportPrompt, effectiveApiKey);
+      const reportResult = await callTextModel(reportPrompt, effectiveApiKey);
       aiReport = reportResult.success ? reportResult.content : 'AI 报告生成失败';
     }
 
@@ -201,20 +201,20 @@ router.post('/location', async (req, res) => {
     } = req.body;
 
     // 一律使用服务端密钥（不接受客户端传 key）
-    const effectiveApiKey = process.env.DASHSCOPE_API_KEY;
+    const effectiveApiKey = process.env.DEEPSEEK_API_KEY;
     if (!effectiveApiKey) return res.status(400).json({ success: false, error: '请配置 API Key' });
 
     const analysisId = uuidv4();
     let environment;
 
     if (description) {
-      const envResult = await callQwenText(getEnvironmentAnalysisPrompt(description), effectiveApiKey);
+      const envResult = await callTextModel(getEnvironmentAnalysisPrompt(description), effectiveApiKey);
       if (envResult.success) {
         environment = parseAIJson(envResult.content) || { overallEnvironment: envResult.content };
       }
     } else if (images?.length > 0) {
       const base64Data = extractBase64(images[0]);
-      const envResult = await callQwenVision(base64Data, getEnvironmentAnalysisPrompt('请根据这张环境照片分析风水格局'), effectiveApiKey);
+      const envResult = await callVisionModel(base64Data, getEnvironmentAnalysisPrompt('请根据这张环境照片分析风水格局'), effectiveApiKey);
       if (envResult.success) {
         environment = parseAIJson(envResult.content) || { overallEnvironment: envResult.content };
       }
@@ -250,11 +250,18 @@ router.post('/ai-report', async (req, res) => {
   try {
     const { data } = req.body;
     // 一律使用服务端密钥（不接受客户端传 key）
-    const apiKey = process.env.DASHSCOPE_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) return res.status(400).json({ success: false, error: '服务端未配置 API Key' });
 
+    // 缺 data 时原先会一路走到 getFengshuiReportPrompt(data) 里解构 undefined，
+    // 抛 TypeError 被 handleError 兜成 500 —— 那是「请求缺参数」，应当是 400。
+    // （生产日志里这条 TypeError 一直在刷，见 pm2 error log）
+    if (!data || typeof data !== 'object') {
+      return res.status(400).json({ success: false, error: '缺少风水分析数据' });
+    }
+
     const prompt = getFengshuiReportPrompt(data);
-    const result = await callQwenText(prompt, apiKey);
+    const result = await callTextModel(prompt, apiKey);
 
     if (result.success) {
       res.json({ success: true, report: result.content });

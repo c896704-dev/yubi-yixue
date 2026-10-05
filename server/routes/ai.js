@@ -1,22 +1,9 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
+import { getAiConfig, getChatCompletionsUrl, AI_MAX_TOKENS } from '../services/ai-config.js';
 
 const router = Router();
 router.use(authMiddleware);
-
-function getAiConfig() {
-  const baseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
-  const model = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  return { baseUrl, model, apiKey };
-}
-
-function getChatCompletionsUrl(baseUrl) {
-  const clean = baseUrl.replace(/\/+$/, '');
-  if (clean.endsWith('/chat/completions')) return clean;
-  if (clean.endsWith('/v1')) return `${clean}/chat/completions`;
-  return `${clean}/v1/chat/completions`;
-}
 
 router.post('/chat', async (req, res) => {
   try {
@@ -43,9 +30,10 @@ router.post('/chat', async (req, res) => {
         messages: chatMessages,
         // 命理解读需稳定输出：默认 0.5，允许前端按场景覆盖
         temperature: typeof temperature === 'number' ? temperature : 0.5,
-        // deepseek-v4-flash 为推理型模型：reasoning_tokens 思维链先占用输出额度
-        // （实测单次思维链可达 3000-4000 tokens），8192 下长报告正文必被截断，提至 16384
-        max_tokens: 16384,
+        // deepseek-flash 为推理型模型：reasoning_tokens 思维链先占用输出额度
+        // （实测单次思维链可达 3000-4000 tokens、占输出额度最高 93.5%），
+        // 8192 下长报告正文必被截断，提至 AI_MAX_TOKENS（16384）
+        max_tokens: AI_MAX_TOKENS,
       }),
     });
 

@@ -21,7 +21,7 @@
 | 后端 | Express 4 · Node.js (ESM) |
 | 数据库 | SQLite (better-sqlite3, WAL 模式) |
 | 本地存储 | IndexedDB（离线可用 + 跨数据库迁移） |
-| AI | DeepSeek API（主）· 通义千问（备） |
+| AI | DeepSeek API（全站唯一上游，含风水视觉；模型 `deepseek-flash`） |
 | 认证 | JWT (jsonwebtoken + bcryptjs) |
 | 字体 | system font stack（Apple HIG） |
 
@@ -117,7 +117,7 @@ npm run db:migrate     # 运行数据库迁移
 | `PORT` | 服务端口 | `3002` |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key | — |
 | `DEEPSEEK_BASE_URL` | DeepSeek API 地址 | `https://api.deepseek.com` |
-| `DEEPSEEK_MODEL` | DeepSeek 模型名 | `deepseek-v4-flash` |
+| `DEEPSEEK_MODEL` | DeepSeek 模型名（官方现支持 `deepseek-flash` / `deepseek-v4-pro`） | `deepseek-flash` |
 | `DASHSCOPE_API_KEY` | 通义千问 API Key（备用） | — |
 | `JWT_SECRET` | JWT 签名密钥 | — |
 
