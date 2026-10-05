@@ -10,7 +10,7 @@ interface HomeLandingProps {
   onNavigate: (tab: AppTab) => void
 }
 
-/* ── Hero 打字机文案（照搬 design-showcase 原文） ── */
+/* ── Hero 打字机文案 ── */
 const TYPING_LINES = [
   '每一句解读，皆有古籍为证。',
   '八字 · 紫微 · 六爻 · 奇门 · 大六壬',
@@ -148,7 +148,7 @@ function Hero({ onNavigate }: HomeLandingProps) {
         </span>
       ))}
 
-      {/* 波浪海（照搬 design-showcase hero 特效） */}
+      {/* 波浪海（Hero 特效：多层黛青渐变波浪 + 金色波峰描边） */}
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[60%] overflow-hidden" aria-hidden="true">
         <svg
           viewBox="0 0 1440 420"

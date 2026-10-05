@@ -6,7 +6,7 @@ import { buildPillarTableData, buildFortuneYears } from '../../utils/analysis'
 import { STEM_ELEMENT } from '../../constants'
 import type { FiveElement } from '../../constants'
 
-/** 五行配色（对齐 design-showcase 古籍美学：木苍翠/火朱砂/土琥珀/金淡金/水黛青） */
+/** 五行配色（古籍美学：木苍翠/火朱砂/土琥珀/金淡金/水黛青） */
 const ELEM_COLORS: Record<FiveElement, string> = {
   '木': '#2d6a4f',
   '火': '#9c3d54',

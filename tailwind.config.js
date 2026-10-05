@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 古籍五色（对齐 design-showcase）
+        // 古籍五色
         'xuan-zhi': '#fbfaf5',
         'xuan-zhi-dark': '#f4f1e8',
         'dai-qing': '#004d4d',
